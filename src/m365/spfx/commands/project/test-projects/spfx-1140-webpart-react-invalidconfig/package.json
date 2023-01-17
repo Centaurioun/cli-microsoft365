@@ -15,7 +15,7 @@
     "office-ui-fabric-react": "7.183.0",
     "@fluentui/react": "8.62.0",
     "@microsoft/rush-stack-compiler-3.7": "0.6.48",
-    "@microsoft/sp-build-web": "1.14.0",
+    "@microsoft/sp-build-web": "1.16.0",
     "@microsoft/sp-core-library": "1.14.0",
     "@microsoft/sp-property-pane": "1.14.0",
     "@microsoft/sp-tslint-rules": "1.14.0",
@@ -30,7 +30,7 @@
   "devDependencies": {
     "@types/react": "17.0.41",
     "@types/react-dom": "17.0.14",
-    "@microsoft/sp-build-web": "1.14.0",
+    "@microsoft/sp-build-web": "1.16.0",
     "@microsoft/sp-tslint-rules": "1.14.0",
     "@microsoft/sp-module-interfaces": "~1.14.0",
     "@microsoft/rush-stack-compiler-3.2": "0.10.48",
