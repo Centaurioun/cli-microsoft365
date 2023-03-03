@@ -1,0 +1,16 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:debug:20170905':
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > debug':
+        patched: '2023-03-03T06:05:24.873Z'
+  'npm:mime:20170907':
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > mime':
+        patched: '2023-03-03T06:05:24.873Z'
+  'npm:ms:20170412':
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > ms':
+        patched: '2023-03-03T06:05:24.873Z'
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > debug > ms':
+        patched: '2023-03-03T06:05:24.873Z'
