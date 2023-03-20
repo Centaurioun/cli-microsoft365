@@ -8,14 +8,17 @@
   "scripts": {
     "build": "gulp bundle",
     "clean": "gulp clean",
-    "test": "gulp test"
+    "test": "gulp test",
+    "prepublish": "npm run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "dependencies": {
     "@microsoft/sp-core-library": "~1.2.0",
-    "@microsoft/sp-webpart-base": "~1.2.0",
+    "@microsoft/sp-webpart-base": "~1.8.0",
     "@types/webpack-env": ">=1.12.1 <1.14.0",
     "knockout": "3.4.0",
-    "@types/knockout": "3.4.39"
+    "@types/knockout": "3.4.39",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "@microsoft/sp-build-web": "~1.2.0",
@@ -24,5 +27,6 @@
     "gulp": "~3.9.1",
     "@types/chai": ">=3.4.34 <3.6.0",
     "@types/mocha": ">=2.2.33 <2.6.0"
-  }
+  },
+  "snyk": true
 }
