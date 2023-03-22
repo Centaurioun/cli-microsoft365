@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@microsoft/sp-core-library": "~1.2.0",
-    "@microsoft/sp-webpart-base": "~1.8.0",
+    "@microsoft/sp-webpart-base": "~1.16.0",
     "@types/webpack-env": ">=1.12.1 <1.14.0",
     "react": "15.4.2",
     "react-dom": "15.4.2",
