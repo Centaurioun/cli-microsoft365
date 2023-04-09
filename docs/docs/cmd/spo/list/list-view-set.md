@@ -19,7 +19,7 @@ m365 spo list view set [options]
 `--listTitle [listTitle]`
 : Title of the list where the view is located. Specify either `listId`, `listTitle`, or `listUrl`.
 
- `--listUrl [listUrl]`
+`--listUrl [listUrl]`
 : Server- or site-relative URL of the list. Specify either `listId` , `listTitle` or `listUrl`.
 
 `--id [id]`
@@ -58,13 +58,13 @@ Update view formatting of the specified list view
 === "PowerShell"
 
     ```sh
-    m365 spo list view set --webUrl https://contoso.sharepoint.com/sites/project-x --listTitle 'My List' --viewTitle 'All items' --CustomFormatter '{\"schema\":\"https://developer.microsoft.com/json-schemas/sp/view-formatting.schema.json\",\"additionalRowClass\": \"=if([$DueDate] &lt;= @now, ''sp-field-severity--severeWarning'', '''')\"}'
+    m365 spo list view set --webUrl https://contoso.sharepoint.com/sites/project-x --listTitle 'My List' --title 'All items' --CustomFormatter '{\"schema\":\"https://developer.microsoft.com/json-schemas/sp/view-formatting.schema.json\",\"additionalRowClass\": \"=if([$DueDate] &lt;= @now, ''sp-field-severity--severeWarning'', '''')\"}'
     ```
 
 === "Bash"
 
     ```sh
-    m365 spo list view set --webUrl https://contoso.sharepoint.com/sites/project-x --listTitle 'My List' --viewTitle 'All items' --CustomFormatter "{\"schema\":\"https://developer.microsoft.com/json-schemas/sp/view-formatting.schema.json\",\"additionalRowClass\": \"=if([$DueDate] &lt;= @now, 'sp-field-severity--severeWarning', '')\"}"
+    m365 spo list view set --webUrl https://contoso.sharepoint.com/sites/project-x --listTitle 'My List' --title 'All items' --CustomFormatter "{\"schema\":\"https://developer.microsoft.com/json-schemas/sp/view-formatting.schema.json\",\"additionalRowClass\": \"=if([$DueDate] &lt;= @now, 'sp-field-severity--severeWarning', '')\"}"
     ```
 
 ## Response
