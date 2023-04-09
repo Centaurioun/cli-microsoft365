@@ -4,6 +4,9 @@ pull_request_rules:
       - "#approved-reviews-by>=1"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Dependabot pull requests
     conditions:
@@ -11,6 +14,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Snyk pull requests
     conditions:
@@ -19,6 +25,9 @@ pull_request_rules:
       - check-success~=^security/snyk
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Renovate pull requests
     conditions:
@@ -26,6 +35,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Requires.io pull requests
     conditions:
@@ -34,6 +46,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Sonarcloud pull requests
     conditions:
@@ -41,6 +56,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for PyUp pull requests
     conditions:
@@ -48,6 +66,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Depfu pull requests
     conditions:
@@ -55,6 +76,9 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for ImgBot pull requests
     conditions:
@@ -62,4 +86,7 @@ pull_request_rules:
       - check-success=Github - Pull Request
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
