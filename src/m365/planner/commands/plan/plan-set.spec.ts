@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./plan-set');
@@ -23,6 +24,7 @@ describe(commands.PLAN_SET, () => {
   const title = 'Plan name';
   const ownerGroupName = 'Group name';
   const ownerGroupId = '00000000-0000-0000-0000-000000000002';
+  const rosterId = 'tYqYlNd6eECmsNhN_fcq85cAGAnd';
   const newTitle = 'New Title';
   const user = 'user@contoso.com';
   const userId = '00000000-0000-0000-0000-000000000000';
@@ -123,6 +125,7 @@ describe(commands.PLAN_SET, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -160,7 +163,8 @@ describe(commands.PLAN_SET, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
     auth.service.accessTokens = {};
@@ -393,6 +397,43 @@ describe(commands.PLAN_SET, () => {
 
     assert(loggerLogSpy.calledWith(outputResponse));
   });
+
+  it('correctly updates planner plan shareWithUserIds with given title and rosterId', async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/beta/planner/rosters/${rosterId}/plans`) {
+        return Promise.resolve(singlePlansResponse);
+      }
+
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
+        return planResponse;
+      }
+
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}/details`) {
+        return planDetailsResponse;
+      }
+
+      return 'Invalid request';
+    });
+
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}/details`) {
+        return outputResponse;
+      }
+
+      return 'Invalid request';
+    });
+
+    await command.action(logger, {
+      options: {
+        title: title,
+        rosterId: rosterId,
+        shareWithUserIds: shareWithUserIds
+      }
+    });
+
+    assert(loggerLogSpy.calledWith(outputResponse));
+  });
+
 
   it('correctly updates planner plan categories with given id', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {

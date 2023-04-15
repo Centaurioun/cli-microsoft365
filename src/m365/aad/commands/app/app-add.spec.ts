@@ -9,6 +9,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import * as mocks from './app-add.mock';
@@ -150,6 +151,7 @@ describe(commands.APP_ADD, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     auth.service.tenantId = '48526e9f-60c5-3000-31d7-aa1dc75ecf3c|908bel80-a04a-4422-b4a0-883d9847d110:c8e761e2-d528-34d1-8776-dc51157d619a&#xA;Tenant';
     if (!auth.service.accessTokens[auth.defaultResource]) {
@@ -193,7 +195,8 @@ describe(commands.APP_ADD, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -798,7 +801,7 @@ describe(commands.APP_ADD, () => {
     }));
   });
 
-  it('creates AAD app reg for a deamon app with specified Microsoft Graph application permissions', async () => {
+  it('creates AAD app reg for a daemon app with specified Microsoft Graph application permissions', async () => {
     sinon.stub(request, 'get').callsFake(opts => {
       if (opts.url === 'https://graph.microsoft.com/v1.0/myorganization/servicePrincipals?$select=appId,appRoles,id,oauth2PermissionScopes,servicePrincipalNames') {
         return Promise.resolve({
@@ -952,7 +955,7 @@ describe(commands.APP_ADD, () => {
     }));
   });
 
-  it('creates AAD app reg for a deamon app with specified Microsoft Graph application and delegated permissions', async () => {
+  it('creates AAD app reg for a daemon app with specified Microsoft Graph application and delegated permissions', async () => {
     sinon.stub(request, 'get').callsFake(opts => {
       if (opts.url === 'https://graph.microsoft.com/v1.0/myorganization/servicePrincipals?$select=appId,appRoles,id,oauth2PermissionScopes,servicePrincipalNames') {
         return Promise.resolve({
@@ -2061,7 +2064,7 @@ describe(commands.APP_ADD, () => {
     }));
   });
 
-  it('creates AAD app reg for a deamon app with specified Microsoft Graph permissions, including admin consent', async () => {
+  it('creates AAD app reg for a daemon app with specified Microsoft Graph permissions, including admin consent', async () => {
     sinon.stub(request, 'get').callsFake(opts => {
       if (opts.url === 'https://graph.microsoft.com/v1.0/myorganization/servicePrincipals?$select=appId,appRoles,id,oauth2PermissionScopes,servicePrincipalNames') {
         return Promise.resolve({

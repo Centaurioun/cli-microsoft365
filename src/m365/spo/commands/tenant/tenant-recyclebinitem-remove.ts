@@ -22,7 +22,6 @@ interface Options extends GlobalOptions {
 class SpoTenantRecycleBinItemRemoveCommand extends SpoCommand {
   private context?: FormDigestInfo;
   private spoAdminUrl?: string;
-  private dots?: string;
 
   public get name(): string {
     return commands.TENANT_RECYCLEBINITEM_REMOVE;
@@ -72,8 +71,8 @@ class SpoTenantRecycleBinItemRemoveCommand extends SpoCommand {
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     const removeDeletedSite = async (): Promise<void> => {
       try {
-        const adminUrl: string = await spo.getSpoAdminUrl(logger, this.debug);
-        const res: FormDigestInfo = await spo.ensureFormDigest(adminUrl, logger, this.context, this.debug);
+        this.spoAdminUrl = await spo.getSpoAdminUrl(logger, this.debug);
+        const res: FormDigestInfo = await spo.ensureFormDigest(this.spoAdminUrl, logger, this.context, this.debug);
         if (this.verbose) {
           logger.logToStderr(`Removing deleted site collection ${args.options.siteUrl}...`);
         }
@@ -108,14 +107,13 @@ class SpoTenantRecycleBinItemRemoveCommand extends SpoCommand {
                 reject,
                 logger,
                 currentContext: this.context as FormDigestInfo,
-                dots: this.dots,
                 debug: this.debug,
                 verbose: this.verbose
               });
             }, operation.PollingInterval);
           });
         }
-      } 
+      }
       catch (err: any) {
         this.handleRejectedODataJsonPromise(err);
       }
@@ -131,7 +129,7 @@ class SpoTenantRecycleBinItemRemoveCommand extends SpoCommand {
         default: false,
         message: `Are you sure you want to remove the deleted site collection ${args.options.siteUrl} from tenant recycle bin?`
       });
-      
+
       if (result.continue) {
         await removeDeletedSite();
       }
