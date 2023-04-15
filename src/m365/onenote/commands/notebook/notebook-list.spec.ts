@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./notebook-list');
@@ -22,6 +23,7 @@ describe(commands.NOTEBOOK_LIST, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -53,7 +55,8 @@ describe(commands.NOTEBOOK_LIST, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -66,26 +69,18 @@ describe(commands.NOTEBOOK_LIST, () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('fails validation if both userId and userName options are passed', async () => {
-    const actual = await command.validate({
-      options:
-      {
-        userId: '2609af39-7775-4f94-a3dc-0dd67657e900',
-        userName: 'Documents'
-      }
-    }, commandInfo);
-    assert.strictEqual(actual, 'Specify either userId or userName, but not both');
+  it('defines correct properties for the default output', () => {
+    assert.deepStrictEqual(command.defaultProperties(), ['createdDateTime', 'displayName', 'id']);
   });
 
-  it('fails validation if both groupId and groupName options are passed', async () => {
+  it('fails validation if webUrl is not a valid webUrl', async () => {
     const actual = await command.validate({
       options:
       {
-        groupId: '233e43d0-dc6a-482e-9b4e-0de7a7bce9b4',
-        groupName: 'MyGroup'
+        webUrl: 'invalid'
       }
     }, commandInfo);
-    assert.strictEqual(actual, 'Specify either groupId or groupName, but not both');
+    assert.notStrictEqual(actual, true);
   });
 
   it('fails validation if the userId is not a valid GUID', async () => {
@@ -342,7 +337,7 @@ describe(commands.NOTEBOOK_LIST, () => {
         return Promise.reject('Invalid request');
       });
 
-    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/testsite' } });
+    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/testsite', debug: true } });
     assert(loggerLogSpy.calledWith([
       {
         "id": "1-99a44a87-c92f-495a-8295-3ab308387821",
