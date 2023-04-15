@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { ClientSidePage } from './clientsidepages';
@@ -83,6 +84,7 @@ describe(commands.PAGE_COLUMN_GET, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -114,7 +116,8 @@ describe(commands.PAGE_COLUMN_GET, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -136,7 +139,7 @@ describe(commands.PAGE_COLUMN_GET, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home.aspx', section: 1, column: 1 } });
+    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home.aspx', section: 1, column: 1, output: 'text' } });
     assert(loggerLogSpy.calledWith(
       {
         "order": 1,
@@ -297,7 +300,7 @@ describe(commands.PAGE_COLUMN_GET, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { debug: true, webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home.aspx', section: 1, column: 1 } });
+    await command.action(logger, { options: { debug: true, webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home.aspx', section: 1, column: 1, output: 'text' } });
     assert(loggerLogSpy.calledWith(
       {
         "order": 1,
@@ -315,7 +318,7 @@ describe(commands.PAGE_COLUMN_GET, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home', section: 1, column: 1 } });
+    await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/team-a', pageName: 'home', section: 1, column: 1, output: 'text' } });
     assert(loggerLogSpy.calledWith(
       {
         "order": 1,

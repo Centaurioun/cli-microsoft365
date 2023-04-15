@@ -13,4 +13,3 @@ patch:
     - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > ms':
         patched: '2023-03-19T07:12:19.753Z'
     - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > debug > ms':
-        patched: '2023-03-19T07:12:19.753Z'

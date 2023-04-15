@@ -9,8 +9,73 @@ patch:
   'npm:mime:20170907':
     - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > mime':
         patched: '2023-03-12T05:41:51.967Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > mime':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > mime':
+        patched: '2023-03-25T01:15:33.550Z'
   'npm:ms:20170412':
     - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > ms':
         patched: '2023-03-12T05:41:51.967Z'
     - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > send > debug > ms':
         patched: '2023-03-12T05:41:51.967Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-favicon > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-favicon > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > tiny-lr > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > connect-timeout > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > body-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > compression > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > connect-timeout > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > express-session > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > morgan > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-index > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-webpart-workbench > @microsoft/gulp-core-build-serve > gulp-connect > tiny-lr > body-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > tiny-lr > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > connect-timeout > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-karma > karma > socket.io > socket.io-adapter > socket.io-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > body-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > compression > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > connect-timeout > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > express-session > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > morgan > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-index > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > tiny-lr > body-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-karma > karma > socket.io > socket.io-adapter > socket.io-parser > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-static > send > debug > ms':
+        patched: '2023-03-25T01:15:33.550Z'
+  'npm:negotiator:20160616':
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > compression > accepts > negotiator':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-index > accepts > negotiator':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > compression > accepts > negotiator':
+        patched: '2023-03-25T01:15:33.550Z'
+    - '@microsoft/sp-build-web > @microsoft/sp-build-core-tasks > @microsoft/gulp-core-build-serve > gulp-connect > connect > serve-index > accepts > negotiator':
+        patched: '2023-03-25T01:15:33.550Z'
