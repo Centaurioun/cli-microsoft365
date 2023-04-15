@@ -6,13 +6,14 @@ import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import { formatting } from '../../../../utils/formatting';
-import { GraphFileDetails } from './GraphFileDetails';
 import { urlUtil } from '../../../../utils/urlUtil';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
+import { GraphFileDetails } from '../../../../utils/spo';
 const command: Command = require('./file-sharinglink-get');
 
 describe(commands.FILE_SHARINGLINK_GET, () => {
@@ -56,6 +57,7 @@ describe(commands.FILE_SHARINGLINK_GET, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -86,7 +88,8 @@ describe(commands.FILE_SHARINGLINK_GET, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });

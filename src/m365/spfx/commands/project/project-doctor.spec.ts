@@ -9,6 +9,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import { fsUtil } from '../../../../utils/fsUtil';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { FindingToReport } from './report-model';
@@ -27,6 +28,8 @@ describe(commands.PROJECT_DOCTOR, () => {
     trackEvent = sinon.stub(telemetry, 'trackEvent').callsFake((commandName) => {
       telemetryCommandName = commandName;
     });
+    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -64,7 +67,8 @@ describe(commands.PROJECT_DOCTOR, () => {
   after(() => {
     sinonUtil.restore([
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
   });
 
@@ -496,6 +500,14 @@ describe(commands.PROJECT_DOCTOR, () => {
 
   it('e2e: shows correct number of findings for a valid 1.16.1 project', async () => {
     sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-webpart-react'));
+
+    await command.action(logger, { options: {} } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 0);
+  });
+
+  it('e2e: shows correct number of findings for a valid 1.17.0 project', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-webpart-react'));
 
     await command.action(logger, { options: {} } as any);
     const findings: FindingToReport[] = log[0];

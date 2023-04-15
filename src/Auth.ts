@@ -637,9 +637,7 @@ export class Auth {
     }
 
     if (resource === 'https://api.bap.microsoft.com' || resource === 'https://api.powerapps.com') {
-      // api.bap.microsoft.com and api.powerapps.com are not valid resources
-      // we need to use https://management.azure.com/ instead
-      resource = 'https://management.azure.com/';
+      resource = 'https://service.powerapps.com/';
     }
 
     if (resource === 'https://api.powerbi.com') {
@@ -677,29 +675,6 @@ export class Auth {
 
   private getMsalCacheStorage(): TokenStorage {
     return new FileTokenStorage(FileTokenStorage.msalCacheFilePath());
-  }
-
-  public static isAppOnlyAuth(accessToken: string): boolean | undefined {
-    let isAppOnlyAuth: boolean | undefined;
-
-    if (!accessToken || accessToken.length === 0) {
-      return isAppOnlyAuth;
-    }
-
-    const chunks = accessToken.split('.');
-    if (chunks.length !== 3) {
-      return isAppOnlyAuth;
-    }
-
-    const tokenString: string = Buffer.from(chunks[1], 'base64').toString();
-    try {
-      const token: any = JSON.parse(tokenString);
-      isAppOnlyAuth = !token.upn;
-    }
-    catch {
-    }
-
-    return isAppOnlyAuth;
   }
 }
 

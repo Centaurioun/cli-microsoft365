@@ -1,65 +1,123 @@
 pull_request_rules:
+  - name: Automatic merge without approval
+    conditions:
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
+    actions:
+      queue:
+        method: squash
+        name: null
+        allow_merging_configuration_change: true
+        autosquash: true
+        commit_message_template: null
+        merge_bot_account: null
+        require_branch_protection: false
+        update_bot_account: null
+        update_method: null
   - name: Automatic merge on approval
     conditions:
-      - "#approved-reviews-by>=1"
+      - "#approved-reviews-by=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Dependabot pull requests
     conditions:
-      - author=dependabot[bot]
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Snyk pull requests
     conditions:
-      - title~=^\[Snyk\]
-      - head~=^snyk-fix
-      - check-success~=^security/snyk
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Renovate pull requests
     conditions:
-      - author=renovate[bot]
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Requires.io pull requests
     conditions:
-      - title~=^\[requires.io\]
-      - head~=^requires-io
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Sonarcloud pull requests
     conditions:
-      - author=sonarcloud-bot
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for PyUp pull requests
     conditions:
-      - author=pyup-bot
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for Depfu pull requests
     conditions:
-      - author=depfu[bot]
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge
   - name: automatic merge for ImgBot pull requests
     conditions:
-      - author=imgbot[bot]
-      - check-success=Github - Pull Request
+    - "label!=ready-to-merge"
+    - "#approved-reviews-by=0"
+    - "#changes-requested-reviews-by=0"
+    - "#review-requested=0"
     actions:
       merge:
+        allow_merging_configuration_change: false
+        commit_message_template: null
+        merge_bot_account: null
         method: merge

@@ -23,21 +23,18 @@ This script creates a report of all flow runs from current day and sends the rep
     $adaptiveCard = '{\"type\":\"AdaptiveCard\",\"body\":[{\"type\":\"TextBlock\",\"size\":\"Medium\",\"weight\":\"Bolder\",\"text\":\"${title}\"},{\"type\":\"TextBlock\",\"text\":\"${description}\",\"wrap\":true}],\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"version\":\"1.3\"}'
     $webhook = 'https://contoso.webhook.office.com/webhookb2/1204eba2-061c-4442-9696-2a725cb2d094@2942bb31-1d49-4da6-8d3d-d0f9e1141486/IncomingWebhook/6e54c3958bde444e96fec9ecad356993/be11f523-2a4d-4eae-9d42-277410893c41'
 
-    $flows = m365 flow list --environment $environment --output json
+    $flows = m365 flow list --environmentName $environment --output json
     $flows = $flows | ConvertFrom-Json
-    $currentDayDate = Get-Date
-    $previousDayDate = (Get-Date).AddDays(-1)
+    $currentDayDate = (Get-Date).ToUniversalTime().ToString("o")
+    $previousDayDate = (Get-Date).AddDays(-1).ToUniversalTime().ToString("o")
 
     $adaptiveCardDescription = ""
     foreach ($flow in $flows) 
     {
-        $flowRuns = m365 flow run list --environment $environment --flow $flow.name --output json
-        $flowRuns = $flowRuns | ConvertFrom-Json
+        $todayRuns = m365 flow run list --environmentName $environment --flowName $flow.name --triggerStartTime $previousDayDate --triggerEndTime $currentDayDate --output json | ConvertFrom-Json
 
         $displayName = $flow.displayName
         $id = $flow.name
-
-        $todayRuns = $flowRuns.Where({[DateTime]$_.properties.endTime -le $currentDayDate -and [DateTime]$_.properties.endTime -gt $previousDayDate})
         
         $todayRunsCount = 0
         $todaySuccessRunsCount = 0

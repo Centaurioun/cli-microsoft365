@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./user-app-list');
@@ -70,6 +71,7 @@ describe(commands.USER_APP_LIST, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -101,7 +103,8 @@ describe(commands.USER_APP_LIST, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -180,7 +183,8 @@ describe(commands.USER_APP_LIST, () => {
     await command.action(logger, {
       options: {
         debug: true,
-        userId: userId
+        userId: userId,
+        output: 'text'
       }
     } as any);
     assert(loggerLogSpy.calledWith([
@@ -214,7 +218,8 @@ describe(commands.USER_APP_LIST, () => {
 
     await command.action(logger, {
       options: {
-        userName: userName
+        userName: userName,
+        output: 'text'
       }
     } as any);
     assert(loggerLogSpy.calledWith([
