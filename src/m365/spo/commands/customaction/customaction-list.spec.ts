@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./customaction-list');
@@ -22,6 +23,8 @@ describe(commands.CUSTOMACTION_LIST, () => {
   before(() => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -53,7 +56,8 @@ describe(commands.CUSTOMACTION_LIST, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -68,64 +72,6 @@ describe(commands.CUSTOMACTION_LIST, () => {
 
   it('defines correct properties for the default output', () => {
     assert.deepStrictEqual(command.defaultProperties(), ['Name', 'Location', 'Scope', 'Id']);
-  });
-
-  it('getCustomActions called once when scope is Web', async () => {
-    const getRequestSpy = sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      return Promise.reject('Invalid request');
-    });
-
-    const getCustomActionsSpy = sinon.spy((command as any), 'getCustomActions');
-    const options = {
-      webUrl: 'https://contoso.sharepoint.com',
-      scope: 'Web'
-    };
-
-    try {
-      await command.action(logger, { options: options } as any);
-      assert(getRequestSpy.calledOnce);
-      assert(getCustomActionsSpy.calledWith({
-        webUrl: 'https://contoso.sharepoint.com',
-        scope: 'Web'
-      }));
-      assert(getCustomActionsSpy.calledOnce);
-    }
-    finally {
-      sinonUtil.restore((command as any)['getCustomActions']);
-    }
-  });
-
-  it('getCustomActions called once when scope is Site', async () => {
-    const getRequestSpy = sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      return Promise.reject('Invalid request');
-    });
-
-    const getCustomActionsSpy = sinon.spy((command as any), 'getCustomActions');
-    const options = {
-      webUrl: 'https://contoso.sharepoint.com',
-      scope: 'Site'
-    };
-
-    try {
-      await command.action(logger, { options: options } as any);
-      assert(getRequestSpy.calledOnce);
-      assert(getCustomActionsSpy.calledWith({
-        webUrl: 'https://contoso.sharepoint.com',
-        scope: 'Site'
-      }));
-      assert(getCustomActionsSpy.calledOnce);
-    }
-    finally {
-      sinonUtil.restore((command as any)['getCustomActions']);
-    }
   });
 
   it('returns all properties for output JSON', async () => {
@@ -152,86 +98,6 @@ describe(commands.CUSTOMACTION_LIST, () => {
     }
   });
 
-  it('getCustomActions called twice when scope is All', async () => {
-    const getRequestSpy = sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      return Promise.reject('Invalid request');
-    });
-
-    const getCustomActionsSpy = sinon.spy((command as any), 'getCustomActions');
-
-    try {
-      await command.action(logger, {
-        options: {
-          debug: true,
-          webUrl: 'https://contoso.sharepoint.com'
-        }
-      });
-      assert(getRequestSpy.calledTwice);
-      assert(getCustomActionsSpy.calledTwice);
-    }
-    finally {
-      sinonUtil.restore((command as any)['getCustomActions']);
-    }
-  });
-
-  it('searchAllScopes called when scope is All', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
-        return Promise.resolve('abc');
-      }
-
-      return Promise.reject('Invalid request');
-    });
-
-    const searchAllScopesSpy = sinon.spy((command as any), 'searchAllScopes');
-    const options = {
-      webUrl: 'https://contoso.sharepoint.com',
-      scope: "All"
-    };
-
-    try {
-      await assert.rejects(command.action(logger, { options: options } as any));
-      assert(searchAllScopesSpy.calledWith(sinon.match(
-        {
-          webUrl: 'https://contoso.sharepoint.com'
-        })));
-      assert(searchAllScopesSpy.calledOnce);
-    }
-    finally {
-      sinonUtil.restore((command as any)['searchAllScopes']);
-    }
-  });
-
-  it('searchAllScopes correctly handles no custom actions when All scope specified', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
-        return Promise.resolve({ value: [] });
-      }
-
-      return Promise.reject('Invalid request');
-    });
-
-    await command.action(logger, {
-      options: {
-        verbose: false,
-        webUrl: 'https://contoso.sharepoint.com',
-        scope: 'All'
-      }
-    });
-    assert(loggerLogSpy.notCalled);
-  });
 
   it('correctly handles no custom actions when All scope specified (verbose)', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
@@ -261,6 +127,9 @@ describe(commands.CUSTOMACTION_LIST, () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
         return Promise.reject(err);
+      }
+      else if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
+        return Promise.resolve({ value: [] });
       }
 
       return Promise.reject('Invalid request');

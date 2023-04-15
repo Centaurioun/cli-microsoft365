@@ -2,16 +2,18 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as fs from 'fs';
 import { telemetry } from '../../../../telemetry';
-import auth, { Auth } from '../../../../Auth';
+import auth from '../../../../Auth';
 import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { formatting } from '../../../../utils/formatting';
+import { accessToken } from '../../../../utils/accessToken';
 const command: Command = require('./mail-send');
 
 describe(commands.MAIL_SEND, () => {
@@ -23,6 +25,7 @@ describe(commands.MAIL_SEND, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     auth.service.accessTokens[auth.defaultResource] = {
       expiresOn: 'abc',
@@ -45,13 +48,13 @@ describe(commands.MAIL_SEND, () => {
       }
     };
     (command as any).items = [];
-    sinon.stub(Auth, 'isAppOnlyAuth').callsFake(() => false);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => false);
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.post,
-      Auth.isAppOnlyAuth,
+      accessToken.isAppOnlyAccessToken,
       fs.existsSync,
       fs.readFileSync,
       fs.lstatSync
@@ -62,7 +65,8 @@ describe(commands.MAIL_SEND, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
     auth.service.accessTokens = {};
@@ -456,8 +460,8 @@ describe(commands.MAIL_SEND, () => {
   });
 
   it('throws an error when the sender is not defined when signed in using app only authentication', async () => {
-    sinonUtil.restore([Auth.isAppOnlyAuth]);
-    sinon.stub(Auth, 'isAppOnlyAuth').callsFake(() => true);
+    sinonUtil.restore([accessToken.isAppOnlyAccessToken]);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
 
     await assert.rejects(command.action(logger, {
       options: {

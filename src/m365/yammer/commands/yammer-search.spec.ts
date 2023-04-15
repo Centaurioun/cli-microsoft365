@@ -8,6 +8,7 @@ import { Logger } from '../../../cli/Logger';
 import Command, { CommandError } from '../../../Command';
 import request from '../../../request';
 import { pid } from '../../../utils/pid';
+import { session } from '../../../utils/session';
 import { sinonUtil } from '../../../utils/sinonUtil';
 import commands from '../commands';
 const command: Command = require('./yammer-search');
@@ -203,6 +204,7 @@ describe(commands.SEARCH, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -234,7 +236,8 @@ describe(commands.SEARCH, () => {
     sinonUtil.restore([
       auth.restoreAuth,
       telemetry.trackEvent,
-      pid.getProcessName
+      pid.getProcessName,
+      session.getId
     ]);
     auth.service.connected = false;
   });
@@ -315,7 +318,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents" } } as any);
+    await command.action(logger, { options: { queryText: "contents", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 15);
@@ -347,7 +350,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "messages" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "messages", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 24);
@@ -361,7 +364,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "summary" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "summary", output: 'text' } } as any);
 
     assert.strictEqual(loggerLogSpy.lastCall.args[0].messages, 4);
     assert.strictEqual(loggerLogSpy.lastCall.args[0].groups, 2);
@@ -377,7 +380,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents" } } as any);
+    await command.action(logger, { options: { queryText: "contents", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 4);
@@ -398,7 +401,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "messages" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "messages", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 4);
@@ -419,7 +422,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "messages" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "messages", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 4);
@@ -437,7 +440,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "topics" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "topics", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 5);
@@ -456,7 +459,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "groups" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "groups", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 2);
@@ -472,7 +475,7 @@ describe(commands.SEARCH, () => {
       return Promise.reject('Invalid request');
     });
 
-    await command.action(logger, { options: { queryText: "contents", show: "users" } } as any);
+    await command.action(logger, { options: { queryText: "contents", show: "users", output: 'text' } } as any);
 
     const result = loggerLogSpy.lastCall.args[0];
     assert.strictEqual(result.length, 4);
@@ -493,10 +496,10 @@ describe(commands.SEARCH, () => {
     await command.action(logger, { options: { queryText: "contents", limit: 1, output: "json" } } as any);
 
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.messages, 4, "summary returns 4 messages");
-    assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.groups, 2, "sumamry returns 2 groups");
+    assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.groups, 2, "summary returns 2 groups");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.topics, 5, "summary return two topics");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.users, 4, "summary returns 4 users");
-    assert.strictEqual(loggerLogSpy.lastCall.args[0].messages.length, 1, "message arary returns 1 message");
+    assert.strictEqual(loggerLogSpy.lastCall.args[0].messages.length, 1, "message array returns 1 message");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].groups.length, 1, "groups array returns 1 group");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].topics.length, 1, "topics array returns 1 topic");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].users.length, 1, "users array returns 1 user");
@@ -516,10 +519,10 @@ describe(commands.SEARCH, () => {
     await command.action(logger, { options: { queryText: "contents", output: "json" } } as any);
 
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.messages, 4, "summary returns 4 messages");
-    assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.groups, 2, "sumamry returns 2 groups");
+    assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.groups, 2, "summary returns 2 groups");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.topics, 5, "summary return two topics");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].summary.users, 4, "summary returns 4 users");
-    assert.strictEqual(loggerLogSpy.lastCall.args[0].messages.length, 4, "message arary returns 4 entries");
+    assert.strictEqual(loggerLogSpy.lastCall.args[0].messages.length, 4, "message array returns 4 entries");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].groups.length, 2, "groups array returns 2 groups");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].topics.length, 5, "topics array returns 2 topics");
     assert.strictEqual(loggerLogSpy.lastCall.args[0].users.length, 4, "users array returns 4 users");

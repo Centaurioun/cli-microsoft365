@@ -186,6 +186,8 @@ export default abstract class Command {
       args.options[command.options[i].name] = missingRequireOptionValue;
     }
 
+    this.processOptions(args.options);
+
     return true;
   }
 
@@ -470,7 +472,7 @@ export default abstract class Command {
         return;
       }
 
-      const lowerCaseValue = value.toLowerCase();
+      const lowerCaseValue = value.toLowerCase().trim();
       if (lowerCaseValue === '@meid') {
         args.options[option] = accessToken.getUserIdFromAccessToken(token);
       }
@@ -574,9 +576,19 @@ export default abstract class Command {
       .replace(/([^\\])\\n/g, '$1\\\\\\n');
   }
 
-  public getCsvOutput(logStatement: any[]): string {
+  public getCsvOutput(logStatement: any[], options: GlobalOptions): string {
     const { stringify } = require('csv-stringify/sync');
     const cli = Cli.getInstance();
+
+    if (logStatement && logStatement.length > 0 && !options.query) {
+      logStatement.map(l => {
+        for (const x of Object.keys(l)) {
+          if (typeof l[x] === 'object') {
+            delete l[x];
+          }
+        }
+      });
+    }
 
     // https://csv.js.org/stringify/options/
     return stringify(logStatement, {
@@ -602,20 +614,33 @@ export default abstract class Command {
           return;
         }
 
+        const title = this.getLogItemTitle(l);
+        const id = this.getLogItemId(l);
+
+        if (title && id) {
+          output.push(`## ${title} (${id})`, os.EOL, os.EOL);
+        }
+        else if (title) {
+          output.push(`## ${title}`, os.EOL, os.EOL);
+        }
+        else if (id) {
+          output.push(`## ${id}`, os.EOL, os.EOL);
+        }
+
         output.push(
-          `## ${this.getLogItemTitle(l)} (${this.getLogItemId(l)})`, os.EOL,
-          os.EOL,
           `Property | Value`, os.EOL,
           `---------|-------`, os.EOL
         );
-        output.push(Object.keys(l).map(k => {
-          const value = l[k];
-          let stringValue = value;
-          if (typeof value === 'object') {
-            stringValue = JSON.stringify(value);
+        output.push(Object.keys(l).filter(x => {
+          if (!options.query && typeof l[x] === 'object') {
+            return;
           }
 
-          return `${md.escapeMd(k)} | ${md.escapeMd(stringValue)}`;
+          return x;
+        }).map(k => {
+          const value = l[k];
+
+          return `${md.escapeMd(k)} | ${md.escapeMd(value)}`;
         }).join(os.EOL), os.EOL);
         output.push(os.EOL);
       });
