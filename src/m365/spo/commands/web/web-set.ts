@@ -1,6 +1,6 @@
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
 import commands from '../../commands';
@@ -19,7 +19,9 @@ interface Options extends GlobalOptions {
   title?: string;
   url: string;
   footerEnabled?: boolean;
+  navAudienceTargetingEnabled?: boolean;
   searchScope?: string;
+  welcomePage?: string;
 }
 
 class SpoWebSetCommand extends SpoCommand {
@@ -48,12 +50,14 @@ class SpoWebSetCommand extends SpoCommand {
         description: typeof args.options.description !== 'undefined',
         headerEmphasis: typeof args.options.headerEmphasis !== 'undefined',
         headerLayout: typeof args.options.headerLayout !== 'undefined',
-        megaMenuEnabled: args.options.megaMenuEnabled,
+        megaMenuEnabled: typeof args.options.megaMenuEnabled !== 'undefined',
         siteLogoUrl: typeof args.options.siteLogoUrl !== 'undefined',
         title: typeof args.options.title !== 'undefined',
-        quickLaunchEnabled: args.options.quickLaunchEnabled,
-        footerEnabled: args.options.footerEnabled,
-        searchScope: args.options.searchScope !== 'undefined'
+        quickLaunchEnabled: typeof args.options.quickLaunchEnabled !== 'undefined',
+        footerEnabled: typeof args.options.footerEnabled !== 'undefined',
+        navAudienceTargetingEnabled: typeof args.options.navAudienceTargetingEnabled !== 'undefined',
+        searchScope: typeof args.options.searchScope !== 'undefined',
+        welcomePage: typeof args.options.welcomePage !== 'undefined'
       });
       this.trackUnknownOptions(this.telemetryProperties, args.options);
     });
@@ -94,14 +98,21 @@ class SpoWebSetCommand extends SpoCommand {
         autocomplete: ['true', 'false']
       },
       {
+        option: '--navAudienceTargetingEnabled [navAudienceTargetingEnabled]',
+        autocomplete: ['true', 'false']
+      },
+      {
         option: '--searchScope [searchScope]',
         autocomplete: SpoWebSetCommand.searchScopeOptions
+      },
+      {
+        option: '--welcomePage [welcomePage]'
       }
     );
   }
 
   #initTypes(): void {
-    this.types.boolean.push('megaMenuEnabled', 'footerEnabled', 'quickLaunchEnabled');
+    this.types.boolean.push('megaMenuEnabled', 'footerEnabled', 'quickLaunchEnabled', 'navAudienceTargetingEnabled');
   }
 
   #initValidators(): void {
@@ -169,27 +180,50 @@ class SpoWebSetCommand extends SpoCommand {
     if (typeof args.options.footerEnabled !== 'undefined') {
       payload.FooterEnabled = args.options.footerEnabled;
     }
+    if (typeof args.options.navAudienceTargetingEnabled !== 'undefined') {
+      payload.NavAudienceTargetingEnabled = args.options.navAudienceTargetingEnabled;
+    }
     if (typeof args.options.searchScope !== 'undefined') {
       const searchScope = args.options.searchScope.toLowerCase();
       payload.SearchScope = SpoWebSetCommand.searchScopeOptions.indexOf(searchScope);
     }
 
-    const requestOptions: any = {
-      url: `${args.options.url}/_api/web`,
-      headers: {
-        'content-type': 'application/json;odata=nometadata',
-        accept: 'application/json;odata=nometadata'
-      },
-      responseType: 'json',
-      data: payload
-    };
-
-    if (this.verbose) {
-      logger.logToStderr(`Updating properties of subsite ${args.options.url}...`);
-    }
-
     try {
+      const requestOptions: CliRequestOptions = {
+        url: `${args.options.url}/_api/web`,
+        headers: {
+          'content-type': 'application/json;odata=nometadata',
+          accept: 'application/json;odata=nometadata'
+        },
+        responseType: 'json',
+        data: payload
+      };
+
+      if (this.verbose) {
+        logger.logToStderr(`Updating properties of subsite ${args.options.url}...`);
+      }
+
       await request.patch(requestOptions);
+
+      if (typeof args.options.welcomePage !== 'undefined') {
+        if (this.verbose) {
+          logger.logToStderr(`Setting welcome page to: ${args.options.welcomePage}...`);
+        }
+
+        const requestOptions: CliRequestOptions = {
+          url: `${args.options.url}/_api/web/RootFolder`,
+          headers: {
+            'content-type': 'application/json;odata=nometadata',
+            accept: 'application/json;odata=nometadata'
+          },
+          responseType: 'json',
+          data: {
+            WelcomePage: args.options.welcomePage
+          }
+        };
+
+        await request.patch(requestOptions);
+      }
     }
     catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
