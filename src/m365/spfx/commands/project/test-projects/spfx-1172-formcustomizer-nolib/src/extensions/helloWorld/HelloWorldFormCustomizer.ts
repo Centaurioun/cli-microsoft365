@@ -1,9 +1,7 @@
-import { Log } from '@microsoft/sp-core-library';
-import {
-  BaseFormCustomizer
-} from '@microsoft/sp-listview-extensibility';
+import { Log } from "@microsoft/sp-core-library";
+import { BaseFormCustomizer } from "@microsoft/sp-listview-extensibility";
 
-import styles from './HelloWorldFormCustomizer.module.scss';
+import styles from "./HelloWorldFormCustomizer.module.scss";
 
 /**
  * If your form customizer uses the ClientSideComponentProperties JSON input,
@@ -15,22 +13,20 @@ export interface IHelloWorldFormCustomizerProperties {
   sampleText?: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorldFormCustomizer';
+const LOG_SOURCE: string = "HelloWorldFormCustomizer";
 
-export default class HelloWorldFormCustomizer
-  extends BaseFormCustomizer<IHelloWorldFormCustomizerProperties> {
-
+export default class HelloWorldFormCustomizer extends BaseFormCustomizer<IHelloWorldFormCustomizerProperties> {
   public onInit(): Promise<void> {
     // Add your custom initialization to this method. The framework will wait
     // for the returned promise to resolve before rendering the form.
-    Log.info(LOG_SOURCE, 'Activated HelloWorldFormCustomizer with properties:');
+    Log.info(LOG_SOURCE, "Activated HelloWorldFormCustomizer with properties:");
     Log.info(LOG_SOURCE, JSON.stringify(this.properties, undefined, 2));
     return Promise.resolve();
   }
 
   public render(): void {
     // Use this method to perform your custom rendering.
-    this.domElement.innerHTML = `<div class="${ styles.helloWorld }"></div>`;
+    this.domElement.innerHTML = `<div class="${styles.helloWorld}"></div>`;
   }
 
   public onDispose(): void {
@@ -44,7 +40,7 @@ export default class HelloWorldFormCustomizer
 
     // You MUST call this.formSaved() after you save the form.
     this.formSaved();
-  }
+  };
 
   //@ts-expect-error
   private _onClose = (): void => {
@@ -52,5 +48,5 @@ export default class HelloWorldFormCustomizer
 
     // You MUST call this.formClosed() after you close the form.
     this.formClosed();
-  }
+  };
 }
