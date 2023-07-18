@@ -1,14 +1,14 @@
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 
-import { Log } from '@microsoft/sp-core-library';
+import { Log } from "@microsoft/sp-core-library";
 import {
   BaseFieldCustomizer,
-  IFieldCustomizerCellEventParameters
-} from '@microsoft/sp-listview-extensibility';
+  IFieldCustomizerCellEventParameters,
+} from "@microsoft/sp-listview-extensibility";
 
-import * as strings from 'HelloWorldFieldCustomizerStrings';
-import HelloWorld, { IHelloWorldProps } from './components/HelloWorld';
+import * as strings from "HelloWorldFieldCustomizerStrings";
+import HelloWorld, { IHelloWorldProps } from "./components/HelloWorld";
 
 /**
  * If your field customizer uses the ClientSideComponentProperties JSON input,
@@ -20,26 +20,31 @@ export interface IHelloWorldFieldCustomizerProperties {
   sampleText?: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorldFieldCustomizer';
+const LOG_SOURCE = "HelloWorldFieldCustomizer";
 
-export default class HelloWorldFieldCustomizer
-  extends BaseFieldCustomizer<IHelloWorldFieldCustomizerProperties> {
-
+export default class HelloWorldFieldCustomizer extends BaseFieldCustomizer<IHelloWorldFieldCustomizerProperties> {
   public onInit(): Promise<void> {
     // Add your custom initialization to this method.  The framework will wait
     // for the returned promise to resolve before firing any BaseFieldCustomizer events.
-    Log.info(LOG_SOURCE, 'Activated HelloWorldFieldCustomizer with properties:');
+    Log.info(
+      LOG_SOURCE,
+      "Activated HelloWorldFieldCustomizer with properties:",
+    );
     Log.info(LOG_SOURCE, JSON.stringify(this.properties, undefined, 2));
-    Log.info(LOG_SOURCE, `The following string should be equal: "HelloWorldFieldCustomizer" and "${strings.Title}"`);
+    Log.info(
+      LOG_SOURCE,
+      `The following string should be equal: "HelloWorldFieldCustomizer" and "${strings.Title}"`,
+    );
     return Promise.resolve();
   }
 
   public onRenderCell(event: IFieldCustomizerCellEventParameters): void {
     // Use this method to perform your custom cell rendering.
-    const text: string = `${this.properties.sampleText}: ${event.fieldValue}`;
+    const text = `${this.properties.sampleText}: ${event.fieldValue}`;
 
-    const helloWorld: React.ReactElement<{}> =
-      React.createElement(HelloWorld, { text } as IHelloWorldProps);
+    const helloWorld: React.ReactElement<{}> = React.createElement(HelloWorld, {
+      text,
+    } as IHelloWorldProps);
 
     ReactDOM.render(helloWorld, event.domElement);
   }

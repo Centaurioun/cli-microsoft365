@@ -13,7 +13,7 @@ export interface IHelloWorldFormCustomizerProperties {
   sampleText?: string;
 }
 
-const LOG_SOURCE: string = "HelloWorldFormCustomizer";
+const LOG_SOURCE = "HelloWorldFormCustomizer";
 
 export default class HelloWorldFormCustomizer extends BaseFormCustomizer<IHelloWorldFormCustomizerProperties> {
   public onInit(): Promise<void> {
@@ -34,7 +34,7 @@ export default class HelloWorldFormCustomizer extends BaseFormCustomizer<IHelloW
     super.onDispose();
   }
 
-  //@ts-expect-error
+  //@ts-ignore
   private _onSave = (): void => {
     // TODO: Add your custom save logic here.
 
@@ -42,7 +42,7 @@ export default class HelloWorldFormCustomizer extends BaseFormCustomizer<IHelloW
     this.formSaved();
   };
 
-  //@ts-expect-error
+  //@ts-ignore
   private _onClose = (): void => {
     // TODO: Add your custom close logic here.
 

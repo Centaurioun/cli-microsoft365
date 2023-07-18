@@ -15,13 +15,13 @@ export interface IHelloWorldWebPartProps {
 }
 
 export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorldWebPartProps> {
-  private _isDarkTheme: boolean = false;
-  private _environmentMessage: string = "";
+  private _isDarkTheme = false;
+  private _environmentMessage = "";
 
   public render(): void {
     this.domElement.innerHTML = `
     <section class="${styles.helloWorld} ${
-      this.context.sdks.microsoftTeams ? styles.teams : ""
+      !!this.context.sdks.microsoftTeams ? styles.teams : ""
     }">
       <div class="${styles.welcome}">
         <img alt="" src="${
@@ -63,12 +63,12 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
   }
 
   private _getEnvironmentMessage(): Promise<string> {
-    if (this.context.sdks.microsoftTeams) {
+    if (!!this.context.sdks.microsoftTeams) {
       // running in Teams, office.com or Outlook
       return this.context.sdks.microsoftTeams.teamsJs.app
         .getContext()
         .then((context) => {
-          let environmentMessage: string = "";
+          let environmentMessage = "";
           switch (context.app.host.name) {
             case "Office": // running in Office
               environmentMessage = this.context.isServedFromLocalhost
