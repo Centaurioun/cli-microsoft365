@@ -128,7 +128,7 @@ class SpoListItemBatchSetCommand extends SpoCommand {
       const amountOfRows = jsonContent.length;
       const idColumn = args.options.idColumn || 'ID';
 
-      if (!jsonContent[0].hasOwnProperty(idColumn)) {
+      if (!Object.prototype.hasOwnProperty.call(jsonContent[0], idColumn)) {
         throw `The specified value for idColumn does not exist in the array. Specified idColumn is '${args.options.idColumn || 'ID'}'. Please specify the correct value.`;
       }
 
