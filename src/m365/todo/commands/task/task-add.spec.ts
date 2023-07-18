@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import { AxiosRequestConfig } from 'axios';
 import * as sinon from 'sinon';
 import { telemetry } from '../../../../telemetry';
 import auth from '../../../../Auth';
@@ -7,8 +6,9 @@ import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./task-add');
@@ -17,7 +17,7 @@ describe(commands.TASK_ADD, () => {
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let postStub: sinon.SinonStub<[options: AxiosRequestConfig<any>]>;
+  let postStub: sinon.SinonStub<[options: CliRequestOptions]>;
 
   const getRequestData = {
     "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('4cb2b035-ad76-406c-bdc4-6c72ad403a22')/todo/lists",
@@ -33,23 +33,17 @@ describe(commands.TASK_ADD, () => {
     ]
   };
   const postRequestData = {
-    "importance": "low",
-    "isReminderOn": false,
-    "status": "notStarted",
-    "title": "New task",
-    "createdDateTime": "2020-10-28T10:30:20.9783659Z",
-    "lastModifiedDateTime": "2020-10-28T10:30:21.3616801Z",
-    "id": "AAMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwBGAAAAAAAq-A2AAw08T7MU1EldWtTXBwCEcpBkci0MQ5UKfxTfG4DYAAGZB5U-AACEcpBkci0MQ5UKfxTfG4DYAAGhnfKPAAA=",
+    title: "New task",
     "body": {
-      "content": "",
-      "contentType": "text"
+      contentType: "text"
     }
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -68,18 +62,20 @@ describe(commands.TASK_ADD, () => {
       }
     };
     (command as any).items = [];
-    postStub = sinon.stub(request, 'post').callsFake((opts: any) => {
+    postStub = sinon.stub(request, 'post').callsFake(async (opts: any) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==/tasks`) {
-        return Promise.resolve(postRequestData);
+        return postRequestData;
       }
-      return Promise.reject();
+
+      throw 'invalid request';
     });
 
-    sinon.stub(request, 'get').callsFake((opts: any) => {
+    sinon.stub(request, 'get').callsFake(async (opts: any) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks%20List'`) {
-        return Promise.resolve(getRequestData);
+        return getRequestData;
       }
-      return Promise.reject();
+
+      throw 'invalid request';
     });
   });
 
@@ -92,11 +88,7 @@ describe(commands.TASK_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -182,18 +174,67 @@ describe(commands.TASK_ADD, () => {
     assert.deepStrictEqual(postStub.lastCall.args[0].data.reminderDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
   });
 
+  it('adds To Do task with categories ', async () => {
+    await command.action(logger, {
+      options: {
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        categories: 'None,Preset24'
+      }
+    } as any);
+
+    assert.deepStrictEqual(postStub.lastCall.args[0].data.categories, ['None', 'Preset24']);
+  });
+
+  it('adds To Do task with completedDateTime', async () => {
+    const dateTime = '2023-01-01';
+    await command.action(logger, {
+      options: {
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        completedDateTime: dateTime
+      }
+    } as any);
+
+    assert.deepStrictEqual(postStub.lastCall.args[0].data.completedDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
+  });
+
+  it('adds To Do task with startDateTime', async () => {
+    const dateTime = '2023-01-01';
+    await command.action(logger, {
+      options: {
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        startDateTime: dateTime
+      }
+    } as any);
+
+    assert.deepStrictEqual(postStub.lastCall.args[0].data.startDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
+  });
+
+  it('adds To Do task with status', async () => {
+    await command.action(logger, {
+      options: {
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        status: 'inProgress'
+      }
+    } as any);
+
+    assert.deepStrictEqual(postStub.lastCall.args[0].data.status, 'inProgress');
+  });
+
   it('rejects if no tasks list is found with the specified list name', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts: any) => {
+    sinon.stub(request, 'get').callsFake(async (opts: any) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks%20List'`) {
-        return Promise.resolve(
-          {
-            "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('4cb2b035-ad76-406c-bdc4-6c72ad403a22')/todo/lists",
-            "value": []
-          }
-        );
+        return {
+          "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('4cb2b035-ad76-406c-bdc4-6c72ad403a22')/todo/lists",
+          "value": []
+        };
       }
-      return Promise.reject();
+
+      throw 'invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -207,9 +248,7 @@ describe(commands.TASK_ADD, () => {
 
   it('handles error correctly', async () => {
     sinonUtil.restore(request.post);
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject('An error has occurred');
-    });
+    sinon.stub(request, 'post').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: { listName: "Tasks List", title: "New task" } } as any), new CommandError('An error has occurred'));
   });
@@ -253,6 +292,65 @@ describe(commands.TASK_ADD, () => {
         title: 'New task',
         listName: 'Tasks List',
         reminderDateTime: '01/01/2022'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when invalid completedDateTime is passed', async () => {
+    const actual = await command.validate({
+      options: {
+        title: 'New task',
+        listName: 'Tasks List',
+        completedDateTime: '01/01/2022',
+        status: 'completed'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when valid completedDateTime is passed without status completed', async () => {
+    const dateTime = '2023-01-01';
+    const actual = await command.validate({
+      options: {
+        title: 'New task',
+        listName: 'Tasks List',
+        completedDateTime: dateTime,
+        status: 'inProgress'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when valid completedDateTime is passed without status', async () => {
+    const dateTime = '2023-01-01';
+    const actual = await command.validate({
+      options: {
+        title: 'New task',
+        listName: 'Tasks List',
+        completedDateTime: dateTime
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when invalid startDateTime is passed', async () => {
+    const actual = await command.validate({
+      options: {
+        title: 'New task',
+        listName: 'Tasks List',
+        startDateTime: '01/01/2022'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when invalid status is passed', async () => {
+    const actual = await command.validate({
+      options: {
+        title: 'New task',
+        listName: 'Tasks List',
+        status: 'foo'
       }
     }, commandInfo);
     assert.notStrictEqual(actual, true);

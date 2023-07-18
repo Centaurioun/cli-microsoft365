@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import { AxiosRequestConfig } from 'axios';
 import * as sinon from 'sinon';
 import { telemetry } from '../../../../telemetry';
 import auth from '../../../../Auth';
@@ -7,8 +6,9 @@ import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -44,16 +44,17 @@ describe(commands.HUBSITE_CONNECT, () => {
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let patchStub: sinon.SinonStub<[options: AxiosRequestConfig<any>]>;
+  let patchStub: sinon.SinonStub<[options: CliRequestOptions]>;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
 
-    sinon.stub(spo, 'getSpoAdminUrl').callsFake(async () => spoAdminUrl);
+    sinon.stub(spo, 'getSpoAdminUrl').resolves(spoAdminUrl);
     patchStub = sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${spoAdminUrl}/_api/HubSites/GetById('${id}')`) {
         return;
@@ -85,18 +86,12 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      spo.getSpoAdminUrl,
-      request.patch
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.HUBSITE_CONNECT), true);
+    assert.strictEqual(command.name, commands.HUBSITE_CONNECT);
   });
 
   it('has a description', () => {
@@ -208,7 +203,7 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   it('throws error when hub site with ID was not found', async () => {
-    sinon.stub(request, 'get').callsFake(async () => ({ value: [] }));
+    sinon.stub(request, 'get').resolves({ value: [] });
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -219,7 +214,7 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   it('throws error when hub site with title was not found', async () => {
-    sinon.stub(request, 'get').callsFake(async () => ({ value: [] }));
+    sinon.stub(request, 'get').resolves({ value: [] });
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -230,7 +225,7 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   it('throws error when hub site with url was not found', async () => {
-    sinon.stub(request, 'get').callsFake(async () => ({ value: [] }));
+    sinon.stub(request, 'get').resolves({ value: [] });
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -241,7 +236,7 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   it('throws error when multiple hub sites with the same name were found', async () => {
-    sinon.stub(request, 'get').callsFake(async () => ({
+    sinon.stub(request, 'get').resolves({
       value: [
         {
           Title: title,
@@ -252,7 +247,7 @@ describe(commands.HUBSITE_CONNECT, () => {
           ID: parentId
         }
       ]
-    }));
+    });
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -263,16 +258,14 @@ describe(commands.HUBSITE_CONNECT, () => {
   });
 
   it('correctly handles random error', async () => {
-    sinon.stub(request, 'get').callsFake(async () => {
-      throw {
-        error: {
-          'odata.error': {
-            message: {
-              value: 'Something went wrong'
-            }
+    sinon.stub(request, 'get').rejects({
+      error: {
+        'odata.error': {
+          message: {
+            value: 'Something went wrong'
           }
         }
-      };
+      }
     });
 
     await assert.rejects(command.action(logger, {

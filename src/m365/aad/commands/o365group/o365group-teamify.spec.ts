@@ -8,19 +8,23 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./o365group-teamify');
 
 describe(commands.O365GROUP_TEAMIFY, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -39,26 +43,24 @@ describe(commands.O365GROUP_TEAMIFY, () => {
       }
     };
     (command as any).items = [];
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
-      request.put
+      request.put,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.O365GROUP_TEAMIFY), true);
+    assert.strictEqual(command.name, commands.O365GROUP_TEAMIFY);
   });
 
   it('has a description', () => {
@@ -93,11 +95,11 @@ describe(commands.O365GROUP_TEAMIFY, () => {
   });
 
   it('fails to get o365 group when it does not exists', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/groups?$filter=mailNickname eq '`) > -1) {
-        return Promise.resolve({ value: [] });
+        return { value: [] };
       }
-      return Promise.reject('The specified Microsoft 365 Group does not exist');
+      throw 'The specified Microsoft 365 Group does not exist';
     });
 
     await assert.rejects(command.action(logger, {
@@ -110,9 +112,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
 
 
   it('fails when multiple groups with same name exists', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/groups?$filter=mailNickname eq '`) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#groups",
           "value": [
             {
@@ -200,9 +202,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
               "onPremisesProvisioningErrors": []
             }
           ]
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -214,9 +216,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
   });
 
   it('Teamify o365 group by id', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'put').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'put').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/8231f9f2-701f-4c6e-93ce-ecb563e3c1ee/team`) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#teams/$entity",
           "id": "8231f9f2-701f-4c6e-93ce-ecb563e3c1ee",
           "createdDateTime": null,
@@ -256,9 +258,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
             "allowStickersAndMemes": true,
             "allowCustomMemes": true
           }
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -268,9 +270,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
   });
 
   it('Teamify o365 group by mailNickname', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/groups?$filter=mailNickname eq `) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#groups",
           "value": [
             {
@@ -316,15 +318,15 @@ describe(commands.O365GROUP_TEAMIFY, () => {
               "onPremisesProvisioningErrors": []
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'put').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'put').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/00000000-0000-0000-0000-000000000000/team`) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#teams/$entity",
           "id": "00000000-0000-0000-0000-000000000000",
           "createdDateTime": null,
@@ -364,9 +366,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
             "allowStickersAndMemes": true,
             "allowCustomMemes": true
           }
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -376,9 +378,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
   });
 
   it('should handle Microsoft graph error response', async () => {
-    sinon.stub(request, 'put').callsFake((opts) => {
+    sinon.stub(request, 'put').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/8231f9f2-701f-4c6e-93ce-ecb563e3c1ee/team`) {
-        return Promise.reject({
+        throw {
           "error": {
             "code": "NotFound",
             "message": "Failed to execute MS Graph backend request GetGroupInternalApiRequest",
@@ -388,9 +390,9 @@ describe(commands.O365GROUP_TEAMIFY, () => {
               "client-request-id": "68cff2aa-b010-daa7-2467-fa8e96cbda25"
             }
           }
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {

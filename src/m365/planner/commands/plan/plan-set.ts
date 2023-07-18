@@ -1,10 +1,7 @@
 import { PlannerPlan, PlannerPlanDetails, User } from '@microsoft/microsoft-graph-types';
-import { AxiosRequestConfig } from 'axios';
-import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { validation } from '../../../../utils/validation';
 import { aadGroup } from '../../../../utils/aadGroup';
@@ -21,6 +18,7 @@ interface Options extends GlobalOptions {
   title?: string;
   ownerGroupId?: string;
   ownerGroupName?: string;
+  rosterId?: string;
   newTitle?: string;
   shareWithUserIds?: string;
   shareWithUserNames?: string;
@@ -55,6 +53,7 @@ class PlannerPlanSetCommand extends GraphCommand {
         title: typeof args.options.title !== 'undefined',
         ownerGroupId: typeof args.options.ownerGroupId !== 'undefined',
         ownerGroupName: typeof args.options.ownerGroupName !== 'undefined',
+        rosterId: typeof args.options.rosterId !== 'undefined',
         newTitle: typeof args.options.newTitle !== 'undefined',
         shareWithUserIds: typeof args.options.shareWithUserIds !== 'undefined',
         shareWithUserNames: typeof args.options.shareWithUserNames !== 'undefined'
@@ -77,6 +76,9 @@ class PlannerPlanSetCommand extends GraphCommand {
         option: '--ownerGroupName [ownerGroupName]'
       },
       {
+        option: '--rosterId [rosterId]'
+      },
+      {
         option: '--newTitle [newTitle]'
       },
       {
@@ -94,14 +96,6 @@ class PlannerPlanSetCommand extends GraphCommand {
         if (args.options.title) {
           if (args.options.ownerGroupId && !validation.isValidGuid(args.options.ownerGroupId as string)) {
             return `${args.options.ownerGroupId} is not a valid GUID`;
-          }
-
-          if (!args.options.ownerGroupId && !args.options.ownerGroupName) {
-            return 'Specify either ownerGroupId or ownerGroupName when using title';
-          }
-
-          if (args.options.ownerGroupId && args.options.ownerGroupName) {
-            return 'Specify either ownerGroupId or ownerGroupName when using title but not both';
           }
         }
 
@@ -158,7 +152,16 @@ class PlannerPlanSetCommand extends GraphCommand {
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['id', 'title'] });
+    this.optionSets.push(
+      {
+        options: ['id', 'title', 'rosterId']
+      },
+      {
+        options: ['ownerGroupId', 'ownerGroupName'],
+        runsWhen: (args) => {
+          return args.options.title !== undefined;
+        }
+      });
   }
 
   public allowUnknownOptions(): boolean | undefined {
@@ -183,21 +186,29 @@ class PlannerPlanSetCommand extends GraphCommand {
       return id;
     }
 
-    const groupId: string = await this.getGroupId(args);
-    const plan: PlannerPlan = await planner.getPlanByTitle(title!, groupId);
-    return plan.id!;
+    let groupId: string = '';
+
+    if (args.options.rosterId) {
+      const plans: PlannerPlan[] = await planner.getPlansByRosterId(args.options.rosterId);
+      return plans[0].id!;
+    }
+    else {
+      groupId = await this.getGroupId(args);
+      const plan: PlannerPlan = await planner.getPlanByTitle(title!, groupId);
+      return plan.id!;
+    }
   }
 
-  private getUserIds(options: Options): Promise<string[]> {
+  private async getUserIds(options: Options): Promise<string[]> {
     if (options.shareWithUserIds) {
-      return Promise.resolve(options.shareWithUserIds.split(','));
+      return options.shareWithUserIds.split(',');
     }
 
     const userNames = options.shareWithUserNames as string;
     const userArr: string[] = userNames.split(',').map(o => o.trim());
 
     const promises: Promise<{ value: User[] }>[] = userArr.map(user => {
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user)}'&$select=id,userPrincipalName`,
         headers: {
           'content-type': 'application/json'
@@ -208,21 +219,19 @@ class PlannerPlanSetCommand extends GraphCommand {
       return request.get(requestOptions);
     });
 
-    return Promise
-      .all(promises)
-      .then((usersRes: { value: User[] }[]): Promise<string[]> => {
-        const userUpns = usersRes.map(res => res.value[0]?.userPrincipalName as string);
-        const userIds = usersRes.map(res => res.value[0]?.id as string);
+    const usersRes = await Promise.all(promises);
 
-        // Find the members where no graph response was found
-        const invalidUsers = userArr.filter(user => !userUpns.some((upn) => upn?.toLowerCase() === user.toLowerCase()));
+    const userUpns = usersRes.map(res => res.value[0]?.userPrincipalName as string);
+    const userIds = usersRes.map(res => res.value[0]?.id as string);
 
-        if (invalidUsers && invalidUsers.length > 0) {
-          return Promise.reject(`Cannot proceed with planner plan creation. The following users provided are invalid: ${invalidUsers.join(',')}`);
-        }
+    // Find the members where no graph response was found
+    const invalidUsers = userArr.filter(user => !userUpns.some((upn) => upn?.toLowerCase() === user.toLowerCase()));
 
-        return Promise.resolve(userIds);
-      });
+    if (invalidUsers && invalidUsers.length > 0) {
+      throw `Cannot proceed with planner plan creation. The following users provided are invalid: ${invalidUsers.join(',')}`;
+    }
+
+    return userIds;
   }
 
   private async generateSharedWith(options: Options): Promise<{ [userId: string]: boolean }> {
@@ -234,7 +243,7 @@ class PlannerPlanSetCommand extends GraphCommand {
   }
 
   private async getPlanEtag(planId: string): Promise<string> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/plans/${planId}`,
       headers: {
         accept: 'application/json'
@@ -247,7 +256,7 @@ class PlannerPlanSetCommand extends GraphCommand {
   }
 
   private async getPlanDetailsEtag(planId: string): Promise<string> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/plans/${planId}/details`,
       headers: {
         accept: 'application/json'
@@ -260,7 +269,7 @@ class PlannerPlanSetCommand extends GraphCommand {
   }
 
   private async getPlanDetails(plan: PlannerPlan): Promise<PlannerPlan & PlannerPlanDetails> {
-    const requestOptionsTaskDetails: AxiosRequestConfig = {
+    const requestOptionsTaskDetails: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/plans/${plan.id}/details`,
       headers: {
         'accept': 'application/json;odata.metadata=none',
@@ -303,7 +312,7 @@ class PlannerPlanSetCommand extends GraphCommand {
 
     const etag = await this.getPlanDetailsEtag(planId);
 
-    const requestOptionsPlanDetails: AxiosRequestConfig = {
+    const requestOptionsPlanDetails: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/plans/${planId}/details`,
       headers: {
         'accept': 'application/json;odata.metadata=none',
@@ -319,18 +328,13 @@ class PlannerPlanSetCommand extends GraphCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    if (accessToken.isAppOnlyAccessToken(auth.service.accessTokens[this.resource].accessToken)) {
-      this.handleError('This command does not support application permissions.');
-      return;
-    }
-
     try {
       const planId: string = await this.getPlanId(args);
 
       if (args.options.newTitle) {
         const etag = await this.getPlanEtag(planId);
 
-        const requestOptions: AxiosRequestConfig = {
+        const requestOptions: CliRequestOptions = {
           url: `${this.resource}/v1.0/planner/plans/${planId}`,
           headers: {
             accept: 'application/json;odata.metadata=none',

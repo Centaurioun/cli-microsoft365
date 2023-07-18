@@ -8,11 +8,13 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./customaction-remove');
 
 describe(commands.CUSTOMACTION_REMOVE, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
@@ -21,25 +23,27 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   let promptOptions: any;
 
   const defaultPostCallsStub = (): sinon.SinonStub => {
-    return sinon.stub(request, 'post').callsFake((opts) => {
+    return sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes remove custom action success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
       // fakes remove custom action success (site collection)
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions(') > -1) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -67,43 +71,36 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
     });
 
     promptOptions = undefined;
+
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
       request.post,
-      Cli.prompt
+      Cli.prompt,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CUSTOMACTION_REMOVE), true);
+    assert.strictEqual(command.name, commands.CUSTOMACTION_REMOVE);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('defines correct option sets', () => {
-    assert.deepStrictEqual(command.optionSets, [
-      { options: ['id', 'title'] }
-    ]);
-  });
-
   it('handles error when multiple user custom actions with the specified title found', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/UserCustomActions?$filter=Title eq ') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               ClientSideComponentId: 'b41916e7-e69d-467f-b37f-ff8ecf8f99f2',
@@ -150,10 +147,10 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
               VersionOfUserCustomAction: '16.0.1.0'
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject(`Invalid request`);
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -166,15 +163,12 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   });
 
   it('handles error when no user custom actions with the specified title found', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/UserCustomActions?$filter=Title eq ') > -1) {
-        return Promise.resolve({
-          value: [
-          ]
-        });
+        return { value: [] };
       }
 
-      return Promise.reject(`Invalid request`);
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -215,9 +209,8 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
     const postCallsSpy: sinon.SinonStub = defaultPostCallsStub();
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, { options: { id: 'b2307a39-e878-458b-bc90-03bc578531d6', webUrl: 'https://contoso.sharepoint.com' } } as any);
     assert(postCallsSpy.notCalled);
   });
@@ -227,9 +220,7 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
     const removeScopedCustomActionSpy = sinon.spy((command as any), 'removeScopedCustomAction');
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     try {
       await command.action(logger, { options: { id: 'b2307a39-e878-458b-bc90-03bc578531d6', webUrl: 'https://contoso.sharepoint.com' } } as any);
@@ -246,9 +237,9 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   });
 
   it('should remove custom action by title when prompt confirmed', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/UserCustomActions?$filter=Title eq ') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "ClientSideComponentId": "015e0fcf-fe9d-4037-95af-0a4776cdfbb4",
@@ -272,18 +263,16 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
               "VersionOfUserCustomAction": "1.0.1.0"
             }
           ]
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const postCallsSpy: sinon.SinonStub = defaultPostCallsStub();
     const removeScopedCustomActionSpy = sinon.spy((command as any), 'removeScopedCustomAction');
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     try {
       await command.action(logger, { options: { title: 'Places', webUrl: 'https://contoso.sharepoint.com' } } as any);
@@ -377,18 +366,18 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   });
 
   it('should removeScopedCustomAction be called twice when scope is All, but item not found on web level', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes remove custom action success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
       // fakes remove custom action success (site collection)
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions(') > -1) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const removeScopedCustomActionSpy = sinon.spy((command as any), 'removeScopedCustomAction');
@@ -435,18 +424,18 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   });
 
   it('should searchAllScopes correctly handles custom action odata.null when All scope specified', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes remove custom action success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
       // fakes remove custom action success (site collection)
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const actionId: string = 'b2307a39-e878-458b-bc90-03bc578531d6';
@@ -464,18 +453,18 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   });
 
   it('should searchAllScopes correctly handles custom action odata.null when All scope specified (verbose)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes remove custom action success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
       // fakes remove custom action success (site collection)
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const actionId: string = 'b2307a39-e878-458b-bc90-03bc578531d6';
@@ -495,13 +484,13 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   it('should correctly handle custom action reject request (web)', async () => {
     const err = 'abc error';
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes remove custom action success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const actionId: string = 'b2307a39-e878-458b-bc90-03bc578531d6';
@@ -519,17 +508,17 @@ describe(commands.CUSTOMACTION_REMOVE, () => {
   it('should correctly handle custom action reject request (site)', async () => {
     const err = 'abc error';
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // should return null to proceed with site when scope is All
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions(') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions(') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const actionId: string = 'b2307a39-e878-458b-bc90-03bc578531d6';

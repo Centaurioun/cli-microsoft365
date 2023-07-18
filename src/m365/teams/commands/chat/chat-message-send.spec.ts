@@ -11,6 +11,7 @@ import request from '../../../../request';
 import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./chat-message-send');
@@ -34,15 +35,18 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
   const messageSentResponse: any = { "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#chats('19%3A2da4c29f6d7041eca70b638b43d45437%40thread.v2')/messages/$entity", "id": "1616991463150", "replyToId": null, "etag": "1616991463150", "messageType": "message", "createdDateTime": "2021-03-29T04:17:43.15Z", "lastModifiedDateTime": "2021-03-29T04:17:43.15Z", "lastEditedDateTime": null, "deletedDateTime": null, "subject": null, "summary": null, "chatId": "19:2da4c29f6d7041eca70b638b43d45437@thread.v2", "importance": "normal", "locale": "en-us", "webUrl": null, "channelIdentity": null, "policyViolation": null, "eventDetail": null, "from": { "application": null, "device": null, "conversation": null, "user": { "id": "8ea0e38b-efb3-4757-924a-5f94061cf8c2", "displayName": "Robin Kline", "userIdentityType": "aadUser" } }, "body": { "contentType": "text", "content": "Hello World" }, "attachments": [], "mentions": [], "reactions": [] };
   //#endregion
 
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     if (!auth.service.accessTokens[auth.defaultResource]) {
       auth.service.accessTokens[auth.defaultResource] = {
@@ -54,37 +58,35 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
   });
 
   beforeEach(() => {
-    sinon.stub(accessToken, 'getUserNameFromAccessToken').callsFake(() => {
-      return 'MeganB@M365x214355.onmicrosoft.com';
-    });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(accessToken, 'getUserNameFromAccessToken').returns('MeganB@M365x214355.onmicrosoft.com');
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats/19:82fe7758-5bb3-4f0d-a43f-e555fd399c6f_8c0a1a67-50ce-4114-bb6c-da9c5dbcf6ca@unq.gbl.spaces/messages`
         || opts.url === `https://graph.microsoft.com/v1.0/chats/19:98a7bf5fe7884694b8078541c5eb6e56@thread.v2/messages`
         || opts.url === `https://graph.microsoft.com/v1.0/chats/19:c03b5a8f9a2e42788561a89d055e6de5@thread.v2/messages`) {
-        return Promise.resolve(messageSentResponse);
+        return messageSentResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=chatType eq 'group'&$expand=members&$select=id,topic,createdDateTime,members`
         || opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=chatType eq 'oneOnOne'&$expand=members&$select=id,topic,createdDateTime,members`) {
-        return Promise.resolve(findGroupChatsByMembersResponse);
+        return findGroupChatsByMembersResponse;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=chatType eq 'group'&$expand=members&$select=id,topic,createdDateTime,members&$skiptoken=eyJDb250aW51YXRpb25Ub2tlbiI6Ilczc2ljM1JoY25RaU9pSXlNREl5TFRBeExUSXdWREE1T2pRME9qVXhMakl5Tnlzd01Eb3dNQ0lzSW1WdVpDSTZJakl3TWpJdE1ERXRNakJVTURrNk5EUTZOVEV1TWpJM0t6QXdPakF3SWl3aWMyOXlkRTl5WkdWeUlqb3dmU3g3SW5OMFlYSjBJam9pTVRrM01DMHdNUzB3TVZRd01Eb3dNRG93TUNzd01Eb3dNQ0lzSW1WdVpDSTZJakU1TnpBdE1ERXRNREZVTURBNk1EQTZNREF1TURBeEt6QXdPakF3SWl3aWMyOXlkRTl5WkdWeUlqb3dmVjA9IiwiQ2hhdFR5cGUiOiJjaGF0fG1lZXRpbmd8c2ZiaW50ZXJvcGNoYXR8cGhvbmVjaGF0In0%3d`) {
-        return Promise.resolve(findGroupChatsByMembersResponseWithNextLink);
+        return findGroupChatsByMembersResponseWithNextLink;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=topic eq '${formatting.encodeQueryParameter('Just a conversation')}'&$expand=members&$select=id,topic,createdDateTime,chatType`) {
-        return Promise.resolve(singleChatByNameResponse);
+        return singleChatByNameResponse;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=topic eq '${formatting.encodeQueryParameter('Just a conversation with same name')}'&$expand=members&$select=id,topic,createdDateTime,chatType`) {
-        return Promise.resolve(multipleChatByNameResponse);
+        return multipleChatByNameResponse;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats?$filter=topic eq '${formatting.encodeQueryParameter('Nonexistent conversation name')}'&$expand=members&$select=id,topic,createdDateTime,chatType`) {
-        return Promise.resolve(noChatByNameResponse);
+        return noChatByNameResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
     log = [];
     logger = {
@@ -99,28 +101,25 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
       request.post,
-      accessToken.getUserNameFromAccessToken
+      accessToken.getUserNameFromAccessToken,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      accessToken.getUserNameFromAccessToken
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CHAT_MESSAGE_SEND), true);
+    assert.strictEqual(command.name, commands.CHAT_MESSAGE_SEND);
   });
 
   it('has a description', () => {
@@ -302,15 +301,15 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
 
   it('sends chat message using userEmails (single)', async () => {
     sinonUtil.restore(request.post);
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats`) {
-        return Promise.resolve(chatCreatedResponse);
+        return chatCreatedResponse;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats/19:82fe7758-5bb3-4f0d-a43f-e555fd399c6f_8c0a1a67-50ce-4114-bb6c-da9c5dbcf6ca@unq.gbl.spaces/messages`) {
-        return Promise.resolve(messageSentResponse);
+        return messageSentResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -334,15 +333,15 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
 
   it('sends chat message to new conversation using userEmails (multiple)', async () => {
     sinonUtil.restore(request.post);
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats`) {
-        return Promise.resolve(groupChatCreatedResponse);
+        return groupChatCreatedResponse;
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats/19:650081f4700a4414ac15cd7993129f80@thread.v2/messages`) {
-        return Promise.resolve(messageSentResponse);
+        return messageSentResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -391,21 +390,21 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
   it('sends chat message using userEmails with single retry because of 404 intermittent failure', async () => {
     sinonUtil.restore(request.post);
     let retries: number = 0;
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats`) {
         if (retries === 0) {
           retries++;
-          return Promise.reject({ message: "Request failed with status code 404" });
+          throw { message: "Request failed with status code 404" };
         }
         else {
-          return Promise.resolve(chatCreatedResponse);
+          return chatCreatedResponse;
         }
       }
       else if (opts.url === `https://graph.microsoft.com/v1.0/chats/19:82fe7758-5bb3-4f0d-a43f-e555fd399c6f_8c0a1a67-50ce-4114-bb6c-da9c5dbcf6ca@unq.gbl.spaces/messages`) {
-        return Promise.resolve(messageSentResponse);
+        return messageSentResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -420,12 +419,12 @@ describe(commands.CHAT_MESSAGE_SEND, () => {
   // The following test is used to test the retry mechanism in use because of an intermittent Graph issue.
   it('fails sending chat message when maximum of 3 retries with 404 intermittent failure have occurred', async () => {
     sinonUtil.restore(request.post);
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/chats`) {
-        return Promise.reject("Request failed with status code 404");
+        throw 'Request failed with status code 404';
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {

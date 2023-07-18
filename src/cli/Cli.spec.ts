@@ -12,6 +12,7 @@ import * as cliCompletionUpdateCommand from '../m365/cli/commands/completion/com
 import { settingsNames } from '../settingsNames';
 import { md } from '../utils/md';
 import { pid } from '../utils/pid';
+import { session } from '../utils/session';
 import { sinonUtil } from '../utils/sinonUtil';
 import { Cli, CommandOutput } from './Cli';
 import { Logger } from './Logger';
@@ -170,6 +171,18 @@ class MockCommandWithPrompt extends AnonymousCommand {
   }
 }
 
+class MockCommandWithHandleMultipleResultsFound extends AnonymousCommand {
+  public get name(): string {
+    return 'cli mock interactive prompt';
+  }
+  public get description(): string {
+    return 'Mock command with interactive prompt';
+  }
+  public async commandAction(): Promise<void> {
+    Cli.handleMultipleResultsFound(`Multiple values with name found. Pick one`, `Multiple values with name found.`, { '1': { 'id': '1', 'title': 'Option1' }, '2': { 'id': '2', 'title': 'Option2' } });
+  }
+}
+
 class MockCommandWithOutput extends AnonymousCommand {
   public get name(): string {
     return 'cli mock output';
@@ -217,6 +230,7 @@ describe('Cli', () => {
   before(() => {
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
 
     cliLogStub = sinon.stub((Cli as any), 'log').callsFake(message => {
       log.push(message ?? '');
@@ -274,22 +288,13 @@ describe('Cli', () => {
       mockCommandWithValidation.validate,
       mockCommand.commandAction,
       mockCommand.processOptions,
-      Cli.prompt
+      Cli.prompt,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      (Cli as any).log,
-      (Cli as any).error,
-      (Cli as any).formatOutput,
-      process.exit,
-      md.md2plain,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      cli.getSettingWithDefaultValue,
-      mockCommand.action
-    ]);
+    sinon.restore();
   });
 
   it('shows generic help when no command specified', (done) => {
@@ -363,9 +368,9 @@ describe('Cli', () => {
   });
 
   it('shows help for the specific command when help specified followed by a valid command name', (done) => {
-    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.md'));
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.mdx'));
     const originalFsReadFileSync = fs.readFileSync;
-    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.md'), 'utf8'));
+    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.mdx'), 'utf8'));
     cli
       .execute(rootFolder, ['help', 'cli', 'mock'])
       .then(_ => {
@@ -380,9 +385,9 @@ describe('Cli', () => {
   });
 
   it('shows help for the specific command when valid command name specified followed by --help', (done) => {
-    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.md'));
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.mdx'));
     const originalFsReadFileSync = fs.readFileSync;
-    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.md'), 'utf8'));
+    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.mdx'), 'utf8'));
     cli
       .execute(rootFolder, ['cli', 'mock', '--help'])
       .then(_ => {
@@ -397,9 +402,9 @@ describe('Cli', () => {
   });
 
   it('shows help for the specific command when valid command name specified followed by -h', (done) => {
-    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.md'));
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.mdx'));
     const originalFsReadFileSync = fs.readFileSync;
-    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.md'), 'utf8'));
+    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.mdx'), 'utf8'));
     cli
       .execute(rootFolder, ['cli', 'mock', '-h'])
       .then(_ => {
@@ -428,9 +433,9 @@ describe('Cli', () => {
   });
 
   it('shows help for the specific command when help specified followed by a valid command alias', (done) => {
-    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.md'));
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.mdx'));
     const originalFsReadFileSync = fs.readFileSync;
-    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.md'), 'utf8'));
+    sinon.stub(fs, 'readFileSync').callsFake(() => originalFsReadFileSync(path.join(rootFolder, '..', '..', 'docs', 'docs', 'cmd', 'cli', 'completion', 'completion-clink-update.mdx'), 'utf8'));
     cli
       .execute(rootFolder, ['help', 'cli', 'mock', 'alt'])
       .then(_ => {
@@ -712,6 +717,8 @@ describe('Cli', () => {
   });
 
   it(`shows validation error when no option from a required set is specified`, (done) => {
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
+
     cli
       .execute(rootFolder, ['cli', 'mock', 'optionsets'])
       .then(_ => done('Promise fulfilled while error expected'), _ => {
@@ -726,6 +733,8 @@ describe('Cli', () => {
   });
 
   it(`shows validation error when multiple options from a required set are specified`, (done) => {
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
+
     cli
       .execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt1', 'testvalue', '--opt2', 'testvalue'])
       .then(_ => done('Promise fulfilled while error expected'), _ => {
@@ -754,6 +763,8 @@ describe('Cli', () => {
   });
 
   it(`shows validation error when no option from a dependent set is set`, (done) => {
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
+
     cli
       .execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt2', 'testvalue'])
       .then(_ => done('Promise fulfilled while error expected'), _ => {
@@ -782,6 +793,8 @@ describe('Cli', () => {
   });
 
   it(`shows validation error when multiple options from an optional set are specified`, (done) => {
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
+
     cli
       .execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt1', 'testvalue', '--opt5', 'testvalue', '--opt6', 'testvalue'])
       .then(_ => done('Promise fulfilled while error expected'), _ => {
@@ -829,6 +842,113 @@ describe('Cli', () => {
           done(e);
         }
       }, e => done(e));
+  });
+
+  it(`prompts for optionset name and value when optionset not specified`, async () => {
+    let firstOptionValue = '', secondOptionValue = '';
+    const promptStub: sinon.SinonStub = sinon.stub(inquirer, 'prompt').callsFake((opts: any, _) => {
+      if (opts.type === 'list' && opts.name === 'missingRequiredOptionName') {
+        firstOptionValue = opts.choices[0];
+        secondOptionValue = opts.choices[1];
+        return { missingRequiredOptionName: opts.choices[0] } as any;
+      }
+
+      if (opts.name === 'missingRequiredOptionValue') {
+        return { missingRequiredOptionValue: 'Test 123' } as any;
+      }
+
+      throw 'Specific prompt not found';
+    });
+
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return 'true';
+      }
+      return defaultValue;
+    });
+    await cli.execute(rootFolder, ['cli', 'mock', 'optionsets']);
+    assert.strictEqual(promptStub.firstCall.args[0].choices[0], firstOptionValue);
+    assert.strictEqual(promptStub.firstCall.args[0].choices[1], secondOptionValue);
+    assert.strictEqual(promptStub.lastCall.args[0].message, `Value for '${firstOptionValue}':`);
+    assert(promptStub.calledTwice);
+  });
+
+  it(`prompts to choose which option you wish to use when multiple options in a specific optionset are specified`, async () => {
+    let firstOptionValue = '', secondOptionValue = '';
+    const promptStub: sinon.SinonStub = sinon.stub(inquirer, 'prompt').callsFake((opts: any, _) => {
+      if (opts.type === 'list' && opts.name === 'missingRequiredOptionName') {
+        firstOptionValue = opts.choices[0];
+        secondOptionValue = opts.choices[1];
+        return { missingRequiredOptionName: opts.choices[0] } as any;
+      }
+
+      throw 'Specific prompt not found';
+    });
+
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return 'true';
+      }
+      return defaultValue;
+    });
+    await cli.execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt1', 'testvalue', '--opt2', 'testvalue']);
+    assert.strictEqual(promptStub.lastCall.args[0].message, `Option to use:`);
+    assert.strictEqual(promptStub.lastCall.args[0].choices[0], firstOptionValue);
+    assert.strictEqual(promptStub.lastCall.args[0].choices[1], secondOptionValue);
+    assert(promptStub.calledOnce);
+  });
+
+  it(`prompts to choose runsWhen option from optionSet when dependant option is set and prompts for the value`, async () => {
+    let firstOptionValue = '', secondOptionValue = '';
+    const promptStub: sinon.SinonStub = sinon.stub(inquirer, 'prompt').callsFake((opts: any, _) => {
+      if (opts.type === 'list' && opts.name === 'missingRequiredOptionName') {
+        firstOptionValue = opts.choices[0];
+        secondOptionValue = opts.choices[1];
+        return { missingRequiredOptionName: opts.choices[0] } as any;
+      }
+
+      if (opts.name === 'missingRequiredOptionValue') {
+        return { missingRequiredOptionValue: 'Test 123' } as any;
+      }
+
+      throw 'Specific prompt not found';
+    });
+
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return 'true';
+      }
+      return defaultValue;
+    });
+    await cli.execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt2', 'testvalue']);
+    assert.strictEqual(promptStub.firstCall.args[0].message, `Option to use:`);
+    assert.strictEqual(promptStub.firstCall.args[0].choices[0], firstOptionValue);
+    assert.strictEqual(promptStub.firstCall.args[0].choices[1], secondOptionValue);
+    assert(promptStub.calledTwice);
+  });
+
+  it(`prompts to pick one of the options from an optionSet when runsWhen condition is matched`, async () => {
+    let firstOptionValue = '', secondOptionValue = '';
+    const promptStub: sinon.SinonStub = sinon.stub(inquirer, 'prompt').callsFake((opts: any, _) => {
+      if (opts.type === 'list' && opts.name === 'missingRequiredOptionName') {
+        firstOptionValue = opts.choices[0];
+        secondOptionValue = opts.choices[1];
+        return { missingRequiredOptionName: opts.choices[0] } as any;
+      }
+
+      throw 'Specific prompt not found';
+    });
+
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return 'true';
+      }
+      return defaultValue;
+    });
+    await cli.execute(rootFolder, ['cli', 'mock', 'optionsets', '--opt2', 'testvalue', '--opt3', 'opt 3', '--opt4', 'opt 4']);
+    assert.strictEqual(promptStub.lastCall.args[0].choices[0], firstOptionValue);
+    assert.strictEqual(promptStub.lastCall.args[0].choices[1], secondOptionValue);
+    assert(promptStub.calledOnce);
   });
 
   it(`calls command's validation method when defined`, (done) => {
@@ -1114,6 +1234,31 @@ describe('Cli', () => {
           done(e);
         }
       }, e => done(e));
+  });
+
+  it('calls inquirer when command shows interactive prompt and executed with output', (done) => {
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((() => true));
+    const promptStub: sinon.SinonStub = sinon.stub(inquirer, 'prompt').callsFake(() => Promise.resolve() as any);
+    const mockCommandWithHandleMultipleResultsFound = new MockCommandWithHandleMultipleResultsFound();
+
+    Cli
+      .executeCommandWithOutput(mockCommandWithHandleMultipleResultsFound, { options: { _: [] } })
+      .then(_ => {
+        try {
+          assert(promptStub.called);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it('throws error when interactive mode not set', async () => {
+    const error = `Multiple values with name found.`;
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((() => false));
+    await assert.rejects((Cli.handleMultipleResultsFound(`Multiple values with name found. Pick one`, error, { '1': { 'id': '1', 'title': 'Option1' }, '2': { 'id': '2', 'title': 'Option2' } })
+    ), 'error');
   });
 
   it('correctly handles error when executing command', (done) => {
@@ -1606,7 +1751,7 @@ describe('Cli', () => {
     const actual = (Cli as any).formatOutput(mockCommand, input, { output: 'md' });
     const match = actual.match(/^## /gm);
     try {
-      assert.strictEqual(match?.length, 2);
+      assert.strictEqual(match, null);
       done();
     }
     catch (e) {
@@ -1623,7 +1768,7 @@ describe('Cli', () => {
     const actual = (Cli as any).formatOutput(mockCommand, input, { output: 'md' });
     const match = actual.match(/^## /gm);
     try {
-      assert.strictEqual(match?.length, 1);
+      assert.strictEqual(match, null);
       done();
     }
     catch (e) {
@@ -1837,6 +1982,111 @@ describe('Cli', () => {
     }
   });
 
+  it(`runs properly when context file not found`, (done) => {
+    sinon.stub(fs, 'existsSync').callsFake(_ => false);
+    cli
+      .execute(rootFolder, ['cli', 'mock', '--parameterX', '123', '--output', 'json'])
+      .then(_ => {
+        try {
+          assert(cliLogStub.called);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`populates option from context file`, (done) => {
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString() === '.m365rc.json');
+    sinon.stub(fs, 'readFileSync').onCall(0).callsFake(_ => '{"context": {"parameterY": "456"}}').onCall(1).callsFake(_ => '{}');
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return undefined;
+      }
+      return defaultValue;
+    });
+    cli
+      .execute(rootFolder, ['cli', 'mock', '--parameterX', '123', '--output', 'text'])
+      .then(_ => {
+        try {
+          assert(cliLogStub.called);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`populates option from context file (debug mode)`, (done) => {
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString() === '.m365rc.json');
+    sinon.stub(fs, 'readFileSync').onCall(0).callsFake(_ => '{"context": {"parameterY": "456"}}').onCall(1).callsFake(_ => '{}');
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return undefined;
+      }
+      return defaultValue;
+    });
+    cli
+      .execute(rootFolder, ['cli', 'mock', '--parameterX', '123', '--output', 'text', '--debug'])
+      .then(_ => {
+        try {
+          assert(cliLogStub.called);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`runs properly when context m365rc file found but without any context`, (done) => {
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString() === '.m365rc.json');
+    sinon.stub(fs, 'readFileSync').onCall(0).callsFake(_ => '{}').onCall(1).callsFake(_ => '{}');
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return undefined;
+      }
+      return defaultValue;
+    });
+    cli
+      .execute(rootFolder, ['cli', 'mock', '--parameterX', '123', '--output', 'text'])
+      .then(_ => {
+        try {
+          assert(cliLogStub.called);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`throws error when context json parse fails`, (done) => {
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString() === '.m365rc.json');
+    sinon.stub(fs, 'readFileSync').onCall(0).callsFake(_ => 'I will not parse').onCall(1).callsFake(_ => '{}');
+    sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
+      if (settingName === settingsNames.prompt) {
+        return undefined;
+      }
+      return defaultValue;
+    });
+    cli
+      .execute(rootFolder, ['cli', 'mock', '--parameterX', '123', '--output', 'text'])
+      .then(_ => {
+        done('Promise completed while error expected');
+      }, _ => {
+        try {
+          assert(cliErrorStub.calledWith(chalk.red('Error: Error parsing .m365rc.json')));
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      });
+  });
+
   it(`exits with the specified exit code`, () => {
     try {
       (cli as any).closeWithError(new CommandError('Error', 5), { options: {} });
@@ -1861,7 +2111,7 @@ describe('Cli', () => {
   });
 
   it(`replaces option value with the content of the specified file when value starts with @ and the specified file exists`, (done) => {
-    sinon.stub(fs, 'existsSync').callsFake(_ => true);
+    sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().endsWith('.txt'));
     sinon.stub(fs, 'readFileSync').callsFake(_ => 'abc');
     cli
       .execute(rootFolder, ['cli', 'mock', '-x', '@file.txt', '-o', 'text'])
@@ -1942,9 +2192,11 @@ describe('Cli', () => {
 
   it(`logs error to console stderr`, () => {
     sinonUtil.restore((Cli as any).error);
-    const consoleErrorSpy: sinon.SinonSpy = sinon.stub(console, 'error').callsFake(() => { });
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake((name, defaultValue) => defaultValue);
+    const consoleErrorStub = sinon.stub(console, 'error').callsFake(() => { });
+
     (Cli as any).error('Message');
-    assert(consoleErrorSpy.calledWith('Message'));
+    assert(consoleErrorStub.calledWith('Message'));
   });
 
   it(`logs error to console stdout when stdout configured as error output`, () => {
@@ -1965,4 +2217,59 @@ describe('Cli', () => {
     const actualValue = cli.getSettingWithDefaultValue('key', '');
     assert.strictEqual(actualValue, 'value');
   });
+
+  it('returns true, for the method shouldTrimOutput, when output is text', () => {
+    const spyShouldTrimOutput = Cli.shouldTrimOutput('text');
+    assert.strictEqual(spyShouldTrimOutput, true);
+  });
+
+  it('returns false, for the method shouldTrimOutput, when output is csv', () => {
+    const spyShouldTrimOutput = Cli.shouldTrimOutput('csv');
+    assert.strictEqual(spyShouldTrimOutput, false);
+  });
+
+  it('returns false, for the method shouldTrimOutput, when output is json', () => {
+    const spyShouldTrimOutput = Cli.shouldTrimOutput('json');
+    assert.strictEqual(spyShouldTrimOutput, false);
+  });
+
+  it('does not show help when output is set to none', (done) => {
+    cli
+      .execute(rootFolder, ['cli', 'completion', 'clink', 'update', '-h', 'examples', '--output', 'none'])
+      .then(_ => {
+        try {
+          assert.strictEqual(log.length === 0, true);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`shows no output on succesful run with output set to none`, (done) => {
+    cli
+      .execute(rootFolder, ['cli', 'mock', 'boolean', 'rewrite', '--booleanParameterX', 'true', '--booleanParameterY', 'false', '--output', 'none'])
+      .then(_ => {
+        try {
+          assert.strictEqual(cliLogStub.notCalled, true);
+          assert.strictEqual(cliErrorStub.notCalled, true);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      }, e => done(e));
+  });
+
+  it(`shows no output when a validation error occurs in and output is set to none`, (done) => {
+    cli
+      .execute(rootFolder, ['cli', 'mock', 'boolean', 'rewrite', '--booleanParameterX', 'folse', '--output', 'none'])
+      .then(_ => {
+        assert(cliErrorStub.notCalled);
+        assert(cliLogStub.notCalled);
+        done();
+      }, _ => done('Promise fulfilled with error, no error expected'));
+  });
+
 });

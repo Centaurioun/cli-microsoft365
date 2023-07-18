@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from "../../commands";
 const command: Command = require('./serviceannouncement-message-get');
@@ -71,9 +72,10 @@ describe(commands.SERVICEANNOUNCEMENT_MESSAGE_GET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -102,16 +104,12 @@ describe(commands.SERVICEANNOUNCEMENT_MESSAGE_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SERVICEANNOUNCEMENT_MESSAGE_GET), true);
+    assert.strictEqual(command.name, commands.SERVICEANNOUNCEMENT_MESSAGE_GET);
   });
 
   it('has a description', () => {
@@ -137,12 +135,12 @@ describe(commands.SERVICEANNOUNCEMENT_MESSAGE_GET, () => {
   });
 
   it('correctly retrieves service update message', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/messages/${testId}`) {
-        return Promise.resolve(resMessage);
+        return resMessage;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -156,12 +154,12 @@ describe(commands.SERVICEANNOUNCEMENT_MESSAGE_GET, () => {
   });
 
   it('correctly retrieves service update message (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/messages/${testId}`) {
-        return Promise.resolve(resMessage);
+        return resMessage;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -176,24 +174,24 @@ describe(commands.SERVICEANNOUNCEMENT_MESSAGE_GET, () => {
   });
 
   it('fails when the message does not exist for the tenant', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/messages/${testIncorrectId}`) {
-        return Promise.reject(resResourceNotExist);
+        throw resResourceNotExist;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { id: testIncorrectId } } as any), new CommandError(resResourceNotExist.error.message));
   });
 
   it('lists all properties for output json', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/messages/${testId}`) {
-        return Promise.resolve(resMessage);
+        return resMessage;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
 

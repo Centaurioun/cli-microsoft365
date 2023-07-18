@@ -7,14 +7,15 @@ import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./plan-set');
 
 describe(commands.PLAN_SET, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
@@ -24,6 +25,7 @@ describe(commands.PLAN_SET, () => {
   const title = 'Plan name';
   const ownerGroupName = 'Group name';
   const ownerGroupId = '00000000-0000-0000-0000-000000000002';
+  const rosterId = 'tYqYlNd6eECmsNhN_fcq85cAGAnd';
   const newTitle = 'New Title';
   const user = 'user@contoso.com';
   const userId = '00000000-0000-0000-0000-000000000000';
@@ -121,9 +123,11 @@ describe(commands.PLAN_SET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -147,39 +151,30 @@ describe(commands.PLAN_SET, () => {
     };
 
     loggerLogSpy = sinon.spy(logger, 'log');
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     (command as any).items = [];
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
       request.patch,
-      accessToken.isAppOnlyAccessToken
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.PLAN_SET), true);
+    assert.strictEqual(command.name, commands.PLAN_SET);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['id', 'title'] }]);
   });
 
   it('defines correct properties for the default output', () => {
@@ -282,18 +277,6 @@ describe(commands.PLAN_SET, () => {
     assert.strictEqual(actual, true);
   });
 
-  it('fails validation when using app only access token', async () => {
-    sinonUtil.restore(accessToken.isAppOnlyAccessToken);
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
-
-    await assert.rejects(command.action(logger, {
-      options: {
-        title: title,
-        ownerGroupId: ownerGroupId
-      }
-    }), new CommandError('This command does not support application permissions.'));
-  });
-
   it('correctly updates planner plan title with given id (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
@@ -329,11 +312,11 @@ describe(commands.PLAN_SET, () => {
   it('correctly updates planner plan shareWithUserNames with given title and ownerGroupName', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq '${formatting.encodeQueryParameter(ownerGroupName)}'`) {
-        return Promise.resolve(singleGroupsResponse);
+        return singleGroupsResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/${ownerGroupId}/planner/plans`) {
-        return Promise.resolve(singlePlansResponse);
+        return singlePlansResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
@@ -377,11 +360,11 @@ describe(commands.PLAN_SET, () => {
   it('correctly updates planner plan shareWithUserIds with given title and ownerGroupId', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq '${formatting.encodeQueryParameter(ownerGroupName)}'`) {
-        return Promise.resolve(singleGroupsResponse);
+        return singleGroupsResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/${ownerGroupId}/planner/plans`) {
-        return Promise.resolve(singlePlansResponse);
+        return singlePlansResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
@@ -413,6 +396,43 @@ describe(commands.PLAN_SET, () => {
 
     assert(loggerLogSpy.calledWith(outputResponse));
   });
+
+  it('correctly updates planner plan shareWithUserIds with given title and rosterId', async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/beta/planner/rosters/${rosterId}/plans`) {
+        return singlePlansResponse;
+      }
+
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
+        return planResponse;
+      }
+
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}/details`) {
+        return planDetailsResponse;
+      }
+
+      return 'Invalid request';
+    });
+
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}/details`) {
+        return outputResponse;
+      }
+
+      return 'Invalid request';
+    });
+
+    await command.action(logger, {
+      options: {
+        title: title,
+        rosterId: rosterId,
+        shareWithUserIds: shareWithUserIds
+      }
+    });
+
+    assert(loggerLogSpy.calledWith(outputResponse));
+  });
+
 
   it('correctly updates planner plan categories with given id', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
@@ -450,11 +470,11 @@ describe(commands.PLAN_SET, () => {
   it('fails when an invalid user is specified', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq '${formatting.encodeQueryParameter(ownerGroupName)}'`) {
-        return Promise.resolve(singleGroupsResponse);
+        return singleGroupsResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/${ownerGroupId}/planner/plans`) {
-        return Promise.resolve(singlePlansResponse);
+        return singlePlansResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${id}`) {
@@ -490,9 +510,7 @@ describe(commands.PLAN_SET, () => {
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject('An error has occurred.');
-    });
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred.'));
 
     await assert.rejects(command.action(logger, { options: {} }), new CommandError('An error has occurred.'));
   });

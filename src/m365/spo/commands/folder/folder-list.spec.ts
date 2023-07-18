@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { urlUtil } from '../../../../utils/urlUtil';
 import commands from '../../commands';
@@ -18,12 +19,12 @@ describe(commands.FOLDER_LIST, () => {
   const webUrl = 'https://contoso.sharepoint.com';
   const parentFolderUrl = '/Shared Documents';
   const serverRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, parentFolderUrl);
-  const requestUrl: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(serverRelativeUrl)}')/folders`;
+  const requestUrl: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(serverRelativeUrl)}'&$skip=0&$top=5000`;
 
   const folderListOutput = {
     value: [
       { "Exists": true, "IsWOPIEnabled": false, "ItemCount": 2, "Name": "Test", "ProgID": null, "ServerRelativeUrl": "/sites/abc/Shared Documents/Test", "TimeCreated": "2018-04-23T21:29:40Z", "TimeLastModified": "2018-04-23T21:32:13Z", "UniqueId": "3e735407-9c9f-418b-8378-450a9888d815", "WelcomePage": "" },
-      { "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "velin12", "ProgID": null, "ServerRelativeUrl": "/sites/abc/Shared Documents/velin12", "TimeCreated": "2018-05-02T22:28:50Z", "TimeLastModified": "2018-05-02T22:36:14Z", "UniqueId": "edeb37c6-8502-4a35-9fa2-6934bfc30214", "WelcomePage": "" },
+      { "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "john", "ProgID": null, "ServerRelativeUrl": "/sites/abc/Shared Documents/john", "TimeCreated": "2018-05-02T22:28:50Z", "TimeLastModified": "2018-05-02T22:36:14Z", "UniqueId": "edeb37c6-8502-4a35-9fa2-6934bfc30214", "WelcomePage": "" },
       { "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "test111", "ProgID": null, "ServerRelativeUrl": "/sites/abc/Shared Documents/test111", "TimeCreated": "2018-05-02T23:21:45Z", "TimeLastModified": "2018-05-02T23:21:45Z", "UniqueId": "0ac3da45-cacf-4c31-9b38-9ef3697d5a66", "WelcomePage": "" },
       { "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "Forms", "ProgID": null, "ServerRelativeUrl": "/sites/abc/Shared Documents/Forms", "TimeCreated": "2018-02-15T13:57:52Z", "TimeLastModified": "2018-02-15T13:57:52Z", "UniqueId": "cbb96da6-c2d8-4af0-9451-d534d5949371", "WelcomePage": "" }
     ]
@@ -48,8 +49,10 @@ describe(commands.FOLDER_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -77,16 +80,12 @@ describe(commands.FOLDER_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.FOLDER_LIST), true);
+    assert.strictEqual(command.name, commands.FOLDER_LIST);
   });
 
   it('has a description', () => {
@@ -102,7 +101,7 @@ describe(commands.FOLDER_LIST, () => {
       if (opts.url === requestUrl) {
         throw 'error1';
       }
-      throw 'Invalid request';
+      throw `Invalid request ${opts.url}`;
     });
     await assert.rejects(command.action(logger, {
       options: {
@@ -118,7 +117,8 @@ describe(commands.FOLDER_LIST, () => {
       if (opts.url === requestUrl) {
         return folderListOutput;
       }
-      throw 'Invalid request';
+
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -131,12 +131,79 @@ describe(commands.FOLDER_LIST, () => {
     assert(loggerLogSpy.calledWith(folderListOutput.value));
   });
 
+  it('retrieves folders with filter and fields option, requesting the ListItemAllFields Id property', async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(serverRelativeUrl)}'&$skip=0&$top=5000&$expand=ListItemAllFields&$select=ListItemAllFields/Id,Name&$filter=name eq 'Folder1'`) {
+        return {
+          value: [
+            {
+              ListItemAllFields: {
+                Id: 1,
+                ID: 1
+              },
+              Name: "Test1"
+            },
+            {
+              ListItemAllFields: {
+                Id: 2
+              },
+              Name: "Test2"
+            },
+            {
+              Name: "Test3"
+            }
+          ]
+        };
+      }
+
+      throw `Invalid request ${opts.url}`;
+    });
+
+    await command.action(logger, {
+      options: {
+        debug: true,
+        webUrl: webUrl,
+        parentFolderUrl: parentFolderUrl,
+        filter: `name eq 'Folder1'`,
+        fields: 'ListItemAllFields/Id,Name'
+      }
+    });
+    assert(loggerLogSpy.calledWith([{ ListItemAllFields: { Id: 1 }, Name: "Test1" }, { ListItemAllFields: { Id: 2 }, Name: "Test2" }, { Name: "Test3" }]));
+  });
+
+  it('should correctly handle folder get success request with threshold limit', async () => {
+    const folderThresholdLimitOutput = {
+      value: new Array(5000).fill(folderListOutputSingleFolder.value)
+    };
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(serverRelativeUrl)}'&$skip=0&$top=5000`) {
+        return folderThresholdLimitOutput;
+      }
+
+      if (opts.url === `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(serverRelativeUrl)}'&$skip=5000&$top=5000`) {
+        return folderListOutput;
+      }
+
+      throw `Invalid request ${opts.url}`;
+    });
+
+    await command.action(logger, {
+      options: {
+        debug: true,
+        webUrl: webUrl,
+        parentFolderUrl: parentFolderUrl
+      }
+    });
+    assert(loggerLogSpy.calledWith([...folderThresholdLimitOutput.value, ...folderListOutput.value]));
+  });
+
   it('returns all information for output type json', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === requestUrl) {
         return folderListOutput;
       }
-      throw 'Invalid request';
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -151,9 +218,9 @@ describe(commands.FOLDER_LIST, () => {
   });
 
   it('returns all information recursive for output type json', async () => {
-    const serverRelativeUrlLevel1First: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test`))}')/folders`;
-    const serverRelativeUrlLevel2First: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test/Test2`))}')/folders`;
-    const serverRelativeUrlLevel2Second: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test/Test3`))}')/folders`;
+    const serverRelativeUrlLevel1First: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test`))}'&$skip=0&$top=5000`;
+    const serverRelativeUrlLevel2First: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test/Test2`))}'&$skip=0&$top=5000`;
+    const serverRelativeUrlLevel2Second: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(urlUtil.getServerRelativePath(webUrl, `${parentFolderUrl}/Test/Test3`))}'&$skip=0&$top=5000`;
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === requestUrl) {
         return folderListOutputSingleFolder;
@@ -171,7 +238,7 @@ describe(commands.FOLDER_LIST, () => {
         return { value: [] };
       }
 
-      throw 'Invalid request';
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -195,7 +262,7 @@ describe(commands.FOLDER_LIST, () => {
       if (opts.url === requestUrl) {
         return folderListOutput;
       }
-      throw 'Invalid request';
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -210,13 +277,13 @@ describe(commands.FOLDER_LIST, () => {
   it('should send correct request params when /sites/abc', async () => {
     const webUrl = 'https://contoso.sharepoint.com/sites/abc';
     const serverRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, parentFolderUrl);
-    const requestUrl: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(serverRelativeUrl)}')/folders`;
+    const requestUrl: string = `${webUrl}/_api/web/GetFolderByServerRelativeUrl(@url)/Folders?@url='${formatting.encodeQueryParameter(serverRelativeUrl)}'&$skip=0&$top=5000`;
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === requestUrl) {
         return folderListOutput;
       }
 
-      throw 'Invalid request';
+      throw `Invalid request ${opts.url}`;
     });
     await command.action(logger, {
       options: {
@@ -227,17 +294,6 @@ describe(commands.FOLDER_LIST, () => {
     });
 
     assert(loggerLogSpy.lastCall.calledWith(folderListOutput.value));
-  });
-
-  it('supports specifying URL', () => {
-    const options = command.options;
-    let containsTypeOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('<webUrl>') > -1) {
-        containsTypeOption = true;
-      }
-    });
-    assert(containsTypeOption);
   });
 
   it('fails validation if the webUrl option is not a valid SharePoint site URL', async () => {

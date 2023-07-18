@@ -7,6 +7,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./schemaextension-remove');
@@ -19,8 +20,10 @@ describe(commands.SCHEMAEXTENSION_REMOVE, () => {
   let promptOptions: any;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -54,16 +57,12 @@ describe(commands.SCHEMAEXTENSION_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SCHEMAEXTENSION_REMOVE), true);
+    assert.strictEqual(command.name, commands.SCHEMAEXTENSION_REMOVE);
   });
 
   it('has a description', () => {
@@ -71,12 +70,12 @@ describe(commands.SCHEMAEXTENSION_REMOVE, () => {
   });
 
   it('removes schema extension', async () => {
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/schemaExtensions/`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: 'exttyee4dv5_MySchemaExtension', confirm: true } });
@@ -84,12 +83,12 @@ describe(commands.SCHEMAEXTENSION_REMOVE, () => {
   });
 
   it('removes schema extension (debug)', async () => {
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/schemaExtensions/`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, id: 'exttyee4dv5_MySchemaExtension', confirm: true } });
@@ -108,46 +107,38 @@ describe(commands.SCHEMAEXTENSION_REMOVE, () => {
   });
 
   it('aborts removing schema extension when prompt not confirmed', async () => {
-    sinon.stub(request, 'delete').callsFake(() => {
-      return Promise.reject('Invalid request');
-    });
+    sinon.stub(request, 'delete').rejects('Invalid request');
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, { options: { id: 'exttyee4dv5_MySchemaExtension' } });
   });
 
   it('removes schema extension when prompt confirmed', async () => {
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`v1.0/schemaExtensions/`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { id: 'exttyee4dv5_MySchemaExtension' } });
     assert(loggerLogSpy.notCalled);
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'delete').callsFake(() => {
-      return Promise.reject({ error: 'An error has occurred' });
-    });
+    sinon.stub(request, 'delete').rejects({ error: 'An error has occurred' });
 
     await assert.rejects(command.action(logger, { options: { id: 'exttyee4dv5_MySchemaExtension', confirm: true } } as any),
       new CommandError('An error has occurred'));
   });
 
   it('correctly handles random API error (string error)', async () => {
-    sinon.stub(request, 'delete').callsFake(() => {
-      return Promise.reject('An error has occurred');
-    });
+    sinon.stub(request, 'delete').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: { id: 'exttyee4dv5_MySchemaExtension', confirm: true } } as any),
       new CommandError('An error has occurred'));

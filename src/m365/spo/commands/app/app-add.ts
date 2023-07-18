@@ -1,8 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { spo } from '../../../../utils/spo';
 import { validation } from '../../../../utils/validation';
 import commands from '../../commands';
@@ -112,7 +113,7 @@ class SpoAppAddCommand extends SpoAppBaseCommand {
       }
 
       const fileName: string = path.basename(fullPath);
-      const requestOptions: any = {
+      const requestOptions: CliRequestOptions = {
         url: `${appCatalogUrl}/_api/web/${scope}appcatalog/Add(overwrite=${(overwrite.toString().toLowerCase())}, url='${fileName}')`,
         headers: {
           accept: 'application/json;odata=nometadata',
@@ -124,7 +125,7 @@ class SpoAppAddCommand extends SpoAppBaseCommand {
       const res = await request.post<string>(requestOptions);
 
       const json: { UniqueId: string; } = JSON.parse(res);
-      if (args.options.output === 'json') {
+      if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(json);
       }
       else {

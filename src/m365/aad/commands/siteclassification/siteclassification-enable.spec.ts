@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./siteclassification-enable');
@@ -15,8 +16,10 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   let logger: Logger;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -43,16 +46,12 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SITECLASSIFICATION_ENABLE), true);
+    assert.strictEqual(command.name, commands.SITECLASSIFICATION_ENABLE);
   });
 
   it('has a description', () => {
@@ -60,9 +59,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   });
 
   it('handles Microsoft 365 Tenant siteclassification missing DirectorySettingTemplate', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -124,10 +123,10 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI", usageGuidelinesUrl: "http://aka.ms/sppnp" } } as any),
@@ -137,9 +136,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   it('sets Microsoft 365 Tenant siteclassification with usage guidelines url and guest usage guidelines url (debug)', async () => {
     let enableRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -201,21 +200,21 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
         JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
         enableRequestIssued = true;
 
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject();
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI", usageGuidelinesUrl: "http://aka.ms/sppnp", guestUsageGuidelinesUrl: "http://aka.ms/sppnp" } } as any);
@@ -225,9 +224,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   it('sets Microsoft 365 Tenant siteclassification with usage guidelines url and guest usage guidelines url', async () => {
     let enableRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -289,21 +288,21 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
         JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
         enableRequestIssued = true;
 
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject();
+      throw 'Invalid Request';
     });
 
     await command.action(logger, { options: { classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI", usageGuidelinesUrl: "http://aka.ms/sppnp", guestUsageGuidelinesUrl: "http://aka.ms/sppnp" } } as any);
@@ -313,9 +312,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   it('sets Microsoft 365 Tenant siteclassification with usage guidelines url', async () => {
     let enableRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -377,21 +376,21 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
         JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
         enableRequestIssued = true;
 
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject();
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI", usageGuidelinesUrl: "http://aka.ms/sppnp" } } as any);
@@ -401,9 +400,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   it('sets Microsoft 365 Tenant siteclassification with guest usage guidelines url', async () => {
     let enableRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -465,21 +464,21 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
         JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl","value":"http://aka.ms/sppnp"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
         enableRequestIssued = true;
 
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject();
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI", guestUsageGuidelinesUrl: "http://aka.ms/sppnp" } } as any);
@@ -489,9 +488,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   it('sets Microsoft 365 Tenant siteclassification', async () => {
     let enableRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -553,21 +552,21 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
         JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
         enableRequestIssued = true;
 
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject();
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI" } } as any);
@@ -575,9 +574,9 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
   });
 
   it('Handles enabling when already enabled (conflicting errors)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettingTemplates`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -639,16 +638,15 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` &&
-        JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
-        return Promise.reject({
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings` && JSON.stringify(opts.data) === `{"values":[{"name":"CustomBlockedWordsList"},{"name":"EnableMSStandardBlockedWords"},{"name":"ClassificationDescriptions"},{"name":"DefaultClassification","value":"HBI"},{"name":"PrefixSuffixNamingRequirement"},{"name":"AllowGuestsToBeGroupOwner"},{"name":"AllowGuestsToAccessGroups"},{"name":"GuestUsageGuidelinesUrl"},{"name":"GroupCreationAllowedGroupId"},{"name":"AllowToAddGuests"},{"name":"UsageGuidelinesUrl"},{"name":"ClassificationList","value":"HBI, LBI, Top Secret"},{"name":"EnableGroupCreation"}],"templateId":"d20c475c-6f96-449a-aee8-08146be187d3"}`) {
+        throw {
           error: {
             "error": {
               "code": "Request_BadRequest",
@@ -659,10 +657,10 @@ describe(commands.SITECLASSIFICATION_ENABLE, () => {
               }
             }
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, { options: { classifications: "HBI, LBI, Top Secret", defaultClassification: "HBI" } } as any),

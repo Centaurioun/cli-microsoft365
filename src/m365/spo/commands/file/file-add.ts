@@ -3,7 +3,7 @@ import * as path from 'path';
 import { v4 } from 'uuid';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { fsUtil } from '../../../../utils/fsUtil';
 import { spo } from '../../../../utils/spo';
@@ -180,7 +180,7 @@ class SpoFileAddCommand extends SpoCommand {
 
     try {
       try {
-        const requestOptions: any = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')`,
           headers: {
             'accept': 'application/json;odata=nometadata'
@@ -219,7 +219,7 @@ class SpoFileAddCommand extends SpoCommand {
 
         // initiate chunked upload session
         const uploadId: string = v4();
-        const requestOptions: any = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files/GetByPathOrAddStub(DecodedUrl='${formatting.encodeQueryParameter(fileName)}')/StartUpload(uploadId=guid'${uploadId}')`,
           headers: {
             'accept': 'application/json;odata=nometadata'
@@ -240,9 +240,8 @@ class SpoFileAddCommand extends SpoCommand {
         };
 
         try {
-          await new Promise<void>((resolve: () => void, reject: (err: any) => void): void => {
-            this.uploadFileChunks(fileUploadInfo, logger, resolve, reject);
-          });
+          await this.uploadFileChunks(fileUploadInfo, logger);
+
           if (this.verbose) {
             logger.logToStderr(`Finished uploading ${fileUploadInfo.Position} bytes in ${fileChunkCount} chunks`);
           }
@@ -252,7 +251,7 @@ class SpoFileAddCommand extends SpoCommand {
             logger.logToStderr('Cancelling upload session due to error...');
           }
 
-          const requestOptions: any = {
+          const requestOptions: CliRequestOptions = {
             url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files('${formatting.encodeQueryParameter(fileName)}')/cancelupload(uploadId=guid'${uploadId}')`,
             headers: {
               'accept': 'application/json;odata=nometadata'
@@ -276,7 +275,7 @@ class SpoFileAddCommand extends SpoCommand {
         const fileBody: Buffer = fs.readFileSync(fullPath);
         const bodyLength: number = fileBody.byteLength;
 
-        const requestOptions: any = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files/Add(url='${formatting.encodeQueryParameter(fileName)}', overwrite=true)`,
           data: fileBody,
           headers: {
@@ -326,7 +325,7 @@ class SpoFileAddCommand extends SpoCommand {
         }
 
         // approve the existing file with given comment
-        const requestOptions: any = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files('${formatting.encodeQueryParameter(fileName)}')/approve(comment='${formatting.encodeQueryParameter(args.options.approveComment || '')}')`,
           headers: {
             'accept': 'application/json;odata=nometadata'
@@ -346,7 +345,7 @@ class SpoFileAddCommand extends SpoCommand {
         }
 
         // publish the existing file with given comment
-        const requestOptions: any = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files('${formatting.encodeQueryParameter(fileName)}')/publish(comment='${formatting.encodeQueryParameter(args.options.publishComment || '')}')`,
           headers: {
             'accept': 'application/json;odata=nometadata'
@@ -382,56 +381,52 @@ class SpoFileAddCommand extends SpoCommand {
     }
   }
 
-  private listHasContentType(contentType: string, webUrl: string, listSettings: ListSettings, logger: any): Promise<void> {
+  private async listHasContentType(contentType: string, webUrl: string, listSettings: ListSettings, logger: any): Promise<void> {
     if (this.verbose) {
       logger.logToStderr(`Getting list of available content types ...`);
     }
 
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/web/lists('${listSettings.Id}')/contenttypes?$select=Name,Id`,
       headers: {
         'accept': 'application/json;odata=nometadata'
       },
       responseType: 'json'
     };
-
-    return request.get<any>(requestOptions).then(response => {
-      // check if the specified content type is in the list
-      for (const ct of response.value) {
-        if (ct.Id.StringValue === contentType || ct.Name === contentType) {
-          return Promise.resolve();
-        }
+    const response = await request.get<any>(requestOptions);
+    // check if the specified content type is in the list
+    for (const ct of response.value) {
+      if (ct.Id.StringValue === contentType || ct.Name === contentType) {
+        return;
       }
+    }
 
-      return Promise.reject(`Specified content type '${contentType}' doesn't exist on the target list`);
-    });
+    throw `Specified content type '${contentType}' doesn't exist on the target list`;
   }
 
-  private fileCheckOut(fileName: string, webUrl: string, folder: string): Promise<void> {
+  private async fileCheckOut(fileName: string, webUrl: string, folder: string): Promise<void> {
     // check if file already exists, otherwise it can't be checked out
-    const requestOptions: any = {
+    const requestOptionsGetFile: CliRequestOptions = {
       url: `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folder)}')/Files('${formatting.encodeQueryParameter(fileName)}')`,
       headers: {
         'accept': 'application/json;odata=nometadata'
       }
     };
 
-    return request.get<void>(requestOptions)
-      .then(() => {
-        // checkout the existing file
-        const requestOptions: any = {
-          url: `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folder)}')/Files('${formatting.encodeQueryParameter(fileName)}')/CheckOut()`,
-          headers: {
-            'accept': 'application/json;odata=nometadata'
-          },
-          responseType: 'json'
-        };
+    await request.get<void>(requestOptionsGetFile);
 
-        return request.post<void>(requestOptions);
-      });
+    const requestOptionsCheckOut: CliRequestOptions = {
+      url: `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folder)}')/Files('${formatting.encodeQueryParameter(fileName)}')/CheckOut()`,
+      headers: {
+        'accept': 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    return request.post<void>(requestOptionsCheckOut);
   }
 
-  private uploadFileChunks(info: FileUploadInfo, logger: any, resolve: () => void, reject: (err: any) => void): void {
+  private async uploadFileChunks(info: FileUploadInfo, logger: any): Promise<void> {
     let fd: number = 0;
     try {
       fd = fs.openSync(info.FilePath, 'r');
@@ -448,7 +443,7 @@ class SpoFileAddCommand extends SpoCommand {
         fileBuffer = fileBuffer.slice(0, readCount);
       }
 
-      const requestOptions: any = {
+      const requestOptions: CliRequestOptions = {
         url: `${info.WebUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(info.FolderPath)}')/Files('${formatting.encodeQueryParameter(info.Name)}')/${isLastChunk ? 'Finish' : 'Continue'}Upload(uploadId=guid'${info.Id}',fileOffset=${offset})`,
         data: fileBuffer,
         headers: {
@@ -458,32 +453,31 @@ class SpoFileAddCommand extends SpoCommand {
         maxBodyLength: this.fileChunkingThreshold
       };
 
-      request
-        .post<void>(requestOptions)
-        .then((): void => {
-          if (this.verbose) {
-            logger.logToStderr(`Uploaded ${info.Position} of ${info.Size} bytes (${Math.round(100 * info.Position / info.Size)}%)`);
-          }
+      try {
+        await request.post<void>(requestOptions);
+        if (this.verbose) {
+          logger.logToStderr(`Uploaded ${info.Position} of ${info.Size} bytes (${Math.round(100 * info.Position / info.Size)}%)`);
+        }
 
-          if (isLastChunk) {
-            resolve();
+        if (isLastChunk) {
+          return;
+        }
+        else {
+          return this.uploadFileChunks(info, logger);
+        }
+      }
+      catch (err: any) {
+        if (--info.RetriesLeft > 0) {
+          if (this.verbose) {
+            logger.logToStderr(`Retrying to upload chunk due to error: ${err}`);
           }
-          else {
-            this.uploadFileChunks(info, logger, resolve, reject);
-          }
-        })
-        .catch((err: any) => {
-          if (--info.RetriesLeft > 0) {
-            if (this.verbose) {
-              logger.logToStderr(`Retrying to upload chunk due to error: ${err}`);
-            }
-            info.Position -= readCount;  // rewind
-            this.uploadFileChunks(info, logger, resolve, reject);
-          }
-          else {
-            reject(err);
-          }
-        });
+          info.Position -= readCount;  // rewind
+          return this.uploadFileChunks(info, logger);
+        }
+        else {
+          throw err;
+        }
+      }
     }
     catch (err) {
       if (fd) {
@@ -498,20 +492,20 @@ class SpoFileAddCommand extends SpoCommand {
         if (this.verbose) {
           logger.logToStderr(`Retrying to read chunk due to error: ${err}`);
         }
-        this.uploadFileChunks(info, logger, resolve, reject);
+        return this.uploadFileChunks(info, logger);
       }
       else {
-        reject(err);
+        throw err;
       }
     }
   }
 
-  private getFileParentList(fileName: string, webUrl: string, folder: string, logger: any): Promise<ListSettings> {
+  private async getFileParentList(fileName: string, webUrl: string, folder: string, logger: any): Promise<ListSettings> {
     if (this.verbose) {
       logger.logToStderr(`Getting list details in order to get its available content types afterwards...`);
     }
 
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folder)}')/Files('${formatting.encodeQueryParameter(fileName)}')/ListItemAllFields/ParentList?$Select=Id,EnableModeration,EnableVersioning,EnableMinorVersions`,
       headers: {
         'accept': 'application/json;odata=nometadata'
@@ -522,7 +516,7 @@ class SpoFileAddCommand extends SpoCommand {
     return request.get(requestOptions);
   }
 
-  private validateUpdateListItem(webUrl: string, folderPath: string, fileName: string, fieldsToUpdate: FieldValue[], logger: any, checkInComment?: string): Promise<void> {
+  private async validateUpdateListItem(webUrl: string, folderPath: string, fileName: string, fieldsToUpdate: FieldValue[], logger: any, checkInComment?: string): Promise<void> {
     if (this.verbose) {
       logger.logToStderr(`Validate and update list item values for file ${fileName}`);
     }
@@ -539,7 +533,7 @@ class SpoFileAddCommand extends SpoCommand {
     }
 
     // update the existing file list item fields
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(folderPath)}')/Files('${formatting.encodeQueryParameter(fileName)}')/ListItemAllFields/ValidateUpdateListItem()`,
       headers: {
         'accept': 'application/json;odata=nometadata'
@@ -548,24 +542,19 @@ class SpoFileAddCommand extends SpoCommand {
       responseType: 'json'
     };
 
-    return request.post(requestOptions)
-      .then((res: any) => {
-        // check for field value update for errors
-        const fieldValues: FieldValueResult[] = res.value;
-        for (const fieldValue of fieldValues) {
-          if (fieldValue.HasException) {
-            return Promise.reject(`Update field value error: ${JSON.stringify(fieldValues)}`);
-          }
-        }
-        return Promise.resolve();
-      })
-      .catch((err: any) => {
-        return Promise.reject(err);
-      });
+    const res = await request.post<any>(requestOptions);
+    // check for field value update for errors
+    const fieldValues: FieldValueResult[] = res.value;
+    for (const fieldValue of fieldValues) {
+      if (fieldValue.HasException) {
+        throw `Update field value error: ${JSON.stringify(fieldValues)}`;
+      }
+    }
+    return;
   }
 
-  private fileCheckIn(args: any, fileName: string): Promise<void> {
-    const requestOptions: any = {
+  private async fileCheckIn(args: any, fileName: string): Promise<void> {
+    const requestOptions: CliRequestOptions = {
       url: `${args.options.webUrl}/_api/web/GetFolderByServerRelativeUrl('${formatting.encodeQueryParameter(args.options.folder)}')/Files('${formatting.encodeQueryParameter(fileName)}')/CheckIn(comment='${formatting.encodeQueryParameter(args.options.checkInComment || '')}',checkintype=0)`,
       headers: {
         'accept': 'application/json;odata=nometadata'

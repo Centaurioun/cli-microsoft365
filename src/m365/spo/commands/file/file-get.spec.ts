@@ -10,20 +10,24 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./file-get');
 
 describe(commands.FILE_GET, () => {
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -42,26 +46,24 @@ describe(commands.FILE_GET, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
-      fs.createWriteStream
+      fs.createWriteStream,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.FILE_GET), true);
+    assert.strictEqual(command.name, commands.FILE_GET);
   });
 
   it('has a description', () => {
@@ -73,10 +75,21 @@ describe(commands.FILE_GET, () => {
   });
 
   it('command correctly handles file get reject request', async () => {
-    const err = 'Invalid request';
+    const err = 'An error has occurred';
+    const error = {
+      error: {
+        'odata.error': {
+          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+          message: {
+            value: err
+          }
+        }
+      }
+    };
+
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById') > -1) {
-        throw err;
+        throw error;
       }
 
       throw 'Invalid request';
@@ -89,25 +102,6 @@ describe(commands.FILE_GET, () => {
         id: 'f09c4efe-b8c0-4e89-a166-03418661b89b'
       }
     }), new CommandError(err));
-  });
-
-  it('uses correct API url when output json option is passed', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('select123=') > -1) {
-        return 'Correct Url1';
-      }
-
-      throw 'Invalid request';
-    });
-
-    await assert.rejects(command.action(logger, {
-      options: {
-        output: 'json',
-        webUrl: 'https://contoso.sharepoint.com',
-        id: 'b2307a39-e878-458b-bc90-03bc578531d6'
-      }
-    }));
-    assert('Correct Url');
   });
 
   it('retrieves file as binary string object', async () => {
@@ -469,20 +463,27 @@ describe(commands.FILE_GET, () => {
   });
 
   it('should handle promise rejection', async () => {
-    const expectedError: any = JSON.stringify({ "odata.error": { "code": "-2130575338, Microsoft.SharePoint.SPException", "message": { "lang": "en-US", "value": "Error: File Not Found." } } });
-    sinon.stub(request, 'get').callsFake(() => {
-      throw expectedError;
-    });
+    const error = {
+      error: {
+        'odata.error': {
+          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+          message: {
+            value: 'File not found'
+          }
+        }
+      }
+    };
+    sinon.stub(request, 'get').rejects(error);
 
     await assert.rejects(command.action(logger, {
       options: {
         webUrl: 'https://contoso.sharepoint.com/sites/project-x'
       }
-    }), new CommandError(expectedError));
+    }), new CommandError(error.error['odata.error'].message.value));
   });
 
   it('fails validation if path doesn\'t exist', async () => {
-    sinon.stub(fs, 'existsSync').callsFake(() => false);
+    sinon.stub(fs, 'existsSync').returns(false);
     const actual = await command.validate({ options: { webUrl: 'https://contoso.sharepoint.com/sites/project-x', id: 'b2307a39-e878-458b-bc90-03bc578531d6', asFile: true, path: 'abc' } }, commandInfo);
     sinonUtil.restore(fs.existsSync);
     assert.notStrictEqual(actual, true);
@@ -499,7 +500,7 @@ describe(commands.FILE_GET, () => {
 
     setTimeout(() => {
       writeStream.emit('close');
-    }, 5);
+    }, 0);
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById(') > -1) {
@@ -542,7 +543,7 @@ describe(commands.FILE_GET, () => {
 
     setTimeout(() => {
       writeStream.emit('error', "Writestream throws error");
-    }, 5);
+    }, 0);
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById(') > -1) {
@@ -571,17 +572,6 @@ describe(commands.FILE_GET, () => {
         fs.createWriteStream
       ]);
     }
-  });
-
-  it('supports specifying URL', () => {
-    const options = command.options;
-    let containsTypeOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('<webUrl>') > -1) {
-        containsTypeOption = true;
-      }
-    });
-    assert(containsTypeOption);
   });
 
   it('fails validation if the webUrl option is not a valid SharePoint site URL', async () => {

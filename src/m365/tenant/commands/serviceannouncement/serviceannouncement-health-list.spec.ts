@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./serviceannouncement-health-list');
@@ -104,9 +105,10 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -137,11 +139,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -168,16 +166,14 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   });
 
   it('correctly returns list', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
-        return Promise.resolve(
-          {
-            value: serviceHealthResponse
-          }
-        );
+        return {
+          value: serviceHealthResponse
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {};
@@ -187,16 +183,14 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   });
 
   it('correctly returns list as csv with issues flag', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
-        return Promise.resolve(
-          {
-            value: serviceHealthResponseCSV
-          }
-        );
+        return {
+          value: serviceHealthResponseCSV
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -209,16 +203,14 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   });
 
   it('correctly returns list with issues', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews?$expand=issues`) {
-        return Promise.resolve(
-          {
-            value: serviceHealthIssuesResponse
-          }
-        );
+        return {
+          value: serviceHealthIssuesResponse
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -230,12 +222,12 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
   });
 
   it('fails when serviceAnnouncement endpoint fails', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('Error fetching service health'));
@@ -243,7 +235,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
 
   it('correctly handles random API error', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
   });

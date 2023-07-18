@@ -7,9 +7,9 @@ import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./plan-remove');
@@ -53,9 +53,10 @@ describe(commands.PLAN_REMOVE, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -78,7 +79,6 @@ describe(commands.PLAN_REMOVE, () => {
       }
     };
     promptOptions = undefined;
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     sinon.stub(Cli, 'prompt').callsFake(async (options: any) => {
       promptOptions = options;
       return { continue: false };
@@ -89,17 +89,12 @@ describe(commands.PLAN_REMOVE, () => {
     sinonUtil.restore([
       request.get,
       request.delete,
-      accessToken.isAppOnlyAccessToken,
       Cli.prompt
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
@@ -110,11 +105,6 @@ describe(commands.PLAN_REMOVE, () => {
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['id', 'title'] }]);
   });
 
   it('fails validation when id and ownerGroupId is specified', async () => {
@@ -202,31 +192,20 @@ describe(commands.PLAN_REMOVE, () => {
     assert(deleteSpy.notCalled);
   });
 
-  it('fails validation when using app only access token', async () => {
-    sinonUtil.restore(accessToken.isAppOnlyAccessToken);
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
-
-    await assert.rejects(command.action(logger, {
-      options: {
-        id: validPlanId
-      }
-    }), new CommandError('This command does not support application permissions.'));
-  });
-
   it('Correctly deletes plan by id', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validPlanId}`) {
-        return Promise.resolve(singlePlanResponse);
+        return singlePlanResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validPlanId}`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -238,22 +217,22 @@ describe(commands.PLAN_REMOVE, () => {
   });
 
   it('Correctly deletes plan by title', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq '${formatting.encodeQueryParameter(validOwnerGroupName)}'`) {
-        return Promise.resolve(singleGroupsResponse);
+        return singleGroupsResponse;
       }
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/${validOwnerGroupId}/planner/plans`) {
-        return Promise.resolve(singlePlansResponse);
+        return singlePlansResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validPlanId}`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
     sinonUtil.restore(Cli.prompt);
     sinon.stub(Cli, 'prompt').callsFake(async () => (
@@ -269,24 +248,22 @@ describe(commands.PLAN_REMOVE, () => {
   });
 
   it('Correctly deletes plan by title with group id', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups/${validOwnerGroupId}/planner/plans`) {
-        return Promise.resolve(singlePlansResponse);
+        return singlePlansResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validPlanId}`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, {
       options: {
@@ -297,8 +274,8 @@ describe(commands.PLAN_REMOVE, () => {
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'get').callsFake(() => Promise.resolve(singlePlanResponse));
-    sinon.stub(request, 'delete').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').resolves(singlePlanResponse);
+    sinon.stub(request, 'delete').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, {
       options: {

@@ -7,6 +7,7 @@ import { CommandInfo } from '../../../cli/CommandInfo';
 import { Logger } from '../../../cli/Logger';
 import Command, { CommandError } from '../../../Command';
 import { pid } from '../../../utils/pid';
+import { session } from '../../../utils/session';
 import { sinonUtil } from '../../../utils/sinonUtil';
 import commands from '../commands';
 const command: Command = require('./spo-set');
@@ -17,9 +18,11 @@ describe(commands.SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(auth, 'storeConnectionInfo').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => {});
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(auth, 'storeConnectionInfo').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -44,24 +47,19 @@ describe(commands.SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      auth.storeConnectionInfo,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SET), true);
+    assert.strictEqual(command.name, commands.SET);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('sets SPO URL when no URL was set previously', async ()  => {
+  it('sets SPO URL when no URL was set previously', async () => {
     auth.service.spoUrl = undefined;
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com' } });
@@ -75,7 +73,7 @@ describe(commands.SET, () => {
     assert.strictEqual(auth.service.spoUrl, 'https://contoso.sharepoint.com');
   });
 
-  it('throws error when trying to set SPO URL when not logged in to O365', async ()  => {
+  it('throws error when trying to set SPO URL when not logged in to O365', async () => {
     auth.service.connected = false;
 
     await assert.rejects(command.action(logger, { options: { url: 'https://contoso.sharepoint.com' } } as any), new CommandError('Log in to Microsoft 365 first'));
@@ -85,7 +83,7 @@ describe(commands.SET, () => {
   it('throws error when setting the password fails', async () => {
     auth.service.connected = true;
     sinonUtil.restore(auth.storeConnectionInfo);
-    sinon.stub(auth, 'storeConnectionInfo').callsFake(() => Promise.reject('An error has occurred while setting the password'));
+    sinon.stub(auth, 'storeConnectionInfo').rejects(new Error('An error has occurred while setting the password'));
 
     await assert.rejects(command.action(logger, { options: { url: 'https://contoso.sharepoint.com' } } as any), new CommandError('An error has occurred while setting the password'));
   });

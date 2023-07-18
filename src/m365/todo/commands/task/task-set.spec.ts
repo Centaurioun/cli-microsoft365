@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import { AxiosRequestConfig } from 'axios';
 import * as sinon from 'sinon';
 import { telemetry } from '../../../../telemetry';
 import auth from '../../../../Auth';
@@ -7,17 +6,19 @@ import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./task-set');
 
 describe(commands.TASK_SET, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let patchStub: sinon.SinonStub<[options: AxiosRequestConfig<any>]>;
+  let patchStub: sinon.SinonStub<[options: CliRequestOptions]>;
 
   const getRequestData = {
     "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('4cb2b035-ad76-406c-bdc4-6c72ad403a22')/todo/lists",
@@ -47,9 +48,11 @@ describe(commands.TASK_SET, () => {
   };
 
   before(() => {
+    cli = Cli.getInstance();
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -82,22 +85,21 @@ describe(commands.TASK_SET, () => {
       }
       return Promise.reject();
     });
+
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
       request.patch,
-      Date.now
+      Date.now,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -208,6 +210,49 @@ describe(commands.TASK_SET, () => {
     } as any);
 
     assert.deepStrictEqual(patchStub.lastCall.args[0].data.reminderDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
+  });
+
+
+  it('updates To Do task with categories ', async () => {
+    await command.action(logger, {
+      options: {
+        id: 'abc',
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        status: "notStarted",
+        categories: 'None,Preset24'
+      }
+    } as any);
+
+    assert.deepStrictEqual(patchStub.lastCall.args[0].data.categories, ['None', 'Preset24']);
+  });
+
+  it('updates To Do task with completedDateTime', async () => {
+    const dateTime = '2023-01-01';
+    await command.action(logger, {
+      options: {
+        id: 'abc',
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        completedDateTime: dateTime
+      }
+    } as any);
+
+    assert.deepStrictEqual(patchStub.lastCall.args[0].data.completedDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
+  });
+
+  it('updates To Do task with startDateTime', async () => {
+    const dateTime = '2023-01-01';
+    await command.action(logger, {
+      options: {
+        id: 'abc',
+        title: 'New task',
+        listId: 'AQMkADlhMTRkOGEzLWQ1M2QtNGVkNS04NjdmLWU0NzJhMjZmZWNmMwAuAAADKvwNgAMNPE_zFNRJXVrU1wEAhHKQZHItDEOVCn8U3xuA2AABmQeVPwAAAA==',
+        startDateTime: dateTime
+      }
+    } as any);
+
+    assert.deepStrictEqual(patchStub.lastCall.args[0].data.startDateTime, { dateTime: dateTime, timeZone: 'Etc/GMT' });
   });
 
   it('rejects if no tasks list is found with the specified list name', async () => {
@@ -340,6 +385,30 @@ describe(commands.TASK_SET, () => {
         status: "notStarted",
         listName: 'Tasks List',
         reminderDateTime: '01/01/2022'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when invalid completedDateTime is passed', async () => {
+    const actual = await command.validate({
+      options: {
+        id: 'abc',
+        title: 'New task',
+        listName: 'Tasks List',
+        completedDateTime: '01/01/2022'
+      }
+    }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('fails validation when invalid startDateTime is passed', async () => {
+    const actual = await command.validate({
+      options: {
+        id: 'abc',
+        title: 'New task',
+        listName: 'Tasks List',
+        startDateTime: '01/01/2022'
       }
     }, commandInfo);
     assert.notStrictEqual(actual, true);

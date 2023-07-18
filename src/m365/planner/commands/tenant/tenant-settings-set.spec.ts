@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./tenant-settings-set');
@@ -29,9 +30,10 @@ describe(commands.TENANT_SETTINGS_SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -60,11 +62,7 @@ describe(commands.TENANT_SETTINGS_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
@@ -95,12 +93,12 @@ describe(commands.TENANT_SETTINGS_SET, () => {
   });
 
   it('successfully updates tenant planner settings', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === 'https://tasks.office.com/taskAPI/tenantAdminSettings/Settings') {
-        return Promise.resolve(successResponse);
+        return successResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -112,12 +110,12 @@ describe(commands.TENANT_SETTINGS_SET, () => {
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === 'https://tasks.office.com/taskAPI/tenantAdminSettings/Settings') {
-        return Promise.reject('An error has occurred');
+        throw 'An error has occurred';
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {

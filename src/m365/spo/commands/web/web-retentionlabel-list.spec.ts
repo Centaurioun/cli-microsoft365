@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./web-retentionlabel-list');
@@ -46,7 +47,7 @@ describe(commands.WEB_RETENTIONLABEL_LIST, () => {
   ];
 
   const mockResponse = {
-    "odata.metadata": "https://blimped.sharepoint.com/_api/$metadata#Collection(SP.CompliancePolicy.ComplianceTag)",
+    "odata.metadata": "https://contoso.sharepoint.com/_api/$metadata#Collection(SP.CompliancePolicy.ComplianceTag)",
     "value": mockResponseArray
   };
   //#endregion
@@ -60,6 +61,7 @@ describe(commands.WEB_RETENTIONLABEL_LIST, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(appInsights, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -87,11 +89,7 @@ describe(commands.WEB_RETENTIONLABEL_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      appInsights.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -150,16 +148,5 @@ describe(commands.WEB_RETENTIONLABEL_LIST, () => {
         webUrl: 'https://contoso.sharepoint.com'
       }
     } as any), new CommandError('An error has occurred'));
-  });
-
-  it('supports debug mode', () => {
-    const options = command.options;
-    let containsDebugOption = false;
-    options.forEach(o => {
-      if (o.option === '--debug') {
-        containsDebugOption = true;
-      }
-    });
-    assert(containsDebugOption);
   });
 });

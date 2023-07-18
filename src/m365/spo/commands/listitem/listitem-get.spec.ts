@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { urlUtil } from '../../../../utils/urlUtil';
 import commands from '../../commands';
@@ -20,6 +21,7 @@ describe(commands.LISTITEM_GET, () => {
   const listTitle = 'Demo List';
   const listServerRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, listUrl);
 
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
@@ -27,11 +29,14 @@ describe(commands.LISTITEM_GET, () => {
 
   const expectedTitle = `List Item 1`;
   const expectedId = 147;
+  const expectedUniqueId = 'ea093c7b-8ae6-4400-8b75-e2d01154dffc';
 
   let actualId = 0;
 
   const getFakes = async (opts: any) => {
-    if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')/items(147)/RoleAssignments?$expand=Member,RoleDefinitionBindings` || opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/lists/getByTitle('${formatting.encodeQueryParameter(listTitle)}')/items(147)/RoleAssignments?$expand=Member,RoleDefinitionBindings`) {
+    if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')/items(147)/RoleAssignments?$expand=Member,RoleDefinitionBindings` ||
+      opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/lists/getByTitle('${formatting.encodeQueryParameter(listTitle)}')/items(147)/RoleAssignments?$expand=Member,RoleDefinitionBindings`
+    ) {
       return {
         "value": [
           {
@@ -69,6 +74,20 @@ describe(commands.LISTITEM_GET, () => {
       };
     }
 
+    if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/lists/getByTitle('Demo%20List')/GetItemByUniqueId(guid'ea093c7b-8ae6-4400-8b75-e2d01154dffc')?$select=`) {
+      return {
+        "Attachments": false,
+        "AuthorId": 3,
+        "ContentTypeId": "0x0100B21BD271A810EE488B570BE49963EA34",
+        "Created": "2018-03-15T10:43:10Z",
+        "EditorId": 3,
+        "GUID": "ea093c7b-8ae6-4400-8b75-e2d01154dffc",
+        "ID": 147,
+        "Modified": "2018-03-15T10:43:10Z",
+        "Title": expectedTitle
+      };
+    }
+
     if (opts.url.indexOf('/_api/web/lists') > -1) {
       if ((opts.url as string).indexOf('/items(') > -1) {
         actualId = parseInt(opts.url.match(/\/items\((\d+)\)/i)[1]);
@@ -85,6 +104,7 @@ describe(commands.LISTITEM_GET, () => {
         };
       }
     }
+
     if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')/items(147)?$select=${formatting.encodeQueryParameter('Title,Modified')}`) {
       actualId = parseInt(opts.url.match(/\/items\((\d+)\)/i)[1]);
       return {
@@ -104,9 +124,11 @@ describe(commands.LISTITEM_GET, () => {
   };
 
   before(() => {
+    cli = Cli.getInstance();
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -125,20 +147,18 @@ describe(commands.LISTITEM_GET, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.get
+      request.get,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -196,12 +216,22 @@ describe(commands.LISTITEM_GET, () => {
     assert(actual);
   });
 
+  it('fails validation if the uniqueId option is not a valid GUID', async () => {
+    const actual = await command.validate({ options: { webUrl: 'https://contoso.sharepoint.com', listId: '0CD891EF-AFCE-4E55-B836-FCE03286CCCF', uniqueId: 'foo' } }, commandInfo);
+    assert.notStrictEqual(actual, true);
+  });
+
+  it('passes validation if the uniqueId option is a valid GUID', async () => {
+    const actual = await command.validate({ options: { webUrl: 'https://contoso.sharepoint.com', listId: '0CD891EF-AFCE-4E55-B836-FCE03286CCCF', uniqueId: expectedUniqueId } }, commandInfo);
+    assert(actual);
+  });
+
   it('fails validation if the specified id is not a number', async () => {
     const actual = await command.validate({ options: { webUrl: 'https://contoso.sharepoint.com', listTitle: 'Demo List', id: 'a' } }, commandInfo);
     assert.notStrictEqual(actual, true);
   });
 
-  it('returns listItemInstance object when list item is requested', async () => {
+  it('returns listItemInstance object by id when list item is requested', async () => {
     sinon.stub(request, 'get').callsFake(getFakes);
 
     command.allowUnknownOptions();
@@ -215,6 +245,31 @@ describe(commands.LISTITEM_GET, () => {
 
     await command.action(logger, { options: options } as any);
     assert.strictEqual(actualId, expectedId);
+  });
+
+  it('returns listItemInstance object by uniqueId when list item is requested', async () => {
+    sinon.stub(request, 'get').callsFake(getFakes);
+
+    command.allowUnknownOptions();
+
+    const options: any = {
+      debug: true,
+      listTitle: 'Demo List',
+      webUrl: webUrl,
+      uniqueId: expectedUniqueId
+    };
+
+    await command.action(logger, { options: options } as any);
+    assert(loggerLogSpy.calledWith({
+      Attachments: false,
+      AuthorId: 3,
+      ContentTypeId: '0x0100B21BD271A810EE488B570BE49963EA34',
+      Created: '2018-03-15T10:43:10Z',
+      EditorId: 3,
+      GUID: 'ea093c7b-8ae6-4400-8b75-e2d01154dffc',
+      Modified: '2018-03-15T10:43:10Z',
+      Title: expectedTitle
+    }));
   });
 
   it('returns listItemInstance object when list item is requested and with permissions', async () => {

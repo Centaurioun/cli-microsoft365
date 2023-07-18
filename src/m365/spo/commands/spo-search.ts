@@ -1,4 +1,5 @@
 import { isNumber } from 'util';
+import { Cli } from '../../../cli/Cli';
 import { Logger } from '../../../cli/Logger';
 import GlobalOptions from '../../../GlobalOptions';
 import request from '../../../request';
@@ -221,34 +222,25 @@ class SpoSearchCommand extends SpoCommand {
     }
   }
 
-  private executeSearchQuery(logger: Logger, args: CommandArgs, webUrl: string, resultSet: SearchResult[], startRow: number): Promise<SearchResult[]> {
-    return ((): Promise<SearchResult> => {
-      const requestUrl: string = this.getRequestUrl(webUrl, logger, args, startRow);
-      const requestOptions: any = {
-        url: requestUrl,
-        headers: {
-          'accept': 'application/json;odata=nometadata'
-        },
-        responseType: 'json'
-      };
+  private async executeSearchQuery(logger: Logger, args: CommandArgs, webUrl: string, resultSet: SearchResult[], startRow: number): Promise<SearchResult[]> {
+    const requestUrl: string = this.getRequestUrl(webUrl, logger, args, startRow);
+    const requestOptions: any = {
+      url: requestUrl,
+      headers: {
+        'accept': 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
 
-      return request.get(requestOptions);
-    })()
-      .then((searchResult: SearchResult): SearchResult => {
-        resultSet.push(searchResult);
+    const searchResult: SearchResult = await request.get(requestOptions);
+    resultSet.push(searchResult);
 
-        return searchResult;
-      })
-      .then((searchResult: SearchResult): Promise<SearchResult[]> => {
-        if (args.options.allResults) {
-          if (startRow + searchResult.PrimaryQueryResult.RelevantResults.RowCount < searchResult.PrimaryQueryResult.RelevantResults.TotalRows) {
-            const nextStartRow = startRow + searchResult.PrimaryQueryResult.RelevantResults.RowCount;
-            return this.executeSearchQuery(logger, args, webUrl, resultSet, nextStartRow);
-          }
-        }
-        return new Promise<SearchResult[]>((resolve) => { resolve(resultSet); });
-      })
-      .then(() => resultSet);
+    if (args.options.allResults && startRow + searchResult.PrimaryQueryResult.RelevantResults.RowCount < searchResult.PrimaryQueryResult.RelevantResults.TotalRows) {
+      const nextStartRow = startRow + searchResult.PrimaryQueryResult.RelevantResults.RowCount;
+      return this.executeSearchQuery(logger, args, webUrl, resultSet, nextStartRow);
+    }
+
+    return resultSet;
   }
 
   private getRequestUrl(webUrl: string, logger: Logger, args: CommandArgs, startRow: number): string {
@@ -334,7 +326,7 @@ class SpoSearchCommand extends SpoCommand {
       logger.log(this.getParsedOutput(args, results));
     }
 
-    if (!args.options.output || args.options.output === 'text') {
+    if (!args.options.output || Cli.shouldTrimOutput(args.options.output)) {
       logger.log("# Rows: " + results[results.length - 1].PrimaryQueryResult.RelevantResults.TotalRows);
       logger.log("# Rows (Including duplicates): " + results[results.length - 1].PrimaryQueryResult.RelevantResults.TotalRowsIncludingDuplicates);
       logger.log("Elapsed Time: " + this.getElapsedTime(results));

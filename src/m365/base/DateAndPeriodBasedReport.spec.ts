@@ -1,14 +1,15 @@
 import * as assert from 'assert';
 import * as fs from 'fs';
 import * as sinon from 'sinon';
-import { telemetry } from '../../telemetry';
 import auth from '../../Auth';
 import { Cli } from '../../cli/Cli';
 import { CommandInfo } from '../../cli/CommandInfo';
 import { Logger } from '../../cli/Logger';
 import { CommandError } from '../../Command';
 import request from '../../request';
+import { telemetry } from '../../telemetry';
 import { pid } from '../../utils/pid';
+import { session } from '../../utils/session';
 import { sinonUtil } from '../../utils/sinonUtil';
 import DateAndPeriodBasedReport from './DateAndPeriodBasedReport';
 
@@ -36,9 +37,10 @@ describe('PeriodBasedReport', () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(mockCommand);
   });
@@ -67,11 +69,7 @@ describe('PeriodBasedReport', () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -140,15 +138,15 @@ describe('PeriodBasedReport', () => {
   });
 
   it('get unique device type in teams and export it in a period', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake(async opts => {
       if (opts.url === `https://graph.microsoft.com/v1.0/reports/MockEndPoint(period='D7')`) {
-        return Promise.resolve(`
+        return `
         Report Refresh Date,Web,Windows Phone,Android Phone,iOS,Mac,Windows,Report Period
         2019-08-28,0,0,0,0,0,0,7
-        `);
+        `;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await mockCommand.action(logger, { options: { period: 'D7' } });
@@ -167,16 +165,16 @@ describe('PeriodBasedReport', () => {
   });
 
   it('gets details about Microsoft Teams user activity by user for the given date', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake(async opts => {
       if (opts.url === `https://graph.microsoft.com/v1.0/reports/MockEndPoint(date=2019-07-13)`) {
-        return Promise.resolve(`
+        return `
         Report Refresh Date,User Principal Name,Last Activity Date,Is Deleted,Deleted Date,Assigned Products,Team Chat Message Count,Private Chat Message Count,Call Count,Meeting Count,Has Other Action,Report Period
         2019-08-14,abisha@contoso.onmicrosoft.com,,False,,,0,0,0,0,No,7
         2019-08-14,same@contoso.onmicrosoft.com,2019-05-22,False,,OFFICE 365 E3 DEVELOPER+MICROSOFT FLOW FREE,0,0,0,0,No,7
-        `);
+        `;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await mockCommand.action(logger, { options: { date: '2019-07-13' } });
@@ -185,7 +183,7 @@ describe('PeriodBasedReport', () => {
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
 
     await assert.rejects(mockCommand.action(logger, { options: { period: 'D7' } } as any),
       new CommandError('An error has occurred'));

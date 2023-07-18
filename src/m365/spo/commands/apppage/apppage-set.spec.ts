@@ -9,16 +9,22 @@ import Command, { CommandError } from "../../../../Command";
 import request from "../../../../request";
 import { sinonUtil } from "../../../../utils/sinonUtil";
 import commands from "../../commands";
+import { session } from "../../../../utils/session";
+import { pid } from "../../../../utils/pid";
 const command: Command = require("./apppage-set");
 
 describe(commands.APPPAGE_SET, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, "restoreAuth").callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, "trackEvent").callsFake(() => { });
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -36,19 +42,23 @@ describe(commands.APPPAGE_SET, () => {
         log.push(msg);
       }
     };
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
-    sinonUtil.restore([request.post]);
+    sinonUtil.restore([
+      request.post,
+      cli.getSettingWithDefaultValue
+    ]);
   });
 
   after(() => {
-    sinonUtil.restore([telemetry.trackEvent, auth.restoreAuth]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it("has correct name", () => {
-    assert.strictEqual(command.name.startsWith(commands.APPPAGE_SET), true);
+    assert.strictEqual(command.name, commands.APPPAGE_SET);
   });
 
   it("has a description", () => {
@@ -56,14 +66,14 @@ describe(commands.APPPAGE_SET, () => {
   });
 
   it("fails to update the single-part app page if request is rejected", async () => {
-    sinon.stub(request, "post").callsFake(opts => {
+    sinon.stub(request, "post").callsFake(async opts => {
       if (
         (opts.url as string).indexOf(`_api/sitepages/Pages/UpdateFullPageApp`) > -1 &&
         opts.data.serverRelativeUrl.indexOf("failme")
       ) {
-        return Promise.reject("Failed to update the single-part app page");
+        throw "Failed to update the single-part app page";
       }
-      return Promise.reject("Invalid request");
+      throw 'Invalid request';
     });
     await assert.rejects(command.action(logger,
       {
@@ -76,19 +86,19 @@ describe(commands.APPPAGE_SET, () => {
   });
 
   it("Update the single-part app pag", async () => {
-    sinon.stub(request, "post").callsFake(opts => {
+    sinon.stub(request, "post").callsFake(async opts => {
       if (
         (opts.url as string).indexOf(`_api/sitepages/Pages/UpdateFullPageApp`) > -1
       ) {
-        return Promise.resolve();
+        return;
       }
-      return Promise.reject("Invalid request");
+      throw 'Invalid request';
     });
     await command.action(logger,
       {
         options: {
           pageName: "demo",
-          webUrl: "https://contoso.sharepoint.com/",
+          webUrl: "https://contoso.sharepoint.com/teams/sales",
           webPartData: JSON.stringify({})
         }
       });

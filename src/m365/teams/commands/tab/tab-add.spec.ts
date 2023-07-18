@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./tab-add');
@@ -20,9 +21,10 @@ describe(commands.TAB_ADD, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -51,16 +53,12 @@ describe(commands.TAB_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TAB_ADD), true);
+    assert.strictEqual(command.name, commands.TAB_ADD);
   });
 
   it('fails validation if the teamId is not a valid guid.', async () => {
@@ -125,15 +123,15 @@ describe(commands.TAB_ADD, () => {
   });
 
   it('creates tab in channel within the Microsoft Teams team in the tenant', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://graph.microsoft.com/v1.0/teams/3b4797e5-bdf3-48e1-a552-839af71562ef`) > -1) {
-        return Promise.resolve({
+        return {
           "id": "19:f3dcbb1674574677abcae89cb626f1e6@thread.skype",
           "displayName": "testweb",
           "webUrl": "https://teams.microsoft.com/l/channel/19:f3dcbb1674574677abcae89cb626f1e6@thread.skype/"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -143,7 +141,7 @@ describe(commands.TAB_ADD, () => {
         channelId: '9:f3dcbb1674574677abcae89cb626f1e6@thread.skype',
         appId: 'com.microsoft.teamspace.tab.web',
         appName: 'testweb',
-        contentUrl: 'https://xxx.sharepoint.com/Shared%20Documents/'
+        contentUrl: 'https://contoso.sharepoint.com/Shared%20Documents/'
       }
     });
     assert(loggerLogSpy.calledWith({
@@ -154,15 +152,15 @@ describe(commands.TAB_ADD, () => {
   });
 
   it('creates tab in channel within the Microsoft Teams team in the tenant with all options', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://graph.microsoft.com/v1.0/teams/3b4797e5-bdf3-48e1-a552-839af71562ef`) > -1) {
-        return Promise.resolve({
+        return {
           "id": "19:f3dcbb1674574677abcae89cb626f1e6@thread.skype",
           "displayName": "testweb",
           "webUrl": "https://teams.microsoft.com/l/channel/19:f3dcbb1674574677abcae89cb626f1e6@thread.skype/"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -172,10 +170,10 @@ describe(commands.TAB_ADD, () => {
         channelId: '9:f3dcbb1674574677abcae89cb626f1e6@thread.skype',
         appId: 'com.microsoft.teamspace.tab.web',
         appName: 'testweb',
-        entityId: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        removeUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        contentUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        websiteUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
+        entityId: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        removeUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        contentUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        websiteUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
         unknown: 'unknown value'
       }
     });
@@ -187,15 +185,15 @@ describe(commands.TAB_ADD, () => {
   });
 
   it('ignores global options when creating request data', async () => {
-    const postStub: Sinon.SinonStub = sinon.stub(request, 'post').callsFake((opts) => {
+    const postStub: Sinon.SinonStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://graph.microsoft.com/v1.0/teams/3b4797e5-bdf3-48e1-a552-839af71562ef`) > -1) {
-        return Promise.resolve({
+        return {
           "id": "19:f3dcbb1674574677abcae89cb626f1e6@thread.skype",
           "displayName": "testweb",
           "webUrl": "https://teams.microsoft.com/l/channel/19:f3dcbb1674574677abcae89cb626f1e6@thread.skype/"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -207,30 +205,40 @@ describe(commands.TAB_ADD, () => {
         channelId: '9:f3dcbb1674574677abcae89cb626f1e6@thread.skype',
         appId: 'com.microsoft.teamspace.tab.web',
         appName: 'testweb',
-        entityId: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        removeUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        contentUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        websiteUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
+        entityId: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        removeUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        contentUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        websiteUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
         unknown: 'unknown value'
       }
     });
     assert.deepEqual(postStub.firstCall.args[0].data, {
       'teamsApp@odata.bind': 'https://graph.microsoft.com/v1.0/appCatalogs/teamsApps/com.microsoft.teamspace.tab.web',
       configuration: {
-        contentUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        entityId: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        removeUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
+        contentUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        entityId: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        removeUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
         unknown: 'unknown value',
-        websiteUrl: 'https://xxx.sharepoint.com/Shared%20Documents/'
+        websiteUrl: 'https://contoso.sharepoint.com/Shared%20Documents/'
       },
       displayName: 'testweb'
     });
   });
 
   it('correctly handles error when adding a tab', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject('An error has occurred');
-    });
+    const error = {
+      "error": {
+        "code": "UnknownError",
+        "message": "An error has occurred",
+        "innerError": {
+          "date": "2022-02-14T13:27:37",
+          "request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c",
+          "client-request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c"
+        }
+      }
+    };
+
+    sinon.stub(request, 'post').rejects(error);
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -238,8 +246,8 @@ describe(commands.TAB_ADD, () => {
         channelId: '19:eab8fda0837c48edb542574d419ff8ab@thread.skype/tabs',
         appId: 'com.microsoft.teamspace.tab.web',
         appName: 'testweb',
-        contentUrl: 'https://xxx.sharepoint.com/Shared%20Documents/',
-        websiteUrl: 'https://xxx.sharepoint.com/Shared%20Documents/'
+        contentUrl: 'https://contoso.sharepoint.com/Shared%20Documents/',
+        websiteUrl: 'https://contoso.sharepoint.com/Shared%20Documents/'
       }
     } as any), new CommandError('An error has occurred'));
   });

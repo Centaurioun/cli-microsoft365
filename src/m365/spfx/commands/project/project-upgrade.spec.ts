@@ -10,6 +10,7 @@ import Command, { CommandError } from '../../../../Command';
 import { fsUtil } from '../../../../utils/fsUtil';
 import { packageManager } from '../../../../utils/packageManager';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { Manifest, Project, VsCode } from './project-model';
@@ -33,6 +34,8 @@ describe(commands.PROJECT_UPGRADE, () => {
     trackEvent = sinon.stub(telemetry, 'trackEvent').callsFake((commandName) => {
       telemetryCommandName = commandName;
     });
+    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     project141webPartNoLib = (command as any).getProject(projectPath);
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -74,10 +77,7 @@ describe(commands.PROJECT_UPGRADE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
@@ -2579,7 +2579,7 @@ describe(commands.PROJECT_UPGRADE, () => {
 
     await command.action(logger, { options: { toVersion: '1.15.2', output: 'json' } } as any);
     const findings: FindingToReport[] = log[0];
-    assert.strictEqual(findings.length, 26);
+    assert.strictEqual(findings.length, 27);
   });
 
   it('e2e: shows correct number of findings for upgrading ace 1.15.0 project to 1.15.2', async () => {
@@ -2720,6 +2720,402 @@ describe(commands.PROJECT_UPGRADE, () => {
     await command.action(logger, { options: { toVersion: '1.16.1', output: 'json' } } as any);
     const findings: FindingToReport[] = log[0];
     assert.strictEqual(findings.length, 23);
+  });
+  //#endregion
+
+  //#region 1.16.1
+  it('e2e: shows correct number of findings for upgrading ace 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 17);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 16);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 18);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 17);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 18);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 18);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.16.1 project to 1.17.0', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1161-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.17.0', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 28);
+  });
+  //#endregion
+
+  //#region 1.17.0
+  it('e2e: shows correct number of findings for upgrading ace 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 9);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 10);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 12);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 12);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 12);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.17.0 project to 1.17.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1170-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.17.1', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 22);
+  });
+  //#endregion
+
+  //#region 1.17.1
+  it('e2e: shows correct number of findings for upgrading ace 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 14);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.17.1 project to 1.17.2', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1171-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.17.2', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 24);
+  });
+  //#endregion
+
+  //#region 1.17.2
+  it('e2e: shows correct number of findings for upgrading ace 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 9);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 14);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.17.2 project to 1.17.3', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1172-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.17.3', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 23);
+  });
+  //#endregion
+
+  //#region 1.17.3
+  it('e2e: shows correct number of findings for upgrading ace 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 9);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 10);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 12);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.17.3 project to 1.17.4', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1173-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.17.4', output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 22);
+  });
+  //#endregion
+
+  //#region 1.17.4
+  it('e2e: shows correct number of findings for upgrading ace 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-ace'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 11);
+  });
+
+  it('e2e: shows correct number of findings for upgrading application customizer 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-applicationcustomizer'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading field customizer react 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-fieldcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading form customizer react 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-formcustomizer-react'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading list view command set 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-listviewcommandset'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 13);
+  });
+
+  it('e2e: shows correct number of findings for upgrading no framework web part 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-webpart-nolib'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 15);
+  });
+
+  it('e2e: shows correct number of findings for upgrading react web part 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-webpart-react'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 16);
+  });
+
+  it('e2e: shows correct number of findings for upgrading web part with optional dependencies 1.17.4 project to 1.18.0-beta.1', async () => {
+    sinon.stub(command as any, 'getProjectRoot').callsFake(_ => path.join(process.cwd(), 'src/m365/spfx/commands/project/test-projects/spfx-1174-webpart-optionaldeps'));
+
+    await command.action(logger, { options: { toVersion: '1.18.0-beta.1', preview: true, output: 'json' } } as any);
+    const findings: FindingToReport[] = log[0];
+    assert.strictEqual(findings.length, 24);
   });
   //#endregion
 

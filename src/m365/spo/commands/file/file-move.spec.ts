@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -62,6 +63,7 @@ describe(commands.FILE_MOVE, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     sinon.stub(spo, 'getRequestDigest').callsFake(() => Promise.resolve({
       FormDigestValue: 'abc',
       FormDigestTimeoutSeconds: 1800,
@@ -101,13 +103,7 @@ describe(commands.FILE_MOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      global.setTimeout,
-      spo.getRequestDigest
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -120,7 +116,7 @@ describe(commands.FILE_MOVE, () => {
   });
 
   it('excludes options from URL processing', () => {
-    assert.deepStrictEqual((command as any).getExcludedOptionsWithUrls(), ['targetUrl']);
+    assert.deepStrictEqual((command as any).getExcludedOptionsWithUrls(), ['targetUrl', 'sourceUrl']);
   });
 
   it('should command complete successfully', async () => {
@@ -176,10 +172,7 @@ describe(commands.FILE_MOVE, () => {
     stubAllPostRequests();
     stubAllGetRequests();
     const fileDeleteError: any = {
-      error: {
-        message: 'does not exist'
-      },
-      stderr: ''
+      message: 'does not exist'
     };
 
     sinon.stub(Cli, 'executeCommand').returns(Promise.reject(fileDeleteError));
@@ -297,17 +290,6 @@ describe(commands.FILE_MOVE, () => {
         deleteIfAlreadyExists: true
       }
     } as any), new CommandError('error2'));
-  });
-
-  it('supports specifying URL', () => {
-    const options = command.options;
-    let containsTypeOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('<webUrl>') > -1) {
-        containsTypeOption = true;
-      }
-    });
-    assert(containsTypeOption);
   });
 
   it('fails validation if the webUrl option is not a valid SharePoint site URL', async () => {

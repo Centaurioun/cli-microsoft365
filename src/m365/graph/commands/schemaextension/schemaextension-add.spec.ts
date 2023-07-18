@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./schemaextension-add');
@@ -19,8 +20,10 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -49,16 +52,12 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SCHEMAEXTENSION_ADD), true);
+    assert.strictEqual(command.name, commands.SCHEMAEXTENSION_ADD);
   });
 
   it('has a description', () => {
@@ -66,9 +65,9 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
   });
 
   it('adds schema extension', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/schemaExtensions`) {
-        return Promise.resolve({
+        return {
           "id": "ext6kguklm2_TestSchemaExtension",
           "description": "Test Description",
           "targetTypes": [
@@ -86,10 +85,10 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
               "type": "String"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -123,9 +122,9 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
   });
 
   it('adds schema extension (debug)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/schemaExtensions`) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#schemaExtensions/$entity",
           "id": "ext6kguklm2_TestSchemaExtension",
           "description": "Test Description",
@@ -144,10 +143,10 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
               "type": "String"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -183,9 +182,7 @@ describe(commands.SCHEMAEXTENSION_ADD, () => {
   });
 
   it('handles error correctly', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject('An error has occurred');
-    });
+    sinon.stub(request, 'post').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, {
       options: {

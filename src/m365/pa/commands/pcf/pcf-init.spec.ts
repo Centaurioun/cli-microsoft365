@@ -8,22 +8,23 @@ import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import TemplateInstantiator from '../../template-instantiator';
 const command: Command = require('./pcf-init');
 
 describe(commands.PCF_INIT, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let trackEvent: any;
-  let telemetryCommandName: any;
 
   before(() => {
-    trackEvent = sinon.stub(telemetry, 'trackEvent').callsFake((commandName) => {
-      telemetryCommandName = commandName;
-    });
+    cli = Cli.getInstance();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -40,7 +41,7 @@ describe(commands.PCF_INIT, () => {
         log.push(msg);
       }
     };
-    telemetryCommandName = null;
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
@@ -48,33 +49,21 @@ describe(commands.PCF_INIT, () => {
       fs.readdirSync,
       TemplateInstantiator.instantiate,
       process.cwd,
-      path.basename
+      path.basename,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.PCF_INIT), true);
+    assert.strictEqual(command.name, commands.PCF_INIT);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('calls telemetry', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert(trackEvent.called);
-  });
-
-  it('logs correct telemetry event', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert.strictEqual(telemetryCommandName, commands.PCF_INIT);
   });
 
   it('supports specifying namespace', () => {
@@ -234,7 +223,7 @@ describe(commands.PCF_INIT, () => {
   });
 
   it('TemplateInstantiator.instantiate is called exactly twice', async () => {
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { name: 'Example1Name', namespace: 'Example1.Namespace', template: 'Field' } });
     assert(templateInstantiate.calledTwice);
@@ -243,12 +232,17 @@ describe(commands.PCF_INIT, () => {
   });
 
   it('TemplateInstantiator.instantiate is called exactly twice (verbose)', async () => {
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { name: 'Example1Name', namespace: 'Example1.Namespace', template: 'Field', verbose: true } });
     assert(templateInstantiate.calledTwice);
     assert(templateInstantiate.withArgs(logger, sinon.match.string, sinon.match.string, false, sinon.match.object, true).calledOnce);
     assert(templateInstantiate.withArgs(logger, sinon.match.string, sinon.match.string, true, sinon.match.object, true).calledOnce);
+  });
+
+  it('throws error when instantiate is called and fails', async () => {
+    sinon.stub(TemplateInstantiator, 'instantiate').throws(new Error('An error has occured'));
+    await assert.rejects(command.action(logger, { options: { name: 'Example1Name', namespace: 'Example1.Namespace', template: 'Field', verbose: true } }), new Error('An error has occured'));
   });
 
   it('supports verbose mode', () => {

@@ -5,6 +5,8 @@ import { Logger } from '../cli/Logger';
 import request from '../request';
 import { sinonUtil } from '../utils/sinonUtil';
 import { FormDigestInfo, spo } from '../utils/spo';
+import { formatting } from './formatting';
+import { RoleDefinition } from '../m365/spo/commands/roledefinition/RoleDefinition';
 
 const stubPostResponses: any = (
   folderAddResp: any = null
@@ -15,7 +17,7 @@ const stubPostResponses: any = (
         return folderAddResp;
       }
       else {
-        return Promise.resolve({ "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "4t4", "ProgID": null, "ServerRelativeUrl": "/sites/VelinDev/Shared Documents/4t4", "TimeCreated": "2018-10-26T22:50:27Z", "TimeLastModified": "2018-10-26T22:50:27Z", "UniqueId": "3f5428e2-b0a8-4d35-87df-89621ed5b457", "WelcomePage": "" });
+        return Promise.resolve({ "Exists": true, "IsWOPIEnabled": false, "ItemCount": 0, "Name": "4t4", "ProgID": null, "ServerRelativeUrl": "/sites/JohnDoe/Shared Documents/4t4", "TimeCreated": "2018-10-26T22:50:27Z", "TimeLastModified": "2018-10-26T22:50:27Z", "UniqueId": "3f5428e2-b0a8-4d35-87df-89621ed5b457", "WelcomePage": "" });
       }
 
     }
@@ -32,7 +34,7 @@ const stubGetResponses: any = (
         return getFolderByServerRelativeUrlResp;
       }
       else {
-        return Promise.resolve({ "Exists": true, "IsWOPIEnabled": false, "ItemCount": 1, "Name": "f", "ProgID": null, "ServerRelativeUrl": "/sites/VelinDev/Shared Documents/4t4/f", "TimeCreated": "2018-10-26T22:54:19Z", "TimeLastModified": "2018-10-26T22:54:20Z", "UniqueId": "0d680f20-53da-4516-b3f6-ed98b1d928e8", "WelcomePage": "" });
+        return Promise.resolve({ "Exists": true, "IsWOPIEnabled": false, "ItemCount": 1, "Name": "f", "ProgID": null, "ServerRelativeUrl": "/sites/JohnDoe/Shared Documents/4t4/f", "TimeCreated": "2018-10-26T22:54:19Z", "TimeLastModified": "2018-10-26T22:54:20Z", "UniqueId": "0d680f20-53da-4516-b3f6-ed98b1d928e8", "WelcomePage": "" });
       }
     }
     return Promise.reject('Invalid request');
@@ -77,9 +79,7 @@ describe('utils/spo', () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -260,6 +260,89 @@ describe('utils/spo', () => {
         done(e);
       }
     });
+  });
+
+  it('retrieves tenant app catalog url', async () => {
+    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/_api/SP_TenantSettings_Current') {
+        return Promise.resolve({ CorporateCatalogUrl: 'https://contoso.sharepoint.com/sites/appcatalog' });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+
+    const tenantAppCatalogUrl = await spo.getTenantAppCatalogUrl(logger, false);
+    assert.deepEqual(tenantAppCatalogUrl, 'https://contoso.sharepoint.com/sites/appcatalog');
+  });
+
+  it('returns null when tenant app catalog not configured', async () => {
+    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/_api/SP_TenantSettings_Current') {
+        return Promise.resolve({ CorporateCatalogUrl: null });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const tenantAppCatalogUrl = await spo.getTenantAppCatalogUrl(logger, false);
+    assert.deepEqual(tenantAppCatalogUrl, null);
+  });
+
+  it('handles error when retrieving SPO URL failed while retrieving tenant app catalog url', (done) => {
+    const errorMessage = 'Couldn\'t retrieve SharePoint URL';
+    auth.service.spoUrl = undefined;
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if ((opts.url as string).indexOf('/_api/SP_TenantSettings_Current') > -1) {
+        return Promise.reject('An error has occurred');
+      }
+
+      return Promise.reject(errorMessage);
+    });
+
+    spo
+      .getTenantAppCatalogUrl(logger, false)
+      .then(() => {
+        done('Expected error');
+      }, (err: string) => {
+        try {
+          assert.strictEqual(err, errorMessage);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      });
+  });
+
+  it('handles error when retrieving the tenant app catalog URL fails', (done) => {
+    const errorMessage = 'Couldn\'t retrieve tenant app catalog URL';
+    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if ((opts.url as string).indexOf('/_api/SP_TenantSettings_Current') > -1) {
+        return Promise.reject(errorMessage);
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    spo
+      .getTenantAppCatalogUrl(logger, false)
+      .then(() => {
+        done('Expected error');
+      }, (err: string) => {
+        try {
+          assert.strictEqual(err, errorMessage);
+          done();
+        }
+        catch (e) {
+          done(e);
+        }
+      });
   });
 
   it('retrieves SPO URL from MS Graph when not retrieved previously', (done) => {
@@ -727,5 +810,301 @@ describe('utils/spo', () => {
       }, (err: any) => {
         done(err);
       });
+  });
+
+  //#region Custom Action Mock Responses
+  const customActionOnSiteResponse1 = { "ClientSideComponentId": "d1e5e0d6-109d-40c4-a53e-924073fe9bbd", "ClientSideComponentProperties": "{\"testMessage\":\"Test message\"}", "CommandUIExtension": null, "Description": null, "Group": null, "Id": "a6c7bef2-42d5-405c-a89f-6e36b3c302b3", "ImageUrl": null, "Location": "ClientSideExtension.ApplicationCustomizer", "Name": "YourName", "RegistrationId": null, "RegistrationType": 0, "Rights": { "High": "0", "Low": "0" }, "Scope": 2, "ScriptBlock": null, "ScriptSrc": null, "Sequence": 0, "Title": "YourAppCustomizer", "Url": null, "VersionOfUserCustomAction": "16.0.1.0" };
+  const customActionOnSiteResponse2 = { "ClientSideComponentId": "230edcf5-2df5-480f-9707-ae1118726912", "ClientSideComponentProperties": "{\"testMessage\":\"Test message\"}", "CommandUIExtension": null, "Description": null, "Group": null, "Id": "06d3eebb-6e30-4346-aecd-f84a342a9316", "ImageUrl": null, "Location": "ClientSideExtension.ApplicationCustomizer", "Name": "YourName", "RegistrationId": null, "RegistrationType": 0, "Rights": { "High": "0", "Low": "0" }, "Scope": 2, "ScriptBlock": null, "ScriptSrc": null, "Sequence": 0, "Title": "YourAppCustomizer", "Url": null, "VersionOfUserCustomAction": "16.0.1.0" };
+  const customActionOnWebResponse1 = { "ClientSideComponentId": "b41916e7-e69d-467f-b37f-ff8ecf8f99f2", "ClientSideComponentProperties": "{\"testMessage\":\"Test message\"}", "CommandUIExtension": null, "Description": null, "Group": null, "Id": "8b86123a-3194-49cf-b167-c044b613a48a", "ImageUrl": null, "Location": "ClientSideExtension.ApplicationCustomizer", "Name": "YourName", "RegistrationId": null, "RegistrationType": 0, "Rights": { "High": "0", "Low": "0" }, "Scope": 3, "ScriptBlock": null, "ScriptSrc": null, "Sequence": 0, "Title": "YourAppCustomizer", "Url": null, "VersionOfUserCustomAction": "16.0.1.0" };
+  const customActionOnWebResponse2 = { "ClientSideComponentId": "a405a600-7a21-49e7-9964-5e8b010b9eec", "ClientSideComponentProperties": "{\"testMessage\":\"Test message\"}", "CommandUIExtension": null, "Description": null, "Group": null, "Id": "9115bb61-d9f1-4ed4-b7b7-e5d1834e60f5", "ImageUrl": null, "Location": "ClientSideExtension.ApplicationCustomizer", "Name": "YourName", "RegistrationId": null, "RegistrationType": 0, "Rights": { "High": "0", "Low": "0" }, "Scope": 3, "ScriptBlock": null, "ScriptSrc": null, "Sequence": 0, "Title": "YourAppCustomizer", "Url": null, "VersionOfUserCustomAction": "16.0.1.0" };
+
+  const customActionsOnSiteResponse = [customActionOnSiteResponse1, customActionOnSiteResponse2];
+  const customActionsOnWebResponse = [customActionOnWebResponse1, customActionOnWebResponse2];
+  //#endregion
+
+  it(`returns a list of custom actions with scope 'All'`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
+        return Promise.resolve({ value: customActionsOnSiteResponse });
+      }
+      else if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
+        return Promise.resolve({ value: customActionsOnWebResponse });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'All');
+    assert.deepEqual(customActions, [
+      ...customActionsOnSiteResponse,
+      ...customActionsOnWebResponse
+    ]);
+  });
+
+  it(`returns a list of custom actions with scope 'Site'`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
+        return Promise.resolve({ value: customActionsOnSiteResponse });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Site');
+    assert.deepEqual(customActions, customActionsOnSiteResponse);
+  });
+
+  it(`returns a list of custom actions with scope 'Web'`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
+        return Promise.resolve({ value: customActionsOnWebResponse });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Web');
+    assert.deepEqual(customActions, customActionsOnWebResponse);
+  });
+
+  it(`returns a list of custom actions with scope 'Web' with a filter`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf(`/_api/Web/UserCustomActions?$filter=ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'`) > -1) {
+        return Promise.resolve({ value: [customActionOnWebResponse1] });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Web', `ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'`);
+    assert.deepEqual(customActions, [customActionOnWebResponse1]);
+  });
+
+  it(`retrieves a custom action by id with scope 'All'`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf(`/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+        return Promise.resolve(customActionOnSiteResponse1);
+      }
+      else if ((opts.url as string).indexOf(`/_api/Web/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+        return Promise.resolve({ 'odata.null': true });
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customAction = await spo.getCustomActionById('https://contoso.sharepoint.com/sites/sales', 'd1e5e0d6-109d-40c4-a53e-924073fe9bbd');
+    assert.deepEqual(customAction, customActionOnSiteResponse1);
+  });
+
+  it(`retrieves a custom action by id with scope 'Site'`, async () => {
+    sinon.stub(request, 'get').callsFake((opts) => {
+      if ((opts.url as string).indexOf(`/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+        return Promise.resolve(customActionOnSiteResponse1);
+      }
+
+      return Promise.reject('Invalid request');
+    });
+
+    const customAction = await spo.getCustomActionById('https://contoso.sharepoint.com/sites/sales', 'd1e5e0d6-109d-40c4-a53e-924073fe9bbd', 'Site');
+    assert.deepEqual(customAction, customActionOnSiteResponse1);
+  });
+
+  it(`retrieves Azure AD ID by SPO user ID sucessfully`, async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/siteusers/GetById('9')?$select=AadObjectId`) {
+        return {
+          AadObjectId: {
+            NameId: '6cc1797e-5463-45ec-bb1a-b93ec198bab6',
+            NameIdIssuer: 'urn:federation:microsoftonline'
+          }
+        };
+      }
+
+      throw 'Invalid request';
+    });
+
+    const customAction = await spo.getUserAzureIdBySpoId('https://contoso.sharepoint.com/sites/sales', '9');
+    assert.deepEqual(customAction, '6cc1797e-5463-45ec-bb1a-b93ec198bab6');
+  });
+
+  it(`retrieves spo user by email sucessfully`, async () => {
+    const userResponse = {
+      Id: 11,
+      IsHiddenInUI: false,
+      LoginName: 'i:0#.f|membership|john.doe@contoso.com',
+      Title: 'John Doe',
+      PrincipalType: 1,
+      Email: 'john.doe@contoso.com',
+      Expiration: '',
+      IsEmailAuthenticationGuestUser: false,
+      IsShareByEmailGuestUser: false,
+      IsSiteAdmin: false,
+      UserId: {
+        NameId: '10032002473c5ae3',
+        NameIdIssuer: 'urn:federation:microsoftonline'
+      },
+      UserPrincipalName: 'john.doe@contoso.com'
+    };
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/siteusers/GetByEmail('${formatting.encodeQueryParameter('john.doe@contoso.com')}')`) {
+        return userResponse;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const user = await spo.getUserByEmail('https://contoso.sharepoint.com/sites/sales', 'john.doe@contoso.com', logger, true);
+    assert.deepEqual(user, userResponse);
+  });
+
+  it(`throws error retrieving a custom action by id with a wrong scope value`, async () => {
+    try {
+      await spo.getCustomActionById('https://contoso.sharepoint.com/sites/sales', 'd1e5e0d6-109d-40c4-a53e-924073fe9bbd', 'Invalid');
+      assert.fail('Expected an error to be thrown');
+    }
+    catch (e) {
+      assert.deepEqual(e, `Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.`);
+    }
+  });
+
+  it(`throws error retrieving a list of custom actions with a wrong scope value`, async () => {
+    try {
+      await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Invalid');
+      assert.fail('Expected an error to be thrown');
+    }
+    catch (e) {
+      assert.deepEqual(e, `Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.`);
+    }
+  });
+
+  //#region Navigation menu state responses
+  const topNavigationResponse = { 'AudienceIds': [], 'FriendlyUrlPrefix': '', 'IsAudienceTargetEnabledForGlobalNav': false, 'Nodes': [{ 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2039', 'Nodes': [{ 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2041', 'Nodes': [], 'NodeType': 0, 'OpenInNewWindow': true, 'SimpleUrl': '/sites/PnPCoreSDKTestGroup', 'Title': 'Sub level 1', 'Translations': [] }], 'NodeType': 0, 'OpenInNewWindow': null, 'SimpleUrl': '/sites/PnPCoreSDKTestGroup', 'Title': 'Site A', 'Translations': [] }, { 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2040', 'Nodes': [], 'NodeType': 0, 'OpenInNewWindow': true, 'SimpleUrl': '/sites/PnPCoreSDKTestGroup', 'Title': 'Site B', 'Translations': [] }, { 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2001', 'Nodes': [], 'NodeType': 0, 'OpenInNewWindow': true, 'SimpleUrl': '/sites/team-a/sitepages/about.aspx', 'Title': 'About', 'Translations': [] }], 'SimpleUrl': '', 'SPSitePrefix': '/sites/SharePointDemoSite', 'SPWebPrefix': '/sites/SharePointDemoSite', 'StartingNodeKey': '1025', 'StartingNodeTitle': 'Quick launch', 'Version': '2023-03-09T18:33:53.5468097Z' };
+  const quickLaunchResponse = { 'AudienceIds': [], 'FriendlyUrlPrefix': '', 'IsAudienceTargetEnabledForGlobalNav': false, 'Nodes': [{ 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2003', 'Nodes': [{ 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2006', 'Nodes': [], 'NodeType': 0, 'OpenInNewWindow': null, 'SimpleUrl': '/sites/SharePointDemoSite#/', 'Title': 'Sub Item', 'Translations': [] }], 'NodeType': 0, 'OpenInNewWindow': true, 'SimpleUrl': 'http://google.be', 'Title': 'Site A', 'Translations': [] }, { 'AudienceIds': [], 'CurrentLCID': 1033, 'CustomProperties': [], 'FriendlyUrlSegment': '', 'IsDeleted': false, 'IsHidden': false, 'IsTitleForExistingLanguage': false, 'Key': '2018', 'Nodes': [], 'NodeType': 0, 'OpenInNewWindow': null, 'SimpleUrl': 'https://google.be', 'Title': 'Site B', 'Translations': [] }], 'SimpleUrl': '', 'SPSitePrefix': '/sites/SharePointDemoSite', 'SPWebPrefix': '/sites/SharePointDemoSite', 'StartingNodeKey': '1002', 'StartingNodeTitle': 'SharePoint Top Navigation Bar', 'Version': '2023-03-09T18:34:53.650545Z' };
+  const webUrl = 'https://contoso.sharepoint.com/sites/sales';
+  //#endregion
+
+  it(`retrieves the quick launch navigation response`, async () => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
+        return quickLaunchResponse;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const quickLaunch = await spo.getQuickLaunchMenuState(webUrl);
+    assert.deepEqual(quickLaunch, quickLaunchResponse);
+  });
+
+  it(`retrieves the top navigation response`, async () => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
+        return topNavigationResponse;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const topNavigation = await spo.getTopNavigationMenuState(webUrl);
+    assert.deepEqual(topNavigation, topNavigationResponse);
+  });
+
+  it(`saves the menu state for the top navigation`, async () => {
+    const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
+        return topNavigationResponse;
+      }
+
+      if (opts.url === `${webUrl}/_api/navigation/SaveMenuState`) {
+        return;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const topNavigation = await spo.getTopNavigationMenuState(webUrl);
+    await spo.saveMenuState(webUrl, topNavigation);
+    assert.deepStrictEqual(postStub.lastCall.args[0].data, { menuState: topNavigation });
+  });
+
+  it(`retrieves spo group by name sucessfully`, async () => {
+    const groupResponse = {
+      Id: 11,
+      IsHiddenInUI: false,
+      LoginName: "groupname",
+      Title: "groupname",
+      PrincipalType: 8,
+      AllowMembersEditMembership: false,
+      AllowRequestToJoinLeave: false,
+      AutoAcceptRequestToJoinLeave: false,
+      Description: "",
+      OnlyAllowMembersViewMembership: true,
+      OwnerTitle: "John Doe",
+      RequestToJoinLeaveEmailSetting: null
+    };
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/sitegroups/GetByName('${formatting.encodeQueryParameter('groupname')}')`) {
+        return groupResponse;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const group = await spo.getGroupByName('https://contoso.sharepoint.com/sites/sales', 'groupname', logger, true);
+    assert.deepEqual(group, groupResponse);
+  });
+
+  it(`retrieves roledefinition by name sucessfully`, async () => {
+    const roledefinitionResponse: RoleDefinition = {
+      BasePermissions: {
+        High: 176,
+        Low: 138612833
+      },
+      Description: "Can view pages and list items and download documents.",
+      Hidden: false,
+      Id: 1073741827,
+      Name: "Read",
+      Order: 128,
+      RoleTypeKind: 2,
+      BasePermissionsValue: [
+        "ViewListItems",
+        "OpenItems",
+        "ViewVersions",
+        "ViewFormPages",
+        "Open",
+        "ViewPages",
+        "CreateSSCSite",
+        "BrowseUserInfo",
+        "UseClientIntegration",
+        "UseRemoteAPIs",
+        "CreateAlerts"
+      ],
+      RoleTypeKindValue: "Reader"
+    };
+
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions`) {
+        return { value: [roledefinitionResponse] };
+      }
+
+      throw 'Invalid request';
+    });
+
+    const roledefintion = await spo.getRoleDefinitionByName('https://contoso.sharepoint.com/sites/sales', 'Read', logger, true);
+    assert.deepEqual(roledefintion, roledefinitionResponse);
+  });
+
+  it(`handles error when no roledefinition by name is found`, async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions`) {
+        return { value: [] };
+      }
+
+      throw 'Invalid request';
+    });
+
+    await assert.rejects(spo.getRoleDefinitionByName('https://contoso.sharepoint.com/sites/sales', 'Read', logger, true), 'An error occured');
   });
 });

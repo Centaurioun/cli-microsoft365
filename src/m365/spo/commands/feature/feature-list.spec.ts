@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./feature-list');
@@ -19,8 +20,10 @@ describe(commands.FEATURE_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -48,16 +51,12 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.FEATURE_LIST), true);
+    assert.strictEqual(command.name, commands.FEATURE_LIST);
   });
 
   it('has a description', () => {
@@ -65,9 +64,9 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('retrieves available features from site collection', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               DefinitionId: "3019c9b4-e371-438d-98f6-0a08c34d06eb",
@@ -78,10 +77,10 @@ describe(commands.FEATURE_LIST, () => {
               DisplayName: "Ratings"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -104,9 +103,9 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('retrieves available features from site', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               DefinitionId: "3019c9b4-e371-438d-98f6-0a08c34d06eb",
@@ -117,10 +116,10 @@ describe(commands.FEATURE_LIST, () => {
               DisplayName: "Ratings"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -143,13 +142,13 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('retrieves available features from site (default) when no scope is entered', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.reject('Invalid request');
+        throw 'Invalid request';
       }
 
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               DefinitionId: "3019c9b4-e371-438d-98f6-0a08c34d06eb",
@@ -160,10 +159,10 @@ describe(commands.FEATURE_LIST, () => {
               DisplayName: "Ratings"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -185,9 +184,9 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('returns all properties for output JSON', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "odata.type": "SP.Feature",
@@ -204,10 +203,10 @@ describe(commands.FEATURE_LIST, () => {
               "DisplayName": "Ratings"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -238,12 +237,12 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('correctly handles no features in site collection', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve(JSON.stringify({ value: [] }));
+        return JSON.stringify({ value: [] });
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -256,12 +255,12 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('correctly handles no features in site', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve(JSON.stringify({ value: [] }));
+        return JSON.stringify({ value: [] });
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -274,12 +273,12 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('correctly handles no features in site collection (verbose)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve(JSON.stringify({ value: [] }));
+        return JSON.stringify({ value: [] });
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -302,12 +301,12 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('correctly handles no features in site (verbose)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve(JSON.stringify({ value: [] }));
+        return JSON.stringify({ value: [] });
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -331,12 +330,12 @@ describe(commands.FEATURE_LIST, () => {
 
   it('correctly handles web feature reject request', async () => {
     const err = 'Invalid web Features reject request';
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -349,12 +348,12 @@ describe(commands.FEATURE_LIST, () => {
 
   it('correctly handles site Features reject request', async () => {
     const err = 'Invalid site Features reject request';
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -378,18 +377,18 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('retrieves all Web features', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Web/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               DefinitionId: "00bfea71-5932-4f9c-ad71-1557e5751100",
               DisplayName: "WebPageLibrary"
             }]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/abc', scope: 'Web' } });
@@ -402,19 +401,19 @@ describe(commands.FEATURE_LIST, () => {
   });
 
   it('retrieves all site features', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/Site/Features?$select=DisplayName,DefinitionId') > -1) {
-        return Promise.resolve({
+        return {
           value: [
             {
               DefinitionId: "3019c9b4-e371-438d-98f6-0a08c34d06eb",
               DisplayName: "TenantSitesList"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/abc', scope: 'Site' } });

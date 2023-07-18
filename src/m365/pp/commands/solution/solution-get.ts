@@ -1,7 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { powerPlatform } from '../../../../utils/powerPlatform';
 import { validation } from '../../../../utils/validation';
 import PowerPlatformCommand from '../../../base/PowerPlatformCommand';
@@ -95,7 +95,7 @@ class PpSolutionGetCommand extends PowerPlatformCommand {
       const dynamicsApiUrl = await powerPlatform.getDynamicsInstanceApiUrl(args.options.environment, args.options.asAdmin);
       const res = await this.getSolution(dynamicsApiUrl, args.options);
 
-      if (!args.options.output || args.options.output === 'json') {
+      if (!args.options.output || !Cli.shouldTrimOutput(args.options.output)) {
         logger.log(res);
       }
       else {
@@ -113,7 +113,7 @@ class PpSolutionGetCommand extends PowerPlatformCommand {
   }
 
   private async getSolution(dynamicsApiUrl: string, options: Options): Promise<Solution> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       headers: {
         accept: 'application/json;odata.metadata=none'
       },

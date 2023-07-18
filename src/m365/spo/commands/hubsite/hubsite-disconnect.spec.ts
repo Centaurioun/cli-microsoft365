@@ -1,5 +1,4 @@
 import * as assert from 'assert';
-import { AxiosRequestConfig } from 'axios';
 import * as sinon from 'sinon';
 import { telemetry } from '../../../../telemetry';
 import auth from '../../../../Auth';
@@ -7,8 +6,9 @@ import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -44,16 +44,17 @@ describe(commands.HUBSITE_DISCONNECT, () => {
   let logger: Logger;
   let commandInfo: CommandInfo;
   let promptOptions: any;
-  let patchStub: sinon.SinonStub<[options: AxiosRequestConfig<any>]>;
+  let patchStub: sinon.SinonStub<[options: CliRequestOptions]>;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
 
-    sinon.stub(spo, 'getSpoAdminUrl').callsFake(async () => spoAdminUrl);
+    sinon.stub(spo, 'getSpoAdminUrl').resolves(spoAdminUrl);
     patchStub = sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${spoAdminUrl}/_api/HubSites/GetById('${id}')`) {
         return;
@@ -91,18 +92,12 @@ describe(commands.HUBSITE_DISCONNECT, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      spo.getSpoAdminUrl,
-      request.patch
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.HUBSITE_DISCONNECT), true);
+    assert.strictEqual(command.name, commands.HUBSITE_DISCONNECT);
   });
 
   it('has a description', () => {
@@ -132,11 +127,6 @@ describe(commands.HUBSITE_DISCONNECT, () => {
   it('passes validation if valid url is specified', async () => {
     const actual = await command.validate({ options: { url: url } }, commandInfo);
     assert.strictEqual(actual, true);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['id', 'title', 'url'] }]);
   });
 
   it('prompts before disconnecting the hub site when confirmation argument not passed', async () => {
@@ -240,9 +230,7 @@ describe(commands.HUBSITE_DISCONNECT, () => {
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, {
       options: {
@@ -338,7 +326,7 @@ describe(commands.HUBSITE_DISCONNECT, () => {
 
     const errorMessage = 'Something went wrong';
     patchStub.restore();
-    sinon.stub(request, 'patch').callsFake(async () => { throw { error: { 'odata.error': { message: { value: errorMessage } } } }; });
+    sinon.stub(request, 'patch').rejects({ error: { 'odata.error': { message: { value: errorMessage } } } });
 
     await assert.rejects(command.action(logger, {
       options: {

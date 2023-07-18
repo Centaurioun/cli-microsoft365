@@ -5,9 +5,9 @@ import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./task-checklistitem-add');
@@ -36,9 +36,10 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -47,7 +48,6 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   });
 
   beforeEach(() => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     log = [];
     logger = {
       log: (msg: string) => {
@@ -67,23 +67,18 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   afterEach(() => {
     sinonUtil.restore([
       request.get,
-      request.patch,
-      accessToken.isAppOnlyAccessToken
+      request.patch
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TASK_CHECKLISTITEM_ADD), true);
+    assert.strictEqual(command.name, commands.TASK_CHECKLISTITEM_ADD);
   });
 
   it('has a description', () => {
@@ -95,19 +90,19 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   });
 
   it('correctly adds checklist item', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve(taskDetailsResponse);
+        return taskDetailsResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve(taskDetailsWithChecklistResponse);
+        return taskDetailsWithChecklistResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await command.action(logger, {
@@ -121,19 +116,19 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   });
 
   it('correctly adds checklist item with text output', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve(taskDetailsResponse);
+        return taskDetailsResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve(taskDetailsWithChecklistResponse);
+        return taskDetailsWithChecklistResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await command.action(logger, {
@@ -147,19 +142,19 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   });
 
   it('fails when unexpected API error was thrown', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve(taskDetailsResponse);
+        return taskDetailsResponse;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.reject('Something went wrong.');
+        throw 'Something went wrong.';
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -171,12 +166,12 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
   });
 
   it('fails when Planner task does not exist', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.reject('The request item is not found.');
+        throw 'The request item is not found.';
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -184,18 +179,6 @@ describe(commands.TASK_CHECKLISTITEM_ADD, () => {
         taskId: validTaskId,
         title: validTitle
       }
-    }), new CommandError('Planner task was not found.'));
-  });
-
-  it('fails validation when using app only access token', async () => {
-    sinonUtil.restore(accessToken.isAppOnlyAccessToken);
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
-
-    await assert.rejects(command.action(logger, {
-      options: {
-        name: 'My Planner Bucket',
-        planId: 'iVPMIgdku0uFlou-KLNg6MkAE1O2'
-      }
-    }), new CommandError('This command does not support application permissions.'));
+    }), new CommandError('The request item is not found.'));
   });
 });

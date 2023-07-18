@@ -1,30 +1,38 @@
+import chalk = require('chalk');
 import * as fs from 'fs';
 import { EOL } from 'os';
 import * as path from 'path';
 
 function convertTitle(md: string): string {
   return md.replace(/^#\s+(.*)/gm, (match, title: string) => {
-    return title.toLocaleUpperCase() + EOL + Array(title.length + 1).join('=');
+    return chalk.bold(title.toLocaleUpperCase()) + EOL + Array(title.length + 1).join('=');
   });
 }
 
 function convertHeadings(md: string): string {
   return md.replace(/^(#+)\s+(.*)/gm, (match, level, content: string) => {
-    return `${EOL}${content.toLocaleUpperCase()}`;
+    return `${EOL}${chalk.bold(content.toLocaleUpperCase())}`;
   });
 }
 
 function convertAdmonitions(md: string): string {
-  const regex = new RegExp('^!!!\\s(.*)' + EOL + '\\s+', 'gm');
-  return md.replace(regex, (match, content: string) => {
-    return content.toLocaleUpperCase() + EOL + EOL;
-  });
+  const regex = new RegExp(/^:::(\w+)([\s\S]*?):::$/, 'gm');
+  return md.replace(regex, (_, label: string, content: string) => label.toLocaleUpperCase() + EOL + EOL + content.trim());
 }
 
 function includeContent(md: string, rootFolder: string): string {
-  return md.replace(/^--8<-- "([^"]+)"/gm, (match, filePath: string) => {
-    return fs.readFileSync(path.join(rootFolder, filePath), 'utf8');
+  const mdxImports = [
+    { tag: "<Global />", location: "docs/cmd/_global.mdx" },
+    { tag: "<CLISettings />", location: "docs/_clisettings.mdx" }
+  ];
+
+  mdxImports.forEach(mdxImport => {
+    md = md.replace(mdxImport.tag, () =>
+      fs.readFileSync(path.join(rootFolder, mdxImport.location), 'utf8')
+    ).replace(/(```\r\n)\r\n(```md definition-list\r\n)/g, "$1$2");
   });
+
+  return md;
 }
 
 function convertDd(md: string): string {
@@ -34,7 +42,7 @@ function convertDd(md: string): string {
 }
 
 function convertHyperlinks(md: string): string {
-  return md.replace(/\[([^\]]+)\]\(([^\)]+)\)/gm, (match, label: string, url: string) => {
+  return md.replace(/(?!\[1m)(?!\[22m)\[([^\]]+)\]\(([^\)]+)\)/gm, (match, label: string, url: string) => {
     // if the link is the same as the content, return just the link
     if (label === url) {
       return url;
@@ -52,10 +60,11 @@ function convertHyperlinks(md: string): string {
 }
 
 function convertContentTabs(md: string): string {
-  const regex = new RegExp('^=== "(.+?)"(?:\r\n|\n){2}((?:^    (?:.*?(?:\r\n|\n))?)+)', 'gms');
-  return md.replace(regex, (match, title: string, content: string) => {
-    return `  ${title}${EOL}${EOL}${content.replace(/^    /gms, '')}`;
-  });
+  return md
+    .replace(/<TabItem value="([^"]+)">/gm, '$1')
+    .replace(/.*<\/?(Tabs|TabItem)>.*\n?/g, '')
+    .replace(/```(?:\w+)?\s*([\s\S]*?)\s*```/g, '$1')
+    .trim();
 }
 
 function convertCodeFences(md: string): string {
@@ -75,6 +84,14 @@ function removeTooManyEmptyLines(md: string): string {
   return md.replace(regex, Array(4).join(EOL));
 }
 
+function removeFrontmatter(md: string): string {
+  return md.replace(/^---[\s\S]*?---/gm, '').trim();
+}
+
+function removeImports(md: string): string {
+  return md.replace(/^import .+;$/gms, '').trim();
+}
+
 function escapeMd(mdString: string | undefined): string | undefined {
   if (!mdString) {
     return mdString;
@@ -91,10 +108,12 @@ const convertFunctions = [
   convertAdmonitions,
   convertDd,
   convertHyperlinks,
-  convertContentTabs,
   convertCodeFences,
+  convertContentTabs,
   removeInlineMarkup,
-  removeTooManyEmptyLines
+  removeTooManyEmptyLines,
+  removeFrontmatter,
+  removeImports
 ];
 
 export const md = {

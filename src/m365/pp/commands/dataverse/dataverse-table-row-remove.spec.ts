@@ -8,6 +8,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { telemetry } from '../../../../telemetry';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { powerPlatform } from '../../../../utils/powerPlatform';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
@@ -32,9 +33,10 @@ describe(commands.DATAVERSE_TABLE_ROW_REMOVE, () => {
   let loggerLogToStderrSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -71,11 +73,7 @@ describe(commands.DATAVERSE_TABLE_ROW_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 

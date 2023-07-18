@@ -8,6 +8,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./business-get');
@@ -31,9 +32,11 @@ describe(commands.BUSINESS_GET, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
+
     auth.service.connected = true;
   });
 
@@ -61,26 +64,17 @@ describe(commands.BUSINESS_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.BUSINESS_GET), true);
+    assert.strictEqual(command.name, commands.BUSINESS_GET);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['id', 'name'] }]);
   });
 
   it('defines correct properties for the text output', () => {
@@ -88,12 +82,12 @@ describe(commands.BUSINESS_GET, () => {
   });
 
   it('gets business by id', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/${formatting.encodeQueryParameter(validId)}`) {
-        return Promise.resolve(businessResponse);
+        return businessResponse;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: validId } });
@@ -101,16 +95,16 @@ describe(commands.BUSINESS_GET, () => {
   });
 
   it('gets business by title', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses`) {
-        return Promise.resolve({ value: [businessResponse] });
+        return { value: [businessResponse] };
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses/${formatting.encodeQueryParameter(validId)}`) {
-        return Promise.resolve(businessResponse);
+        return businessResponse;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { name: validName } });
@@ -118,36 +112,36 @@ describe(commands.BUSINESS_GET, () => {
   });
 
   it('fails when multiple businesses found with same name', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses`) {
-        return Promise.resolve({ value: [businessResponse, businessResponse] });
+        return { value: [businessResponse, businessResponse] };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { name: validName } } as any), new CommandError(`Multiple businesses with name ${validName} found. Please disambiguate: ${validId}, ${validId}`));
   });
 
   it('fails when no business found with name', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses`) {
-        return Promise.resolve({ value: [] });
+        return { value: [] };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { name: validName } } as any), new CommandError(`The specified business with name ${validName} does not exist.`));
   });
 
   it('fails when no business found with name because of an empty displayName', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/solutions/bookingBusinesses`) {
-        return Promise.resolve({ value: [{ 'displayName': null }] });
+        return { value: [{ 'displayName': null }] };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { name: validName } } as any), new CommandError(`The specified business with name ${validName} does not exist.`));
@@ -155,7 +149,7 @@ describe(commands.BUSINESS_GET, () => {
 
   it('correctly handles random API error', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
   });

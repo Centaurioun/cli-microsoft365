@@ -8,11 +8,13 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./file-sharinginfo-get');
 
 describe(commands.FILE_SHARINGINFO_GET, () => {
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
@@ -463,9 +465,11 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -485,26 +489,24 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
     };
     loggerLogSpy = sinon.spy(logger, 'log');
     loggerLogToStderrSpy = sinon.spy(logger, 'logToStderr');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
-      request.post
+      request.post,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.FILE_SHARINGINFO_GET), true);
+    assert.strictEqual(command.name, commands.FILE_SHARINGINFO_GET);
   });
 
   it('has a description', () => {
@@ -516,13 +518,22 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
   });
 
   it('command correctly handles file get reject request', async () => {
-    const err = 'Invalid request';
-    sinon.stub(request, 'get').callsFake((opts) => {
+    const error = {
+      error: {
+        'odata.error': {
+          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
+          }
+        }
+      }
+    };
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById') > -1) {
-        return Promise.reject(err);
+        throw error;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -531,13 +542,13 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
         webUrl: 'https://contoso.sharepoint.com',
         fileId: 'f09c4efe-b8c0-4e89-a166-03418661b89b'
       }
-    }), new CommandError(err));
+    }), new CommandError(error.error['odata.error'].message.value));
   });
 
   it('Retrieves Sharing Information When Site ID is Passed - JSON Output', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById') > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "ParentList": {
               "Title": "Documents"
@@ -545,18 +556,18 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
             "Id": 2,
             "ID": 2
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle') > -1) {
-        return Promise.resolve(JSONOuput);
+        return JSONOuput;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -570,9 +581,9 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
   });
 
   it('Retrieves Sharing Information When document URL is Passed - JSON Output (Debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileByServerRelativePath') > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "ParentList": {
               "Title": "Documents"
@@ -580,18 +591,18 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
             "Id": 2,
             "ID": 2
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle') > -1) {
-        return Promise.resolve(JSONOuput);
+        return JSONOuput;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -606,9 +617,9 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
   });
 
   it('Retrieves Sharing Information When Site ID is Passed - Text Output (Debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/GetFileById') > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "ParentList": {
               "Title": "Documents"
@@ -616,18 +627,18 @@ describe(commands.FILE_SHARINGINFO_GET, () => {
             "Id": 2,
             "ID": 2
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle') > -1) {
-        return Promise.resolve(JSONOuput);
+        return JSONOuput;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {

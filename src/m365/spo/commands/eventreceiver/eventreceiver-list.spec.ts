@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./eventreceiver-list');
@@ -46,9 +47,10 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -77,16 +79,12 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.EVENTRECEIVER_LIST), true);
+    assert.strictEqual(command.name, commands.EVENTRECEIVER_LIST);
   });
 
   it('has a description', () => {
@@ -153,9 +151,9 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('correctly handles list not found', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/lists/getByTitle('Documents')/eventreceivers`) > -1) {
-        return Promise.reject({
+        throw {
           error: {
             "odata.error": {
               "code": "-1, System.ArgumentException",
@@ -165,10 +163,10 @@ describe(commands.EVENTRECEIVER_LIST, () => {
               }
             }
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, webUrl: 'https://contoso.sharepoint.com/sites/portal', listTitle: 'Documents' } } as any),
@@ -176,11 +174,11 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('retrieves all web event receivers', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/eventreceivers`) > -1) {
-        return Promise.resolve(eventReceiverValue);
+        return eventReceiverValue;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal' } });
@@ -188,11 +186,11 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('retrieves all site event receivers', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/site/eventreceivers`) > -1) {
-        return Promise.resolve(eventReceiverValue);
+        return eventReceiverValue;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', scope: 'site' } });
@@ -200,11 +198,11 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('retrieves all list event receivers queried by title', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/lists/getByTitle('Documents')/eventreceivers`) > -1) {
-        return Promise.resolve(eventReceiverValue);
+        return eventReceiverValue;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', listTitle: 'Documents' } });
@@ -212,11 +210,11 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('retrieves all list event receivers queried by url', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/GetList('%2Fsites%2Fportal%2FShared%20Documents')/eventreceivers`) > -1) {
-        return Promise.resolve(eventReceiverValue);
+        return eventReceiverValue;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', listUrl: 'Shared Documents' } });
@@ -224,11 +222,11 @@ describe(commands.EVENTRECEIVER_LIST, () => {
   });
 
   it('retrieves all list event receivers queried by guid', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/lists(guid'b17bd74f-d1b1-42bf-a21d-f865a903acc3')/eventreceivers`) > -1) {
-        return Promise.resolve(eventReceiverValue);
+        return eventReceiverValue;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', listId: 'b17bd74f-d1b1-42bf-a21d-f865a903acc3' } });

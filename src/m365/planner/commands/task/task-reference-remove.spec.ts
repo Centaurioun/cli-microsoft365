@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./task-reference-remove');
@@ -50,9 +51,10 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -93,18 +95,13 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      Cli.getInstance().config.all
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TASK_REFERENCE_REMOVE), true);
+    assert.strictEqual(command.name, commands.TASK_REFERENCE_REMOVE);
   });
 
   it('has a description', () => {
@@ -141,11 +138,6 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
     assert.strictEqual(actual, true);
   });
 
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['url', 'alias'] }]);
-  });
-
   it('prompts before removal when confirm option not passed', async () => {
     sinonUtil.restore(Cli.prompt);
     sinon.stub(Cli, 'prompt').callsFake(async (options: any) => {
@@ -180,27 +172,23 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('correctly removes reference', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve({
-          references: null
-        });
+        return { references: null };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details` &&
         JSON.stringify(opts.headers) === JSON.stringify({
           'accept': 'application/json'
         })) {
-        return Promise.resolve({
-          "@odata.etag": "TestEtag"
-        });
+        return { "@odata.etag": "TestEtag" };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid Request';
     });
 
     const options: any = {
@@ -213,28 +201,26 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('correctly removes reference by alias with prompting', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details`) {
-        return Promise.resolve({
-          references: null
-        });
+        return { references: null };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid Request';
     });
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details` &&
         JSON.stringify(opts.headers) === JSON.stringify({
           'accept': 'application/json'
         })) {
-        return Promise.resolve({
+        return {
           "@odata.etag": "TestEtag",
           references: referenceResponse
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid Request';
     });
 
     const options: any = {
@@ -246,18 +232,18 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('fails validation when no references found', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details` &&
         JSON.stringify(opts.headers) === JSON.stringify({
           'accept': 'application/json'
         })) {
-        return Promise.resolve({
+        return {
           "@odata.etag": "TestEtag",
           references: {}
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -269,18 +255,18 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('fails validation when reference does not contain alias', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details` &&
         JSON.stringify(opts.headers) === JSON.stringify({
           'accept': 'application/json'
         })) {
-        return Promise.resolve({
+        return {
           "@odata.etag": "TestEtag",
           references: multiReferencesResponseNoAlias
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -292,18 +278,18 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('fails validation when multiple references found', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/tasks/${formatting.encodeQueryParameter(validTaskId)}/details` &&
         JSON.stringify(opts.headers) === JSON.stringify({
           'accept': 'application/json'
         })) {
-        return Promise.resolve({
+        return {
           "@odata.etag": "TestEtag",
           references: multiReferencesResponse
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid Request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -315,8 +301,7 @@ describe(commands.TASK_REFERENCE_REMOVE, () => {
   });
 
   it('correctly handles random API error', async () => {
-    sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
   });

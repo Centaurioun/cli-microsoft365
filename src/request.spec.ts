@@ -1,11 +1,10 @@
 import * as assert from 'assert';
-import { AxiosRequestConfig } from 'axios';
 import { ClientRequest } from 'http';
 import * as https from 'https';
 import * as sinon from 'sinon';
-import auth from './Auth';
+import auth, { CloudType } from './Auth';
 import { Logger } from './cli/Logger';
-import _request from './request';
+import _request, { CliRequestOptions } from './request';
 import { sinonUtil } from './utils/sinonUtil';
 
 describe('Request', () => {
@@ -15,7 +14,7 @@ describe('Request', () => {
     logToStderr: () => { }
   };
 
-  let _options: AxiosRequestConfig;
+  let _options: CliRequestOptions;
 
   beforeEach(() => {
     _request.logger = logger;
@@ -175,7 +174,7 @@ describe('Request', () => {
       });
   });
 
-  
+
   it(`removes the resource header on distinguished resource requests`, (done) => {
     sinon.stub(https, 'request').callsFake((options: any) => {
       _options = options;
@@ -741,5 +740,57 @@ describe('Request', () => {
       }, (err: any) => {
         done(err);
       });
+  });
+
+  it(`updates the URL for the China cloud`, async () => {
+    let url;
+    auth.service.cloudType = CloudType.China;
+    sinon.stub(_request as any, 'req').callsFake(options => {
+      url = options.url;
+      return Promise.resolve({ data: {} });
+    });
+    await _request.execute({
+      url: 'https://graph.microsoft.com/v1.0/me'
+    });
+    assert.strictEqual(url, 'https://microsoftgraph.chinacloudapi.cn/v1.0/me');
+  });
+
+  it(`updates the URL for the USGov cloud`, async () => {
+    let url;
+    auth.service.cloudType = CloudType.USGov;
+    sinon.stub(_request as any, 'req').callsFake(options => {
+      url = options.url;
+      return Promise.resolve({ data: {} });
+    });
+    await _request.execute({
+      url: 'https://graph.microsoft.com/v1.0/me'
+    });
+    assert.strictEqual(url, 'https://graph.microsoft.com/v1.0/me');
+  });
+
+  it(`updates the URL for the USGovDoD cloud`, async () => {
+    let url;
+    auth.service.cloudType = CloudType.USGovDoD;
+    sinon.stub(_request as any, 'req').callsFake(options => {
+      url = options.url;
+      return Promise.resolve({ data: {} });
+    });
+    await _request.execute({
+      url: 'https://graph.microsoft.com/v1.0/me'
+    });
+    assert.strictEqual(url, 'https://dod-graph.microsoft.us/v1.0/me');
+  });
+
+  it(`updates the URL for the USGovHigh cloud`, async () => {
+    let url;
+    auth.service.cloudType = CloudType.USGovHigh;
+    sinon.stub(_request as any, 'req').callsFake(options => {
+      url = options.url;
+      return Promise.resolve({ data: {} });
+    });
+    await _request.execute({
+      url: 'https://graph.microsoft.com/v1.0/me'
+    });
+    assert.strictEqual(url, 'https://graph.microsoft.us/v1.0/me');
   });
 });

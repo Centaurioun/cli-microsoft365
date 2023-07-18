@@ -1,8 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
 import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
@@ -110,7 +109,7 @@ class SpoListItemRetentionLabelRemoveCommand extends SpoCommand {
         type: 'confirm',
         name: 'continue',
         default: false,
-        message: `Are you sure you want to remove the retentionlabel from list item ${args.options.listItemId} from list ${args.options.listId || args.options.listTitle || args.options.listUrl} located in site ${args.options.webUrl}?`
+        message: `Are you sure you want to remove the retentionlabel from list item ${args.options.listItemId} from list '${args.options.listId || args.options.listTitle || args.options.listUrl}' located in site ${args.options.webUrl}?`
       });
 
       if (result.continue) {
@@ -121,7 +120,7 @@ class SpoListItemRetentionLabelRemoveCommand extends SpoCommand {
 
   private async removeListItemRetentionLabel(logger: Logger, args: CommandArgs): Promise<void> {
     if (this.verbose) {
-      logger.logToStderr(`Removing retention label from list ${args.options.listId || args.options.listTitle || args.options.listUrl} in site at ${args.options.webUrl}...`);
+      logger.logToStderr(`Removing retention label from list item ${args.options.listItemId} from list '${args.options.listId || args.options.listTitle || args.options.listUrl}' in site at ${args.options.webUrl}...`);
     }
     try {
       let url = `${args.options.webUrl}/_api/web`;
@@ -145,7 +144,7 @@ class SpoListItemRetentionLabelRemoveCommand extends SpoCommand {
         "isUnlockedAsDefault": false
       };
 
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: url,
         method: 'POST',
         headers: {

@@ -1,14 +1,15 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
-import { telemetry } from "../../../../telemetry";
 import auth from "../../../../Auth";
 import { Cli } from "../../../../cli/Cli";
 import { CommandInfo } from "../../../../cli/CommandInfo";
 import { Logger } from "../../../../cli/Logger";
 import Command, { CommandError } from "../../../../Command";
 import request from "../../../../request";
+import { telemetry } from "../../../../telemetry";
 import { formatting } from "../../../../utils/formatting";
 import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
 import { sinonUtil } from "../../../../utils/sinonUtil";
 import commands from "../../commands";
 const command: Command = require("./gateway-get");
@@ -30,9 +31,10 @@ describe(commands.GATEWAY_GET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, "restoreAuth").callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, "trackEvent").callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -58,16 +60,12 @@ describe(commands.GATEWAY_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it("has correct name", () => {
-    assert.strictEqual(command.name.startsWith(commands.GATEWAY_GET), true);
+    assert.strictEqual(command.name, commands.GATEWAY_GET);
   });
 
   it("has a description", () => {
@@ -102,7 +100,7 @@ describe(commands.GATEWAY_GET, () => {
 
   it("correctly handles error", async () => {
     sinon.stub(request, "get").callsFake(() => {
-      return Promise.reject("An error has occurred");
+      throw "An error has occurred";
     });
 
     await assert.rejects(
@@ -122,9 +120,9 @@ describe(commands.GATEWAY_GET, () => {
         "https://api.powerbi.com" +
         `/v1.0/myorg/gateways/${formatting.encodeQueryParameter(gateway.id)}`
       ) {
-        return Promise.resolve(gateway);
+        return gateway;
       }
-      return Promise.reject("Invalid request");
+      throw "Invalid request";
     });
 
     await command.action(logger, {

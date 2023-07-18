@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./serviceannouncement-healthissue-list');
@@ -203,9 +204,10 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -233,16 +235,12 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST), true);
+    assert.strictEqual(command.name, commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST);
   });
 
   it('has a description', () => {
@@ -254,22 +252,22 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   });
 
   it('handles promise error while getting service health issues available in Microsoft 365', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues') > -1) {
-        return Promise.reject('An error has occurred');
+        throw 'An error has occurred';
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
   });
 
   it('gets the service health issues available in Microsoft 365', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues') > -1) {
-        return Promise.resolve(jsonOutput);
+        return jsonOutput;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -280,11 +278,11 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   });
 
   it('gets the service health issues available in Microsoft 365 (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues') > -1) {
-        return Promise.resolve(jsonOutput);
+        return jsonOutput;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -296,11 +294,11 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   });
 
   it('gets the service health issues for a particular service available in Microsoft 365', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues') > -1) {
-        return Promise.resolve(jsonOutputMicrosoftForms);
+        return jsonOutputMicrosoftForms;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -312,11 +310,11 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_LIST, () => {
   });
 
   it('gets the service health issues for a particular service available in Microsoft 365 as text', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues') > -1) {
-        return Promise.resolve(jsonOutputMicrosoftForms);
+        return jsonOutputMicrosoftForms;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {

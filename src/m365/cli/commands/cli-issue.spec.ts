@@ -6,9 +6,9 @@ import { CommandInfo } from '../../../cli/CommandInfo';
 import { Logger } from '../../../cli/Logger';
 import Command from '../../../Command';
 import { pid } from '../../../utils/pid';
-import { sinonUtil } from '../../../utils/sinonUtil';
+import { session } from '../../../utils/session';
 import commands from '../commands';
-import Sinon = require('sinon');
+import { browserUtil } from '../../../utils/browserUtil';
 
 const command: Command = require('./cli-issue');
 
@@ -16,13 +16,13 @@ describe(commands.ISSUE, () => {
   let log: any[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let openBrowserSpy: Sinon.SinonSpy;
+  let openStub: sinon.SinonStub;
 
   before(() => {
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     (command as any).open = () => { };
-    openBrowserSpy = sinon.spy(command as any, 'openBrowser');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -39,17 +39,15 @@ describe(commands.ISSUE, () => {
         log.push(msg);
       }
     };
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async () => { return; });
   });
 
   afterEach(() => {
-    openBrowserSpy.resetHistory();
+    openStub.restore();
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
@@ -82,32 +80,57 @@ describe(commands.ISSUE, () => {
   });
 
   it('Opens URL for a command (debug)', async () => {
+    const commandUrl = 'https://aka.ms/cli-m365/new-command';
+
+    openStub.restore();
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === commandUrl) {
+        return;
+      }
+      throw 'Invalid url';
+    });
     await command.action(logger, {
       options: {
         debug: true,
         type: 'command'
       }
     } as any);
-    openBrowserSpy.calledWith("https://aka.ms/cli-m365/new-command");
+    openStub.calledWith(commandUrl);
   });
 
   it('Opens URL for a bug (debug)', async () => {
+    const bugUrl = 'https://aka.ms/cli-m365/bug';
+    openStub.restore();
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === bugUrl) {
+        return;
+      }
+      throw 'Invalid url';
+    });
     await command.action(logger, {
       options: {
         debug: true,
         type: 'bug'
       }
     } as any);
-    openBrowserSpy.calledWith("https://aka.ms/cli-m365/bug");
+    openStub.calledWith(bugUrl);
   });
 
   it('Opens URL for a sample (debug)', async () => {
+    const sampleScriptUrl = 'https://aka.ms/cli-m365/new-sample-script';
+    openStub.restore();
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === sampleScriptUrl) {
+        return;
+      }
+      throw 'Invalid url';
+    });
     await command.action(logger, {
       options: {
         debug: true,
         type: 'sample'
       }
     } as any);
-    openBrowserSpy.calledWith("https://aka.ms/cli-m365/new-sample-script");
+    openStub.calledWith(sampleScriptUrl);
   });
 });

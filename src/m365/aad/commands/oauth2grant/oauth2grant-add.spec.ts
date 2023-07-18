@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./oauth2grant-add');
@@ -20,9 +21,10 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   let loggerLogToStderrSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -51,16 +53,12 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.OAUTH2GRANT_ADD), true);
+    assert.strictEqual(command.name, commands.OAUTH2GRANT_ADD);
   });
 
   it('has a description', () => {
@@ -68,7 +66,7 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   });
 
   it('adds OAuth2 permission grant (debug)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants`) > -1) {
         if (opts.headers &&
           opts.headers['content-type'] &&
@@ -76,11 +74,11 @@ describe(commands.OAUTH2GRANT_ADD, () => {
           opts.data.clientId === '6a7b1395-d313-4682-8ed4-65a6265a6320' &&
           opts.data.resourceId === '6a7b1395-d313-4682-8ed4-65a6265a6321' &&
           opts.data.scope === 'user_impersonation') {
-          return Promise.resolve();
+          return;
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, clientId: '6a7b1395-d313-4682-8ed4-65a6265a6320', resourceId: '6a7b1395-d313-4682-8ed4-65a6265a6321', scope: 'user_impersonation' } } as any);
@@ -88,7 +86,7 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   });
 
   it('adds OAuth2 permission grant', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants`) > -1) {
         if (opts.headers &&
           opts.headers['content-type'] &&
@@ -96,11 +94,11 @@ describe(commands.OAUTH2GRANT_ADD, () => {
           opts.data.clientId === '6a7b1395-d313-4682-8ed4-65a6265a6320' &&
           opts.data.resourceId === '6a7b1395-d313-4682-8ed4-65a6265a6321' &&
           opts.data.scope === 'user_impersonation') {
-          return Promise.resolve();
+          return;
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { clientId: '6a7b1395-d313-4682-8ed4-65a6265a6320', resourceId: '6a7b1395-d313-4682-8ed4-65a6265a6321', scope: 'user_impersonation' } });
@@ -108,17 +106,15 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject({
-        error: {
-          'odata.error': {
-            code: '-1, InvalidOperationException',
-            message: {
-              value: 'An error has occurred'
-            }
+    sinon.stub(request, 'post').rejects({
+      error: {
+        'odata.error': {
+          code: '-1, InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
           }
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: { clientId: '6a7b1395-d313-4682-8ed4-65a6265a6320', resourceId: '6a7b1395-d313-4682-8ed4-65a6265a6320', scope: 'user_impersonation' } } as any),

@@ -1,8 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
 import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { ClientSvcResponse, ClientSvcResponseContents, spo } from '../../../../utils/spo';
 import { urlUtil } from '../../../../utils/urlUtil';
@@ -105,14 +104,14 @@ class SpoContentTypeFieldRemoveCommand extends SpoCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    const removeFieldLink: () => Promise<void> = async (): Promise<void> => {
+    const removeFieldLink = async (): Promise<void> => {
       try {
         if (this.debug) {
           logger.logToStderr(`Get SiteId required by ProcessQuery endpoint.`);
         }
 
         // GET SiteId
-        let requestOptions: AxiosRequestConfig = {
+        let requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/site?$select=Id`,
           headers: {
             accept: 'application/json;odata=nometadata'
@@ -217,7 +216,7 @@ class SpoContentTypeFieldRemoveCommand extends SpoCommand {
   }
 
   private async getListIdFromListTitle(webUrl: string, listTitle: string): Promise<string> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/lists/GetByTitle('${formatting.encodeQueryParameter(listTitle)}')?$select=Id`,
       headers: {
         accept: 'application/json;odata=nometadata'
@@ -231,7 +230,7 @@ class SpoContentTypeFieldRemoveCommand extends SpoCommand {
 
   private async getListIdFromListUrl(webUrl: string, listUrl: string): Promise<string> {
     const listServerRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, listUrl);
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/web/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')?$select=Id`,
       headers: {
         accept: 'application/json;odata=nometadata'

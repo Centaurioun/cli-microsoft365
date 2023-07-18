@@ -1,7 +1,7 @@
 import { Cli } from '../../../../cli/Cli';
 import Command from '../../../../Command';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
 import { Logger } from '../../../../cli/Logger';
@@ -104,7 +104,7 @@ class SpoFolderRoleAssignmentRemoveCommand extends SpoCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    const removeRoleAssignment: () => Promise<void> = async (): Promise<void> => {
+    const removeRoleAssignment = async (): Promise<void> => {
       if (this.verbose) {
         logger.logToStderr(`Removing role assignment from folder in site at ${args.options.webUrl}...`);
       }
@@ -147,7 +147,7 @@ class SpoFolderRoleAssignmentRemoveCommand extends SpoCommand {
   }
 
   private async removeRoleAssignment(requestUrl: string, logger: Logger, options: Options): Promise<void> {
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${requestUrl}/roleassignments/removeroleassignment(principalid='${options.principalId}')`,
       method: 'POST',
       headers: {
@@ -157,7 +157,7 @@ class SpoFolderRoleAssignmentRemoveCommand extends SpoCommand {
       responseType: 'json'
     };
 
-    await request.post(requestOptions);
+    return request.post(requestOptions);
   }
 
   private async getGroupPrincipalId(options: Options): Promise<number> {

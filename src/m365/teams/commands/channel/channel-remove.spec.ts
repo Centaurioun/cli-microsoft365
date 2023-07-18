@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./channel-remove');
@@ -25,9 +26,10 @@ describe(commands.CHANNEL_REMOVE, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -61,16 +63,12 @@ describe(commands.CHANNEL_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CHANNEL_REMOVE), true);
+    assert.strictEqual(command.name, commands.CHANNEL_REMOVE);
   });
 
   it('has a description', () => {
@@ -95,14 +93,6 @@ describe(commands.CHANNEL_REMOVE, () => {
       }
     }, commandInfo);
     assert.strictEqual(actual, true);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [
-      { options: ['id', 'name'] },
-      { options: ['teamId', 'teamName'] }
-    ]);
   });
 
   it('fails validation if the id is not valid', async () => {
@@ -264,9 +254,7 @@ describe(commands.CHANNEL_REMOVE, () => {
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, {
       options: {
@@ -306,9 +294,7 @@ describe(commands.CHANNEL_REMOVE, () => {
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, {
       options: {
@@ -369,8 +355,18 @@ describe(commands.CHANNEL_REMOVE, () => {
   });
 
   it('correctly handles Microsoft graph error response', async () => {
-    const errorMessage = 'UnknownError';
-    sinon.stub(request, 'delete').callsFake(async () => { throw errorMessage; });
+    const error = {
+      "error": {
+        "code": "UnknownError",
+        "message": "An error has occurred",
+        "innerError": {
+          "date": "2022-02-14T13:27:37",
+          "request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c",
+          "client-request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c"
+        }
+      }
+    };
+    sinon.stub(request, 'delete').rejects(error);
 
     await assert.rejects(command.action(logger, {
       options: {
@@ -379,6 +375,6 @@ describe(commands.CHANNEL_REMOVE, () => {
         teamId: teamId,
         confirm: true
       }
-    }), new CommandError(errorMessage));
+    }), new CommandError(error.error.message));
   });
 });

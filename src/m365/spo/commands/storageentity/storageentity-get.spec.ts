@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./storageentity-get');
@@ -16,17 +17,19 @@ describe(commands.STORAGEENTITY_GET, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.spoUrl = 'https://contoso.sharepoint.com';
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/GetStorageEntity('existingproperty')`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ Comment: 'Lorem', Description: 'ipsum', Value: 'dolor' });
+          return { Comment: 'Lorem', Description: 'ipsum', Value: 'dolor' };
         }
       }
 
@@ -34,7 +37,7 @@ describe(commands.STORAGEENTITY_GET, () => {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ Comment: 'Lorem', Value: 'dolor' });
+          return { Comment: 'Lorem', Value: 'dolor' };
         }
       }
 
@@ -42,7 +45,7 @@ describe(commands.STORAGEENTITY_GET, () => {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ Description: 'ipsum', Value: 'dolor' });
+          return { Description: 'ipsum', Value: 'dolor' };
         }
       }
 
@@ -50,7 +53,7 @@ describe(commands.STORAGEENTITY_GET, () => {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ "odata.null": true });
+          return { "odata.null": true };
         }
       }
 
@@ -58,11 +61,11 @@ describe(commands.STORAGEENTITY_GET, () => {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ Description: 'ipsum', Value: 'dolor' });
+          return { Description: 'ipsum', Value: 'dolor' };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
   });
 
@@ -83,18 +86,13 @@ describe(commands.STORAGEENTITY_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      request.get,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.STORAGEENTITY_GET), true);
+    assert.strictEqual(command.name, commands.STORAGEENTITY_GET);
   });
 
   it('has a description', () => {
@@ -171,7 +169,7 @@ describe(commands.STORAGEENTITY_GET, () => {
 
   it('handles promise rejection', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('error'));
+    sinon.stub(request, 'get').rejects(new Error('error'));
 
     await assert.rejects(command.action(logger, { options: { debug: true, key: '#myprop' } } as any), new CommandError('error'));
   });

@@ -1,8 +1,7 @@
 import { Group } from '@microsoft/microsoft-graph-types';
-import { AxiosRequestConfig } from 'axios';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { validation } from '../../../../utils/validation';
 import GraphCommand from '../../../base/GraphCommand';
@@ -83,7 +82,7 @@ class AadO365GroupRecycleBinItemRestoreCommand extends GraphCommand {
 
     try {
       const groupId = await this.getGroupId(args.options);
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/directory/deleteditems/${groupId}/restore`,
         headers: {
           accept: 'application/json;odata.metadata=none',
@@ -99,11 +98,11 @@ class AadO365GroupRecycleBinItemRestoreCommand extends GraphCommand {
     }
   }
 
-  private getGroupId(options: Options): Promise<string> {
+  private async getGroupId(options: Options): Promise<string> {
     const { id, displayName, mailNickname } = options;
 
     if (id) {
-      return Promise.resolve(id);
+      return id;
     }
 
     let filterValue: string = '';
@@ -115,7 +114,7 @@ class AadO365GroupRecycleBinItemRestoreCommand extends GraphCommand {
       filterValue = `mailNickname eq '${formatting.encodeQueryParameter(mailNickname)}'`;
     }
 
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/directory/deletedItems/Microsoft.Graph.Group?$filter=${filterValue}`,
       headers: {
         accept: 'application/json;odata.metadata=none'
@@ -123,21 +122,18 @@ class AadO365GroupRecycleBinItemRestoreCommand extends GraphCommand {
       responseType: 'json'
     };
 
-    return request
-      .get<{ value: Group[] }>(requestOptions)
-      .then((response: { value: Group[] }): Promise<string> => {
-        const groups = response.value;
+    const response = await request.get<{ value: Group[] }>(requestOptions);
+    const groups = response.value;
 
-        if (groups.length === 0) {
-          return Promise.reject(`The specified group '${displayName || mailNickname}' does not exist.`);
-        }
+    if (groups.length === 0) {
+      throw `The specified group '${displayName || mailNickname}' does not exist.`;
+    }
 
-        if (groups.length > 1) {
-          return Promise.reject(`Multiple groups with name '${displayName || mailNickname}' found: ${groups.map(x => x.id).join(',')}.`);
-        }
+    if (groups.length > 1) {
+      throw `Multiple groups with name '${displayName || mailNickname}' found: ${groups.map(x => x.id).join(',')}.`;
+    }
 
-        return Promise.resolve(groups[0].id!);
-      });
+    return groups[0].id!;
   }
 }
 

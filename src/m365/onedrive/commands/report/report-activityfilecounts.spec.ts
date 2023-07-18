@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./report-activityfilecounts');
@@ -18,6 +19,7 @@ describe(commands.REPORT_ACTIVITYFILECOUNTS, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
   });
 
@@ -44,16 +46,12 @@ describe(commands.REPORT_ACTIVITYFILECOUNTS, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.REPORT_ACTIVITYFILECOUNTS), true);
+    assert.strictEqual(command.name, commands.REPORT_ACTIVITYFILECOUNTS);
   });
 
   it('has a description', () => {
@@ -61,14 +59,12 @@ describe(commands.REPORT_ACTIVITYFILECOUNTS, () => {
   });
 
   it('gets the report for the last week', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/reports/getOneDriveActivityFileCounts(period='D7')`) {
-        return Promise.resolve(`
-           Report Refresh Date,Viewed Or Edited,Synced,Shared Internally,Shared Externally,Report Date,Report Period`
-        );
+        return `Report Refresh Date,Viewed Or Edited,Synced,Shared Internally,Shared Externally,Report Date,Report Period`;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { period: 'D7' } });

@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./user-guest-add');
@@ -41,9 +42,10 @@ describe(commands.USER_GUEST_ADD, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -71,16 +73,12 @@ describe(commands.USER_GUEST_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.USER_GUEST_ADD), true);
+    assert.strictEqual(command.name, commands.USER_GUEST_ADD);
   });
 
   it('has a description', () => {
@@ -191,7 +189,7 @@ describe(commands.USER_GUEST_ADD, () => {
 
   it('handles random API error', async () => {
     const errorMessage = 'Something went wrong';
-    sinon.stub(request, 'post').callsFake(async () => { throw { error: { message: errorMessage } }; });
+    sinon.stub(request, 'post').rejects({ error: { message: errorMessage } });
 
     await assert.rejects(command.action(logger, {
       options: {

@@ -7,6 +7,7 @@ import Command, { CommandError } from '../../../../Command';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { Cli } from '../../../../cli/Cli';
@@ -110,9 +111,10 @@ describe(commands.MEETING_GET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[auth.defaultResource] = {
       expiresOn: 'abc',
@@ -146,17 +148,13 @@ describe(commands.MEETING_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.MEETING_GET), true);
+    assert.strictEqual(command.name, commands.MEETING_GET);
   });
 
   it('has a description', () => {
@@ -184,8 +182,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('retrieves specific meeting details using userId (debug)', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/users/${userId}/onlineMeetings?$filter=JoinWebUrl eq '${encodeURIComponent(joinUrl)}'`) {
         return meetingResponse;
@@ -207,7 +204,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('retrieves specific meeting details using userName', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
 
     sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (command): Promise<any> => {
       if (command === userGetCommand) {
@@ -236,8 +233,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('retrieves specific meeting details using email', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
     sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (command): Promise<any> => {
       if (command === userGetCommand) {
         return { "stdout": JSON.stringify({ id: userId }) };
@@ -265,8 +261,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('retrieves specific meeting details using delegated permissions', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => false);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/me/onlineMeetings?$filter=JoinWebUrl eq '${encodeURIComponent(joinUrl)}'`) {
         return meetingResponse;
@@ -286,8 +281,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('correctly handles error when the meeting with join URL not found', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/users/${userId}/onlineMeetings?$filter=JoinWebUrl eq '${encodeURIComponent(joinUrl)}'`) {
         return { value: [] };
@@ -306,8 +300,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('correctly handles error when getting specified meeting details', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => false);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     const errorMessage = 'An error has occurred.';
     sinon.stub(request, 'get').callsFake(async () => { throw { error: { error: { message: errorMessage } } }; });
 
@@ -320,8 +313,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('correctly handles error when getting specified meeting details using app only permissions', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => true);
-
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
     const errorMessage = `The option 'userId', 'userName' or 'email' is required when retrieving meetings using app only permissions`;
 
     await assert.rejects(command.action(logger, {
@@ -333,7 +325,7 @@ describe(commands.MEETING_GET, () => {
   });
 
   it('correctly handles error when getting specified meeting details using delegated permissions', async () => {
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').callsFake(() => false);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     const errorMessage = `The options 'userId', 'userName' and 'email' cannot be used when retrieving meetings using delegated permissions`;
 
     await assert.rejects(command.action(logger, {

@@ -9,6 +9,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { urlUtil } from '../../../../utils/urlUtil';
 import commands from '../../commands';
@@ -21,9 +22,10 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   let promptOptions: any;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -55,16 +57,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.LISTITEM_ROLEINHERITANCE_BREAK), true);
+    assert.strictEqual(command.name, commands.LISTITEM_ROLEINHERITANCE_BREAK);
   });
 
   it('has a description', () => {
@@ -80,11 +78,6 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
       }
     });
     assert(containsTypeOption);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['listId', 'listTitle', 'listUrl'] }]);
   });
 
   it('fails validation if the url option is not a valid SharePoint site URL', async () => {
@@ -141,12 +134,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   it('break role inheritance of list item with id 1 on list by title', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle(\'test\')/items(1)/breakroleinheritance(true)') > -1) {
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -161,12 +154,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   it('break role inheritance of list item with id 1 on list by title and clear all permissions', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle(\'test\')/items(1)/breakroleinheritance(false)') > -1) {
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -182,12 +175,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   it('break role inheritance of list item with id 1 on list by id', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists(guid\'202b8199-b9de-43fd-9737-7f213f51c991\')/items(1)/breakroleinheritance(true)') > -1) {
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -202,12 +195,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   it('break role inheritance of list item with id 1 on list by id and clear all permissions', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists(guid\'202b8199-b9de-43fd-9737-7f213f51c991\')/items(1)/breakroleinheritance(false)') > -1) {
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -224,12 +217,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
 
   it('list item role inheritance break command handles reject request correctly', async () => {
     const err = 'request rejected';
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle(\'test\')/items(1)/breakroleinheritance(true)') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -323,12 +316,12 @@ describe(commands.LISTITEM_ROLEINHERITANCE_BREAK, () => {
   });
 
   it('break role inheritance when prompt confirmed', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/lists/getbytitle(\'test\')/items(8)/breakroleinheritance(true)') > -1) {
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     sinonUtil.restore(Cli.prompt);

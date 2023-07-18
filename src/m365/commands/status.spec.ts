@@ -1,11 +1,12 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { telemetry } from '../../telemetry';
-import auth, { AuthType } from '../../Auth';
+import auth, { AuthType, CloudType } from '../../Auth';
 import { Logger } from '../../cli/Logger';
 import Command, { CommandError } from '../../Command';
+import { telemetry } from '../../telemetry';
 import { accessToken } from '../../utils/accessToken';
 import { pid } from '../../utils/pid';
+import { session } from '../../utils/session';
 import { sinonUtil } from '../../utils/sinonUtil';
 import commands from './commands';
 const command: Command = require('./status');
@@ -20,6 +21,7 @@ describe(commands.STATUS, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
   });
 
   beforeEach(() => {
@@ -47,11 +49,7 @@ describe(commands.STATUS, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
@@ -108,6 +106,7 @@ describe(commands.STATUS, () => {
     auth.service.authType = AuthType.DeviceCode;
     auth.service.appId = '8dd76117-ab8e-472c-b5c1-a50e13b457cd';
     auth.service.tenant = 'common';
+    auth.service.cloudType = CloudType.Public;
     sinon.stub(auth, 'ensureAccessToken').callsFake(() => Promise.resolve(''));
     sinon.stub(accessToken, 'getUserNameFromAccessToken').callsFake(() => { return 'admin@contoso.onmicrosoft.com'; });
     await command.action(logger, { options: {} });
@@ -115,7 +114,8 @@ describe(commands.STATUS, () => {
       connectedAs: 'admin@contoso.onmicrosoft.com',
       authType: 'DeviceCode',
       appId: '8dd76117-ab8e-472c-b5c1-a50e13b457cd',
-      appTenant: 'common'
+      appTenant: 'common',
+      cloudType: 'Public'
     }));
   });
 
@@ -124,6 +124,7 @@ describe(commands.STATUS, () => {
     auth.service.authType = AuthType.DeviceCode;
     auth.service.appId = '8dd76117-ab8e-472c-b5c1-a50e13b457cd';
     auth.service.tenant = 'common';
+    auth.service.cloudType = CloudType.Public;
     sinon.stub(auth, 'ensureAccessToken').callsFake(() => Promise.resolve(''));
     sinon.stub(accessToken, 'getUserNameFromAccessToken').callsFake(() => { return 'admin@contoso.onmicrosoft.com'; });
     auth.service.accessTokens = {
@@ -138,7 +139,8 @@ describe(commands.STATUS, () => {
       authType: 'DeviceCode',
       appId: '8dd76117-ab8e-472c-b5c1-a50e13b457cd',
       appTenant: 'common',
-      accessTokens: '{\n  "https://graph.microsoft.com": {\n    "expiresOn": "123",\n    "accessToken": "abc"\n  }\n}'
+      accessTokens: '{\n  "https://graph.microsoft.com": {\n    "expiresOn": "123",\n    "accessToken": "abc"\n  }\n}',
+      cloudType: 'Public'
     }));
   });
 
@@ -147,6 +149,7 @@ describe(commands.STATUS, () => {
     auth.service.authType = AuthType.DeviceCode;
     auth.service.appId = '8dd76117-ab8e-472c-b5c1-a50e13b457cd';
     auth.service.tenant = 'common';
+    auth.service.cloudType = CloudType.Public;
     sinon.stub(auth, 'ensureAccessToken').callsFake(() => Promise.resolve(''));
     auth.service.accessTokens = {
       'https://graph.microsoft.com': {
@@ -161,7 +164,8 @@ describe(commands.STATUS, () => {
       authType: 'DeviceCode',
       appId: '8dd76117-ab8e-472c-b5c1-a50e13b457cd',
       appTenant: 'common',
-      accessTokens: '{\n  "https://graph.microsoft.com": {\n    "expiresOn": "123",\n    "accessToken": "abc"\n  }\n}'
+      accessTokens: '{\n  "https://graph.microsoft.com": {\n    "expiresOn": "123",\n    "accessToken": "abc"\n  }\n}',
+      cloudType: 'Public'
     }));
   });
 

@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import { fsUtil } from '../../../../utils/fsUtil';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./package-generate');
@@ -27,8 +28,9 @@ describe(commands.PACKAGE_GENERATE, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     (command as any).archive = admZipMock;
     commandInfo = Cli.getCommandInfo(command);
     Cli.getInstance().config;
@@ -80,14 +82,11 @@ describe(commands.PACKAGE_GENERATE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.PACKAGE_GENERATE), true);
+    assert.strictEqual(command.name, commands.PACKAGE_GENERATE);
   });
 
   it('has a description', () => {

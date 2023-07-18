@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { mockCanvasContent, mockPage } from './page-control-set.mock';
@@ -20,9 +21,10 @@ describe(commands.PAGE_HEADER_SET, () => {
   let data: string;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -41,28 +43,28 @@ describe(commands.PAGE_HEADER_SET, () => {
       }
     };
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')/SavePageAsDraft`) > -1) {
         data = opts.data;
-        return Promise.resolve();
+        return '';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
   });
 
@@ -75,16 +77,12 @@ describe(commands.PAGE_HEADER_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.PAGE_HEADER_SET), true);
+    assert.strictEqual(command.name, commands.PAGE_HEADER_SET);
   });
 
   it('has a description', () => {
@@ -98,28 +96,28 @@ describe(commands.PAGE_HEADER_SET, () => {
   it('checks out page if not checked out by the current user', async () => {
     sinonUtil.restore([request.get, request.post]);
     let checkedOut = false;
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: false,
           Title: 'Page'
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')/checkoutpage`) > -1) {
         checkedOut = true;
-        return Promise.resolve(mockPage.ListItemAllFields);
+        return mockPage.ListItemAllFields;
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')/SavePageAsDraft`) > -1) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -135,32 +133,32 @@ describe(commands.PAGE_HEADER_SET, () => {
   it('doesn\'t check out page if not checked out by the current user', async () => {
     sinonUtil.restore([request.get, request.post]);
     let checkingOut = false;
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')/checkoutpage`) > -1) {
         checkingOut = true;
-        return Promise.resolve({});
+        return {};
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/home.aspx')/SavePageAsDraft`) > -1) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -210,38 +208,38 @@ describe(commands.PAGE_HEADER_SET, () => {
     };
 
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/site?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: 'c7678ab2-c9dc-454b-b2ee-7fcffb983d4e'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: '0df4d2d2-5ecf-45e9-94f5-c638106bfc65'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('%2Fsites%2Fteam-a%2Fsiteassets%2Fhero.jpg')?$select=ListId,UniqueId`) > -1) {
-        return Promise.resolve({
+        return {
           ListId: 'e1557527-d333-49f2-9d60-ea8a3003fda8',
           UniqueId: '102f496d-23a2-415f-803a-232b8a6c7613'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve(null);
+        return null;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a', type: 'None' } });
@@ -255,38 +253,38 @@ describe(commands.PAGE_HEADER_SET, () => {
     };
 
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/site?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: 'c7678ab2-c9dc-454b-b2ee-7fcffb983d4e'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: '0df4d2d2-5ecf-45e9-94f5-c638106bfc65'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('%2Fsites%2Fteam-a%2Fsiteassets%2Fhero.jpg')?$select=ListId,UniqueId`) > -1) {
-        return Promise.resolve({
+        return {
           ListId: 'e1557527-d333-49f2-9d60-ea8a3003fda8',
           UniqueId: '102f496d-23a2-415f-803a-232b8a6c7613'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a', type: 'Custom', imageUrl: '/sites/team-a/siteassets/hero.jpg', translateX: 42.3837520042758, translateY: 56.4285714285714 } });
@@ -300,38 +298,38 @@ describe(commands.PAGE_HEADER_SET, () => {
     };
 
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/site?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: 'c7678ab2-c9dc-454b-b2ee-7fcffb983d4e'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: '0df4d2d2-5ecf-45e9-94f5-c638106bfc65'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('%2Fsites%2Fteam-a%2Fsiteassets%2Fhero.jpg')?$select=ListId,UniqueId`) > -1) {
-        return Promise.resolve({
+        return {
           ListId: 'e1557527-d333-49f2-9d60-ea8a3003fda8',
           UniqueId: '102f496d-23a2-415f-803a-232b8a6c7613'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a', type: 'Custom', imageUrl: '/sites/team-a/siteassets/hero.jpg', translateX: 42.3837520042758, translateY: 56.4285714285714 } });
@@ -355,38 +353,38 @@ describe(commands.PAGE_HEADER_SET, () => {
     };
 
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/site?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: 'c7678ab2-c9dc-454b-b2ee-7fcffb983d4e'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: '0df4d2d2-5ecf-45e9-94f5-c638106bfc65'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('%2Fsites%2Fteam-a%2Fsiteassets%2Fhero.jpg')?$select=ListId,UniqueId`) > -1) {
-        return Promise.resolve({
+        return {
           ListId: 'e1557527-d333-49f2-9d60-ea8a3003fda8',
           UniqueId: '102f496d-23a2-415f-803a-232b8a6c7613'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a', type: 'Custom', imageUrl: '/sites/team-a/siteassets/hero.jpg' } });
@@ -442,7 +440,7 @@ describe(commands.PAGE_HEADER_SET, () => {
   it('correctly handles OData error when retrieving modern page', async () => {
     sinonUtil.restore(request.get);
     sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({ error: { 'odata.error': { message: { value: 'An error has occurred' } } } });
+      throw { error: { 'odata.error': { message: { value: 'An error has occurred' } } } };
     });
 
     await assert.rejects(command.action(logger, { options: { pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a' } } as any),
@@ -451,35 +449,35 @@ describe(commands.PAGE_HEADER_SET, () => {
 
   it('correctly handles error when the specified image doesn\'t exist', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$select=IsPageCheckedOutToCurrentUser,Title`) > -1) {
-        return Promise.resolve({
+        return {
           IsPageCheckedOutToCurrentUser: true,
           Title: 'Page'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/site?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: 'c7678ab2-c9dc-454b-b2ee-7fcffb983d4e'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web?`) > -1) {
-        return Promise.resolve({
+        return {
           Id: '0df4d2d2-5ecf-45e9-94f5-c638106bfc65'
-        });
+        };
       }
 
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('%2Fsites%2Fteam-a%2Fsiteassets%2Fhero.jpg')?$select=ListId,UniqueId`) > -1) {
-        return Promise.reject({ error: { 'odata.error': { message: { value: 'An error has occurred' } } } });
+        throw { error: { 'odata.error': { message: { value: 'An error has occurred' } } } };
       }
 
       if ((opts.url as string).indexOf(`/_api/sitepages/pages/GetByUrl('sitepages/page.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({ CanvasContent1: mockCanvasContent });
+        return { CanvasContent1: mockCanvasContent };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { pageName: 'page.aspx', webUrl: 'https://contoso.sharepoint.com/sites/team-a', type: 'Custom', imageUrl: '/sites/team-a/siteassets/hero.jpg', translateX: 42.3837520042758, translateY: 56.4285714285714 } } as any), new CommandError('An error has occurred'));

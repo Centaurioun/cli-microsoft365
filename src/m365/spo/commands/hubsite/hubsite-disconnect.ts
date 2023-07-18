@@ -1,8 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
 import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { spo } from '../../../../utils/spo';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
@@ -92,7 +91,7 @@ class SpoHubSiteDisconnectCommand extends SpoCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    const disconnectHubSite: () => Promise<void> = async (): Promise<void> => {
+    const disconnectHubSite = async (): Promise<void> => {
       try {
         if (this.verbose) {
           logger.logToStderr(`Disconnecting hub site '${args.options.id || args.options.title || args.options.url}' from its parent hub site...`);
@@ -101,7 +100,7 @@ class SpoHubSiteDisconnectCommand extends SpoCommand {
         const spoAdminUrl = await spo.getSpoAdminUrl(logger, this.debug);
         const hubSite = await this.getHubSite(spoAdminUrl, args.options);
 
-        const requestOptions: AxiosRequestConfig = {
+        const requestOptions: CliRequestOptions = {
           url: `${spoAdminUrl}/_api/HubSites/GetById('${hubSite.ID}')`,
           headers: {
             accept: 'application/json;odata=nometadata',
@@ -138,7 +137,7 @@ class SpoHubSiteDisconnectCommand extends SpoCommand {
   }
 
   private async getHubSite(spoAdminUrl: string, options: Options): Promise<{ 'odata.etag': string, ID: string }> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       headers: {
         accept: 'application/json;odata=minimalmetadata'
       },

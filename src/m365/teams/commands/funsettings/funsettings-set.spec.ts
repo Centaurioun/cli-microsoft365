@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./funsettings-set');
@@ -18,8 +19,10 @@ describe(commands.FUNSETTINGS_SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -48,16 +51,12 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.FUNSETTINGS_SET), true);
+    assert.strictEqual(command.name, commands.FUNSETTINGS_SET);
   });
 
   it('has a description', () => {
@@ -65,17 +64,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowGiphy settings to false', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowGiphy: false
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -84,17 +83,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowGiphy settings to true', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowGiphy: true
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -103,17 +102,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets giphyContentRating to moderate', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             giphyContentRating: 'moderate'
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -122,17 +121,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets giphyContentRating to strict', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             giphyContentRating: 'strict'
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -141,17 +140,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowStickersAndMemes to true', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowStickersAndMemes: true
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -160,17 +159,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowStickersAndMemes to false', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowStickersAndMemes: false
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -180,17 +179,17 @@ describe(commands.FUNSETTINGS_SET, () => {
 
 
   it('sets allowCustomMemes to true', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowCustomMemes: true
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -199,17 +198,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowCustomMemes to false', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowCustomMemes: false
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -218,17 +217,17 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('sets allowCustomMemes to false (debug)', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/6703ac8a-c49b-4fd4-8223-11f09f201302` &&
         JSON.stringify(opts.data) === JSON.stringify({
           funSettings: {
             allowCustomMemes: false
           }
         })) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -237,7 +236,18 @@ describe(commands.FUNSETTINGS_SET, () => {
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'patch').callsFake(() => Promise.reject('An error has occurred'));
+    const error = {
+      "error": {
+        "code": "UnknownError",
+        "message": "An error has occurred",
+        "innerError": {
+          "date": "2022-02-14T13:27:37",
+          "request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c",
+          "client-request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c"
+        }
+      }
+    };
+    sinon.stub(request, 'patch').rejects(error);
 
     await assert.rejects(command.action(logger, {
       options: {

@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -20,14 +21,16 @@ describe(commands.SITESCRIPT_GET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(spo, 'getRequestDigest').callsFake(() => Promise.resolve({
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
+    sinon.stub(spo, 'getRequestDigest').resolves({
       FormDigestValue: 'ABC',
       FormDigestTimeoutSeconds: 1800,
       FormDigestExpiresAt: new Date(),
       WebFullUrl: 'https://contoso.sharepoint.com'
-    }));
+    });
     auth.service.connected = true;
     auth.service.spoUrl = 'https://contoso.sharepoint.com';
     commandInfo = Cli.getCommandInfo(command);
@@ -56,18 +59,13 @@ describe(commands.SITESCRIPT_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      spo.getRequestDigest,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SITESCRIPT_GET), true);
+    assert.strictEqual(command.name, commands.SITESCRIPT_GET);
   });
 
   it('has a description', () => {
@@ -75,12 +73,12 @@ describe(commands.SITESCRIPT_GET, () => {
   });
 
   it('gets information about the specified site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.GetSiteScriptMetadata`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b'
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({
             "$schema": "schema.json",
             "actions": [
@@ -96,10 +94,10 @@ describe(commands.SITESCRIPT_GET, () => {
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 1
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b' } });
@@ -123,12 +121,12 @@ describe(commands.SITESCRIPT_GET, () => {
   });
 
   it('gets information about the specified site script (debug)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.GetSiteScriptMetadata`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b'
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({
             "$schema": "schema.json",
             "actions": [
@@ -144,10 +142,10 @@ describe(commands.SITESCRIPT_GET, () => {
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 1
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b' } });
@@ -171,9 +169,7 @@ describe(commands.SITESCRIPT_GET, () => {
   });
 
   it('correctly handles error when site script not found', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject({ error: { 'odata.error': { message: { value: 'File Not Found.' } } } });
-    });
+    sinon.stub(request, 'post').rejects({ error: { 'odata.error': { message: { value: 'File Not Found.' } } } });
 
     await assert.rejects(command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b' } } as any), new CommandError('File Not Found.'));
   });

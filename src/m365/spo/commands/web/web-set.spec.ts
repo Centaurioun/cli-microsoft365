@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./web-set');
@@ -18,9 +19,10 @@ describe(commands.WEB_SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -47,16 +49,12 @@ describe(commands.WEB_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.WEB_SET), true);
+    assert.strictEqual(command.name, commands.WEB_SET);
   });
 
   it('has a description', () => {
@@ -64,216 +62,224 @@ describe(commands.WEB_SET, () => {
   });
 
   it('updates site title', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         Title: 'New title'
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', title: 'New title' } });
   });
 
   it('updates site logo URL', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SiteLogoUrl: 'image.png'
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', siteLogoUrl: 'image.png' } });
   });
 
   it('unsets the site logo', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SiteLogoUrl: ''
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', siteLogoUrl: '' } });
   });
 
   it('disables quick launch', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         QuickLaunchEnabled: false
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', quickLaunchEnabled: false } });
   });
 
   it('enables quick launch', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         QuickLaunchEnabled: true
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', quickLaunchEnabled: true } });
   });
 
   it('sets site header to compact', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderLayout: 2
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerLayout: 'compact' } });
   });
 
   it('sets site header to standard', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderLayout: 1
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerLayout: 'standard' } });
   });
 
   it('sets site header emphasis to 0', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderEmphasis: 0
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerEmphasis: 0 } });
   });
 
   it('sets site header emphasis to 1', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderEmphasis: 1
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerEmphasis: 1 } });
   });
 
   it('sets site header emphasis to 2', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderEmphasis: 2
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerEmphasis: 2 } });
   });
 
   it('sets site header emphasis to 3', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         HeaderEmphasis: 3
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', headerEmphasis: 3 } });
   });
 
   it('sets site menu mode to megamenu', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         MegaMenuEnabled: true
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', megaMenuEnabled: true } });
   });
 
   it('sets site menu mode to cascading', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         MegaMenuEnabled: false
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', megaMenuEnabled: false } });
   });
 
   it('updates all properties', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', title: 'New title', description: 'New description', siteLogoUrl: 'image.png', quickLaunchEnabled: true, headerLayout: 'compact', headerEmphasis: 1, megaMenuEnabled: true, footerEnabled: true } });
+    await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', title: 'New title', description: 'New description', siteLogoUrl: 'image.png', quickLaunchEnabled: true, headerLayout: 'compact', headerEmphasis: 1, megaMenuEnabled: true, footerEnabled: true, navAudienceTargetingEnabled: true } });
   });
 
   it('Update Welcome page', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
-      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
-        return Promise.resolve();
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web/RootFolder') {
+        return;
       }
-      return Promise.reject('Invalid request');
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
+        return;
+      }
+
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { welcomePage: 'SitePages/Home.aspx', url: 'https://contoso.sharepoint.com/sites/team-a' } });
   });
 
   it('Update Welcome page (debug)', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
-      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
-        return Promise.resolve();
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web/RootFolder') {
+        return;
       }
-      return Promise.reject('Invalid request');
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
+        return;
+      }
+
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, welcomePage: 'SitePages/Home.aspx', url: 'https://contoso.sharepoint.com/sites/team-a' } });
@@ -281,7 +287,7 @@ describe(commands.WEB_SET, () => {
 
   it('correctly handles error when hub site not found', async () => {
     sinon.stub(request, 'patch').callsFake(() => {
-      return Promise.reject({
+      throw {
         error: {
           "odata.error": {
             "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
@@ -291,25 +297,32 @@ describe(commands.WEB_SET, () => {
             }
           }
         }
-      });
+      };
     });
 
-    await assert.rejects(command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a' } } as any), new CommandError("Exception of type 'Microsoft.SharePoint.Client.ResourceNotFoundException' was thrown."));
+    await assert.rejects(command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a' } }), new CommandError("Exception of type 'Microsoft.SharePoint.Client.ResourceNotFoundException' was thrown."));
   });
 
   it('correctly handles error while updating Welcome page', async () => {
-    sinon.stub(request, 'patch').callsFake(() => {
-      return Promise.reject({
-        error: {
-          "odata.error": {
-            "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
-            "message": {
-              "lang": "en-US",
-              "value": "The WelcomePage property must be a path that is relative to the folder, and the path cannot contain two consecutive periods (..)."
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web/RootFolder') {
+        throw {
+          error: {
+            "odata.error": {
+              "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
+              "message": {
+                "lang": "en-US",
+                "value": "The WelcomePage property must be a path that is relative to the folder, and the path cannot contain two consecutive periods (..)."
+              }
             }
           }
-        }
-      });
+        };
+      }
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
+        return;
+      }
+
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -317,7 +330,7 @@ describe(commands.WEB_SET, () => {
         welcomePage: 'https://contoso.sharepoint.com/sites/team-a/SitePages/Home.aspx',
         url: 'https://contoso.sharepoint.com/sites/team-a'
       }
-    } as any), new CommandError('The WelcomePage property must be a path that is relative to the folder, and the path cannot contain two consecutive periods (..).'));
+    }), new CommandError('The WelcomePage property must be a path that is relative to the folder, and the path cannot contain two consecutive periods (..).'));
   });
 
   it('allows unknown properties', () => {
@@ -416,32 +429,59 @@ describe(commands.WEB_SET, () => {
     assert.strictEqual(actual, true);
   });
 
+  it('passes validation if navAudienceTargetingEnabled is set to true', async () => {
+    const actual = await command.validate({ options: { url: 'https://contoso.sharepoint.com/sites/team-a', navAudienceTargetingEnabled: true } }, commandInfo);
+    assert.strictEqual(actual, true);
+  });
+
+  it('passes validation if navAudienceTargetingEnabled is set to false', async () => {
+    const actual = await command.validate({ options: { url: 'https://contoso.sharepoint.com/sites/team-a', navAudienceTargetingEnabled: false } }, commandInfo);
+    assert.strictEqual(actual, true);
+  });
+
   it('enables footer', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         FooterEnabled: true
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', footerEnabled: true } });
   });
 
   it('disables footer', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         FooterEnabled: false
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', footerEnabled: false } });
+  });
+
+  it('enables navAudienceTargetingEnabled', async () => {
+    const postRequestStub = sinon.stub(request, 'patch').callsFake(async (opts) => {
+      if (opts.url === 'https://contoso.sharepoint.com/sites/team-a/_api/web') {
+        return;
+      }
+
+      throw 'Invalid request';
+    });
+
+    const requestBody = {
+      NavAudienceTargetingEnabled: true
+    };
+
+    await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', navAudienceTargetingEnabled: true } });
+    assert.deepStrictEqual(postRequestStub.lastCall.args[0].data, requestBody);
   });
 
   it('fails validation if search scope is not valid', async () => {
@@ -480,70 +520,70 @@ describe(commands.WEB_SET, () => {
   });
 
   it('sets search scope to default scope', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SearchScope: 0
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', searchScope: 'defaultscope' } });
   });
 
   it('sets search scope to tenant', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SearchScope: 1
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', searchScope: 'tenant' } });
   });
 
   it('sets search scope to hub', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SearchScope: 2
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', searchScope: 'hub' } });
   });
 
   it('sets search scope to site', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SearchScope: 3
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', searchScope: 'site' } });
   });
 
   it('sets search scope even if parameter is not all lower case', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (JSON.stringify(opts.data) === JSON.stringify({
         SearchScope: 3
       })) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/team-a', searchScope: 'Site' } });

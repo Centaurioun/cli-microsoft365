@@ -1,10 +1,11 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { telemetry } from '../../telemetry';
 import auth from '../../Auth';
 import { Logger } from '../../cli/Logger';
 import { CommandError } from '../../Command';
+import { telemetry } from '../../telemetry';
 import { pid } from '../../utils/pid';
+import { session } from '../../utils/session';
 import { sinonUtil } from '../../utils/sinonUtil';
 import PowerBICommand from './PowerBICommand';
 
@@ -28,6 +29,7 @@ describe('PowerBICommand', () => {
   before(() => {
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
   });
 
   afterEach(() => {
@@ -35,14 +37,11 @@ describe('PowerBICommand', () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('correctly reports an error while restoring auth info', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(auth, 'restoreAuth').callsFake(async () => { throw 'An error has occurred'; });
     const command = new MockCommand();
     const logger: Logger = {
       log: () => { },
@@ -53,7 +52,7 @@ describe('PowerBICommand', () => {
   });
 
   it('doesn\'t execute command when error occurred while restoring auth info', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(auth, 'restoreAuth').callsFake(async () => { throw 'An error has occurred'; });
     const command = new MockCommand();
     const logger: Logger = {
       log: () => { },
@@ -66,7 +65,7 @@ describe('PowerBICommand', () => {
   });
 
   it('doesn\'t execute command when not logged in', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
+    sinon.stub(auth, 'restoreAuth').resolves();
     const command = new MockCommand();
     const logger: Logger = {
       log: () => { },
@@ -80,7 +79,7 @@ describe('PowerBICommand', () => {
   });
 
   it('executes command when logged in', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
+    sinon.stub(auth, 'restoreAuth').resolves();
     const command = new MockCommand();
     const logger: Logger = {
       log: () => { },

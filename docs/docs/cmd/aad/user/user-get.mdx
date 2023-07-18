@@ -1,0 +1,152 @@
+import Global from '/docs/cmd/_global.mdx';
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+# aad user get
+
+Gets information about the specified user
+
+## Usage
+
+```sh
+m365 aad user get [options]
+```
+
+## Options
+
+```md definition-list
+`-i, --id [id]`
+: The ID of the user to retrieve information for. Use either `id`, `userName` or `email`, but not all.
+
+`-n, --userName [userName]`
+: The name of the user to retrieve information for. Use either `id`, `userName` or `email`, but not all.
+
+`--email [email]`
+: The email of the user to retrieve information for. Use either `id`, `userName` or `email`, but not all.
+
+`-p, --properties [properties]`
+: Comma-separated list of properties to retrieve
+```
+
+<Global />
+
+## Remarks
+
+You can retrieve information about a user, either by specifying that user's id, user name (`userPrincipalName`), or email (`mail`), but not all.
+
+If the user with the specified id, user name, or email doesn't exist, you will get a `Resource 'xyz' does not exist or one of its queried reference-property objects are not present.` error.
+
+## Examples
+
+Get information about the user with id _1caf7dcd-7e83-4c3a-94f7-932a1299c844_
+
+```sh
+m365 aad user get --id 1caf7dcd-7e83-4c3a-94f7-932a1299c844
+```
+
+Get information about the user by user name
+
+```sh
+m365 aad user get --userName AarifS@contoso.onmicrosoft.com
+```
+
+Get information about the user by email
+
+```sh
+m365 aad user get --email AarifS@contoso.onmicrosoft.com
+```
+
+For the user with id _1caf7dcd-7e83-4c3a-94f7-932a1299c844_ retrieve the user name, e-mail address and full name
+
+```sh
+m365 aad user get --id 1caf7dcd-7e83-4c3a-94f7-932a1299c844 --properties "userPrincipalName,mail,displayName"
+```
+
+Get information about the currently logged user using the Id token
+
+```sh
+m365 aad user get --id "@meId"
+```
+
+Get information about the currently logged in user using the UserName token
+
+```sh
+m365 aad user get --userName "@meUserName"
+```
+
+## Response
+
+<Tabs>
+  <TabItem value="JSON">
+
+  ```json
+  {
+    "businessPhones": [],
+    "displayName": "John Doe",
+    "givenName": null,
+    "jobTitle": null,
+    "mail": null,
+    "mobilePhone": null,
+    "officeLocation": null,
+    "preferredLanguage": null,
+    "surname": null,
+    "userPrincipalName": "john.doe@contoso.com",
+    "id": "74a3b772-3122-447b-b9da-10895e238219"
+  }
+  ```
+
+  </TabItem>
+  <TabItem value="Text">
+
+  ```text
+  businessPhones   : []
+  displayName      : John Doe
+  givenName        : null
+  id               : 74a3b772-3122-447b-b9da-10895e238219
+  jobTitle         : null
+  mail             : null
+  mobilePhone      : null
+  officeLocation   : null
+  preferredLanguage: null
+  surname          : null
+  userPrincipalName: john.doe@contoso.com
+  ```
+
+  </TabItem>
+  <TabItem value="CSV">
+
+  ```csv
+  displayName,userPrincipalName,id
+  John Doe,john.doe@contoso.com,74a3b772-3122-447b-b9da-10895e238219
+  ```
+
+  </TabItem>
+  <TabItem value="Markdown">
+
+  ```md
+  # aad user get --displayName "John Doe" --userName "john.doe@contoso.com" --password "SomePassw0rd" --firstName "John" --lastName "Doe" --jobTitle "Sales Manager" --officeLocation "Vosselaar" --preferredLanguage "nl-BE"
+
+  Date: 16/02/2023
+
+  ## John Doe (990e2425-f595-43bc-85ed-b89a44093793)
+
+  Property | Value
+  ---------|-------
+  displayName | John Doe
+  givenName | John
+  jobTitle | Sales Manager
+  mail | null
+  mobilePhone | null
+  officeLocation | Vosselaar
+  preferredLanguage | nl-BE
+  surname | Doe
+  userPrincipalName | john.doe@contoso.com
+  id | 0649d0bd-53dc-4e1d-a357-76f1d92d447b
+  ```
+
+  </TabItem>
+</Tabs>
+
+## More information
+
+- Microsoft Graph User properties: [https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/user#properties](https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/user#properties)

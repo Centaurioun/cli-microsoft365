@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./contenttype-list');
@@ -19,8 +20,10 @@ describe(commands.CONTENTTYPE_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -48,16 +51,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CONTENTTYPE_LIST), true);
+    assert.strictEqual(command.name, commands.CONTENTTYPE_LIST);
   });
 
   it('has a description', () => {
@@ -85,12 +84,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
 
   it('command correctly handles reject request', async () => {
     const err = 'Invalid request';
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/ContentTypes') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -102,12 +101,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
   });
 
   it('retrieves all content types (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             "value": [
               {
                 "Description": "Create a new document.",
@@ -162,11 +161,11 @@ describe(commands.CONTENTTYPE_LIST, () => {
                 "StringId": "0x0120000EAD53EDAD7C6647B0D976EEC953F99E"
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -232,12 +231,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
   });
 
   it('retrieves all content types', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             "value": [
               {
                 "Description": "Create a new document.",
@@ -292,11 +291,11 @@ describe(commands.CONTENTTYPE_LIST, () => {
                 "StringId": "0x0120000EAD53EDAD7C6647B0D976EEC953F99E"
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -361,12 +360,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
   });
 
   it('retrieves all content types by category (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes?$filter=Group eq 'List%20Content%20Types'`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             "value": [
               {
                 "Description": "Create a new document.",
@@ -421,11 +420,11 @@ describe(commands.CONTENTTYPE_LIST, () => {
                 "StringId": "0x0120000EAD53EDAD7C6647B0D976EEC953F99E"
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -492,12 +491,12 @@ describe(commands.CONTENTTYPE_LIST, () => {
   });
 
   it('retrieves all content types by category', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes?$filter=Group eq 'List%20Content%20Types'`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             "value": [
               {
                 "Description": "Create a new document.",
@@ -552,11 +551,11 @@ describe(commands.CONTENTTYPE_LIST, () => {
                 "StringId": "0x0120000EAD53EDAD7C6647B0D976EEC953F99E"
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {

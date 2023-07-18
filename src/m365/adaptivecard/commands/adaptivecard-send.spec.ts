@@ -8,6 +8,7 @@ import { Logger } from '../../../cli/Logger';
 import Command, { CommandError } from '../../../Command';
 import request from '../../../request';
 import { pid } from '../../../utils/pid';
+import { session } from '../../../utils/session';
 import { sinonUtil } from '../../../utils/sinonUtil';
 import commands from '../commands';
 const command: Command = require('./adaptivecard-send');
@@ -15,14 +16,17 @@ const command: Command = require('./adaptivecard-send');
 import 'adaptivecards-templating';
 
 describe(commands.SEND, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -39,24 +43,22 @@ describe(commands.SEND, () => {
         log.push(msg);
       }
     };
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.post
+      request.post,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SEND), true);
+    assert.strictEqual(command.name, commands.SEND);
   });
 
   it('has a description', () => {
@@ -65,7 +67,7 @@ describe(commands.SEND, () => {
 
   describe('send card to Teams', () => {
     it('sends card with just title', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -87,10 +89,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
 
       await command.action(logger, {
@@ -102,7 +104,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with just title (debug)', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -124,10 +126,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
 
       await command.action(logger, {
@@ -140,7 +142,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with just description', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -161,10 +163,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
 
       await command.action(logger, {
@@ -176,7 +178,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with title and description', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -203,10 +205,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -218,7 +220,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with title, description and image', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -250,10 +252,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -266,7 +268,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with title, description and action', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -300,10 +302,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -316,7 +318,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with title, description, image and action', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -355,10 +357,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -372,7 +374,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends card with title, description, action and unknown options', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -419,10 +421,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -437,7 +439,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends custom card without any data', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -481,10 +483,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -495,7 +497,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends custom card with just title merged', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -538,10 +540,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -553,7 +555,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends custom card with all known options merged', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -596,10 +598,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -614,7 +616,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends custom card with unknown option merged', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -657,10 +659,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -672,7 +674,7 @@ describe(commands.SEND, () => {
     });
 
     it('sends custom card with cardData', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -727,10 +729,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve(1);
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -742,7 +744,7 @@ describe(commands.SEND, () => {
     });
 
     it('correctly handles error when sending card to Teams', async () => {
-      sinon.stub(request, 'post').callsFake(_ => Promise.resolve('Webhook message delivery failed with error: Microsoft Teams endpoint returned HTTP error 400 with ContextId MS-CV=Qn6afVIGzEq'));
+      sinon.stub(request, 'post').resolves('Webhook message delivery failed with error: Microsoft Teams endpoint returned HTTP error 400 with ContextId MS-CV=Qn6afVIGzEq');
       await assert.rejects(command.action(logger, {
         options: {
           url: 'https://contoso.webhook.office.com/webhookb2/892e8ed3-997c-4b6e-8f8a-7f32728a8a87@f7322380-f203-42ff-93e8-66e266f6d2e4/IncomingWebhook/fcc6565ec7a944928bd43d6fc193b258/4f0482d4-b147-4f67-8a61-11f0a5019547',
@@ -754,7 +756,7 @@ describe(commands.SEND, () => {
 
   describe('send card to a URL', () => {
     it('sends card with just title', async () => {
-      sinon.stub(request, 'post').callsFake(opts => {
+      sinon.stub(request, 'post').callsFake(async opts => {
         if (JSON.stringify(opts.data) === JSON.stringify({
           "type": "message",
           "attachments": [
@@ -776,10 +778,10 @@ describe(commands.SEND, () => {
             }
           ]
         })) {
-          return Promise.resolve('OK');
+          return '1';
         }
 
-        return Promise.reject(`Invalid data: ${JSON.stringify(opts.data)}`);
+        throw `Invalid data: ${JSON.stringify(opts.data)}`;
       });
       await command.action(logger, {
         options: {
@@ -818,11 +820,6 @@ describe(commands.SEND, () => {
   it(`passes validation if the specified cardData is a valid JSON string`, async () => {
     const actual = await command.validate({ options: { url: 'https://contoso.webhook.office.com/webhookb2/892e8ed3-997c-4b6e-8f8a-7f32728a8a87@f7322380-f203-42ff-93e8-66e266f6d2e4/IncomingWebhook/fcc6565ec7a944928bd43d6fc193b258/4f0482d4-b147-4f67-8a61-11f0a5019547', card: '{}', cardData: '{}' } }, commandInfo);
     assert.strictEqual(actual, true);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['title', 'card'] }]);
   });
 
   it('supports specifying unknown options', () => {

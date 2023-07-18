@@ -1,3 +1,4 @@
+import * as os from 'os';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { telemetry } from '../../../../telemetry';
@@ -9,6 +10,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import { urlUtil } from '../../../../utils/urlUtil';
@@ -16,6 +18,7 @@ import commands from '../../commands';
 const command: Command = require('./listitem-add');
 
 describe(commands.LISTITEM_ADD, () => {
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let commandInfo: CommandInfo;
@@ -37,8 +40,8 @@ describe(commands.LISTITEM_ADD, () => {
         const bodyString = JSON.stringify(opts.data);
         const ctMatch = bodyString.match(/\"?FieldName\"?:\s*\"?ContentType\"?,\s*\"?FieldValue\"?:\s*\"?(\w*)\"?/i);
         actualContentType = ctMatch ? ctMatch[1] : "";
-        if (bodyString.indexOf("fail adding me") > -1) { return Promise.resolve({ value: [] }); }
-        return { value: [{ FieldName: "Id", FieldValue: expectedId }] };
+        if (bodyString.indexOf("fail adding me") > -1) { return Promise.resolve({ value: [{ ErrorMessage: 'failed updating', 'FieldName': 'Title', 'HasException': true }] }); }
+        return { value: [{ FieldName: "Id", FieldValue: expectedId, HasException: false }] };
       }
     }
     if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')/AddValidateUpdateItemUsingPath()`) {
@@ -95,9 +98,11 @@ describe(commands.LISTITEM_ADD, () => {
   };
 
   before(() => {
+    cli = Cli.getInstance();
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     ensureFolderStub = sinon.stub(spo, 'ensureFolder').resolves();
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
@@ -116,22 +121,19 @@ describe(commands.LISTITEM_ADD, () => {
         log.push(msg);
       }
     };
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.post,
-      request.get
+      request.get,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      spo.ensureFolder,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -201,7 +203,7 @@ describe(commands.LISTITEM_ADD, () => {
       Title: "fail adding me"
     };
 
-    await assert.rejects(command.action(logger, { options: options } as any), new CommandError("Item didn't add successfully"));
+    await assert.rejects(command.action(logger, { options: options } as any), new CommandError(`Creating the item failed with the following errors: ${os.EOL}- Title - failed updating`));
     assert.strictEqual(actualId, 0);
   });
 

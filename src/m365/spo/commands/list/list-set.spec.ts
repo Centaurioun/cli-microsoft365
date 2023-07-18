@@ -8,19 +8,23 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./list-set');
 
 describe(commands.LIST_SET, () => {
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -38,25 +42,23 @@ describe(commands.LIST_SET, () => {
         log.push(msg);
       }
     };
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.post
+      request.post,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.LIST_SET), true);
+    assert.strictEqual(command.name, commands.LIST_SET);
   });
 
   it('has a description', () => {
@@ -304,6 +306,22 @@ describe(commands.LIST_SET, () => {
     assert.strictEqual(actual, expected);
   });
 
+  it('sets specified disableCommenting for list', async () => {
+    const expected = true;
+    let actual = '';
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `https://contoso.sharepoint.com/sites/project-x/_api/web/lists(guid'3EA5A977-315E-4E25-8B0F-E4F949BF6B8F')/`) {
+        actual = opts.data.DisableCommenting;
+        return { ErrorMessage: null };
+      }
+
+      throw 'Invalid request';
+    });
+
+    await command.action(logger, { options: { id: '3EA5A977-315E-4E25-8B0F-E4F949BF6B8F', disableCommenting: expected, webUrl: 'https://contoso.sharepoint.com/sites/project-x' } });
+    assert.strictEqual(actual, expected);
+  });
+
   it('sets specified disableGridEditing for list', async () => {
     const expected = true;
     let actual = '';
@@ -321,7 +339,7 @@ describe(commands.LIST_SET, () => {
   });
 
   it('sets specified draftVersionVisibility for list', async () => {
-    const expected = true;
+    const expected = 1;
     let actual = '';
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/lists`) > -1) {
@@ -332,7 +350,7 @@ describe(commands.LIST_SET, () => {
       throw 'Invalid request';
     });
 
-    await command.action(logger, { options: { id: '3EA5A977-315E-4E25-8B0F-E4F949BF6B8F', draftVersionVisibility: expected, webUrl: 'https://contoso.sharepoint.com/sites/project-x' } });
+    await command.action(logger, { options: { id: '3EA5A977-315E-4E25-8B0F-E4F949BF6B8F', draftVersionVisibility: 'Author', webUrl: 'https://contoso.sharepoint.com/sites/project-x' } });
     assert.strictEqual(actual, expected);
   });
 
@@ -737,7 +755,7 @@ describe(commands.LIST_SET, () => {
   });
 
   it('sets specified listExperienceOptions for list', async () => {
-    const expected = 'NewExperience';
+    const expected = 1;
     let actual = '';
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/lists`) > -1) {
@@ -748,7 +766,7 @@ describe(commands.LIST_SET, () => {
       throw 'Invalid request';
     });
 
-    await command.action(logger, { options: { id: '3EA5A977-315E-4E25-8B0F-E4F949BF6B8F', listExperienceOptions: expected, webUrl: 'https://contoso.sharepoint.com/sites/project-x' } });
+    await command.action(logger, { options: { id: '3EA5A977-315E-4E25-8B0F-E4F949BF6B8F', listExperienceOptions: 'NewExperience', webUrl: 'https://contoso.sharepoint.com/sites/project-x' } });
     assert.strictEqual(actual, expected);
   });
 

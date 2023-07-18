@@ -3,7 +3,7 @@ import Command from '../../../../Command';
 import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { spo } from '../../../../utils/spo';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
@@ -26,8 +26,6 @@ interface Options extends GlobalOptions {
 }
 
 class SpoFileMoveCommand extends SpoCommand {
-  private dots?: string;
-
   public get name(): string {
     return commands.FILE_MOVE;
   }
@@ -80,7 +78,7 @@ class SpoFileMoveCommand extends SpoCommand {
   }
 
   protected getExcludedOptionsWithUrls(): string[] | undefined {
-    return ['targetUrl'];
+    return ['targetUrl', 'sourceUrl'];
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
@@ -89,6 +87,7 @@ class SpoFileMoveCommand extends SpoCommand {
     const tenantUrl: string = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
 
     try {
+      const serverRelativePath = urlUtil.getServerRelativePath(webUrl, args.options.sourceUrl);
       // Check if the source file exists.
       // Called on purpose, we explicitly check if user specified file
       // in the sourceUrl option.
@@ -96,7 +95,7 @@ class SpoFileMoveCommand extends SpoCommand {
       // A user might enter folder instead of file as source url by mistake
       // then there are edge cases when deleteIfAlreadyExists flag is set
       // the user can receive misleading error message.
-      this.fileExists(tenantUrl, webUrl, args.options.sourceUrl);
+      await this.fileExists(webUrl, serverRelativePath);
 
       if (args.options.deleteIfAlreadyExists) {
         // try delete target file, if deleteIfAlreadyExists flag is set
@@ -105,10 +104,10 @@ class SpoFileMoveCommand extends SpoCommand {
       }
 
       // all preconditions met, now create copy job
-      const sourceAbsoluteUrl: string = urlUtil.urlCombine(webUrl, args.options.sourceUrl);
+      const sourceAbsoluteUrl: string = urlUtil.urlCombine(tenantUrl, serverRelativePath);
       const allowSchemaMismatch: boolean = args.options.allowSchemaMismatch || false;
       const requestUrl: string = urlUtil.urlCombine(webUrl, '/_api/site/CreateCopyJobs');
-      const requestOptions: any = {
+      const requestOptions: CliRequestOptions = {
         url: requestUrl,
         headers: {
           'accept': 'application/json;odata=nometadata'
@@ -126,8 +125,6 @@ class SpoFileMoveCommand extends SpoCommand {
       };
 
       const jobInfo = await request.post<any>(requestOptions);
-      this.dots = '';
-
       const copyJobInfo: any = jobInfo.value[0];
       const progressPollInterval: number = 1800; // 30 * 60; //used previously implemented interval. The API does not provide guidance on what value should be used.
 
@@ -140,7 +137,6 @@ class SpoFileMoveCommand extends SpoCommand {
             resolve,
             reject,
             logger,
-            dots: this.dots,
             debug: this.debug,
             verbose: this.verbose
           });
@@ -155,12 +151,9 @@ class SpoFileMoveCommand extends SpoCommand {
   /**
    * Checks if a file exists on the server relative url
    */
-  private fileExists(tenantUrl: string, webUrl: string, sourceUrl: string): Promise<void> {
-    const webServerRelativeUrl: string = webUrl.replace(tenantUrl, '');
-    const fileServerRelativeUrl: string = `${webServerRelativeUrl}${sourceUrl}`;
-
-    const requestUrl = `${webUrl}/_api/web/GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileServerRelativeUrl)}')/`;
-    const requestOptions: any = {
+  private fileExists(webUrl: string, sourceUrl: string): Promise<void> {
+    const requestUrl = `${webUrl}/_api/web/GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(sourceUrl)}')/`;
+    const requestOptions: CliRequestOptions = {
       url: requestUrl,
       method: 'GET',
       headers: {
@@ -202,7 +195,7 @@ class SpoFileMoveCommand extends SpoCommand {
       await Cli.executeCommand(removeCommand as Command, { options: { ...removeOptions, _: [] } });
     }
     catch (err: any) {
-      if (err.error !== undefined && err.error.message !== undefined && err.error.message.includes('does not exist')) {
+      if (err !== undefined && err.message !== undefined && err.message.includes('does not exist')) {
 
       }
       else {

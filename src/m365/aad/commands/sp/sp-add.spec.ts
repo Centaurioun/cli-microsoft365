@@ -8,20 +8,24 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./sp-add');
 
 describe(commands.SP_ADD, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -41,26 +45,24 @@ describe(commands.SP_ADD, () => {
     };
     loggerLogSpy = sinon.spy(logger, 'log');
     (command as any).items = [];
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
-      request.post
+      request.post,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SP_ADD), true);
+    assert.strictEqual(command.name, commands.SP_ADD);
   });
 
   it('has a description', () => {
@@ -146,17 +148,15 @@ describe(commands.SP_ADD, () => {
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        error: {
-          'odata.error': {
-            code: '-1, InvalidOperationException',
-            message: {
-              value: 'An error has occurred'
-            }
+    sinon.stub(request, 'get').rejects({
+      error: {
+        'odata.error': {
+          code: '-1, InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
           }
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: { id: 'b2307a39-e878-458b-bc90-03bc578531d6' } } as any),
@@ -164,16 +164,16 @@ describe(commands.SP_ADD, () => {
   });
 
   it('fails when the specified Azure AD app does not exist', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/applications?$filter=id eq `) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#applications",
           "value": [
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -185,9 +185,9 @@ describe(commands.SP_ADD, () => {
   });
 
   it('fails when Azure AD app with same name exists', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/applications?$filter=displayName eq `) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#applications",
           "value": [
             {
@@ -201,10 +201,10 @@ describe(commands.SP_ADD, () => {
               "displayName": "Test App"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -216,15 +216,15 @@ describe(commands.SP_ADD, () => {
   });
 
   it('adds a service principal to a registered Azure AD app by appId', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/servicePrincipals`) {
-        return Promise.resolve({
+        return {
           "id": "59e617e5-e447-4adc-8b88-00af644d7c92",
           "appId": "65415bb1-9267-4313-bbf5-ae259732ee12",
           "displayName": "foo"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -240,9 +240,9 @@ describe(commands.SP_ADD, () => {
   });
 
   it('adds a service principal to a registered Azure AD app by appName', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/applications?$filter=displayName eq `) > -1) {
-        return Promise.resolve({
+        return {
           "value": [
             {
               "id": "59e617e5-e447-4adc-8b88-00af644d7c92",
@@ -250,22 +250,22 @@ describe(commands.SP_ADD, () => {
               "displayName": "foo"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/servicePrincipals`) > -1) {
-        return Promise.resolve({
+        return {
           "id": "59e617e5-e447-4adc-8b88-00af644d7c92",
           "appId": "65415bb1-9267-4313-bbf5-ae259732ee12",
           "displayName": "foo"
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -282,9 +282,9 @@ describe(commands.SP_ADD, () => {
   });
 
   it('adds a service principal to a registered Azure AD app by objectId', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/applications?$filter=id eq `) > -1) {
-        return Promise.resolve({
+        return {
           "value": [
             {
               "id": "59e617e5-e447-4adc-8b88-00af644d7c92",
@@ -292,22 +292,22 @@ describe(commands.SP_ADD, () => {
               "displayName": "foo"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/servicePrincipals`) > -1) {
-        return Promise.resolve({
+        return {
           "id": "59e617e5-e447-4adc-8b88-00af644d7c92",
           "appId": "65415bb1-9267-4313-bbf5-ae259732ee12",
           "displayName": "foo"
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {

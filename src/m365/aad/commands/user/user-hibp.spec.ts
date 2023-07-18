@@ -8,20 +8,24 @@ import { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command = require('./user-hibp');
 
 describe(commands.USER_HIBP, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
 
   before(() => {
+    cli = Cli.getInstance();
     commandInfo = Cli.getCommandInfo(command);
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
   });
 
   beforeEach(() => {
@@ -38,23 +42,22 @@ describe(commands.USER_HIBP, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.get
+      request.get,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.USER_HIBP), true);
+    assert.strictEqual(command.name, commands.USER_HIBP);
   });
 
   it('has a description', () => {
@@ -82,12 +85,12 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('checks user is pwned using userName', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://haveibeenpwned.com/api/v3/breachedaccount/${formatting.encodeQueryParameter('account-exists@hibp-integration-tests.com')}`) {
-        return Promise.resolve([{ "Name": "Adobe" }]);
+        return [{ "Name": "Adobe" }];
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { userName: 'account-exists@hibp-integration-tests.com', apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -95,13 +98,13 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('checks user is pwned using userName (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://haveibeenpwned.com/api/v3/breachedaccount/${formatting.encodeQueryParameter('account-exists@hibp-integration-tests.com')}`) {
         // this is the actual truncated response as the API would return
-        return Promise.resolve([{ "Name": "Adobe" }]);
+        return [{ "Name": "Adobe" }];
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, userName: 'account-exists@hibp-integration-tests.com', apiKey: '2975xc539c304xf797f665x43f8x557x' } });
@@ -109,13 +112,13 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('checks user is pwned using userName and multiple breaches', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://haveibeenpwned.com/api/v3/breachedaccount/${formatting.encodeQueryParameter('account-exists@hibp-integration-tests.com')}`) {
         // this is the actual truncated response as the API would return
-        return Promise.resolve([{ "Name": "Adobe" }, { "Name": "Gawker" }, { "Name": "Stratfor" }]);
+        return [{ "Name": "Adobe" }, { "Name": "Gawker" }, { "Name": "Stratfor" }];
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { userName: 'account-exists@hibp-integration-tests.com', apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -123,13 +126,13 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('checks user is pwned using userName and domain', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://haveibeenpwned.com/api/v3/breachedaccount/${formatting.encodeQueryParameter('account-exists@hibp-integration-tests.com')}?domain=adobe.com`) {
         // this is the actual truncated response as the API would return
-        return Promise.resolve([{ "Name": "Adobe" }]);
+        return [{ "Name": "Adobe" }];
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { userName: 'account-exists@hibp-integration-tests.com', domain: "adobe.com", apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -137,17 +140,17 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('checks user is pwned using userName and domain with a domain that does not exists', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://haveibeenpwned.com/api/v3/breachedaccount/${formatting.encodeQueryParameter('account-exists@hibp-integration-tests.com')}?domain=adobe.xxx`) {
         // this is the actual truncated response as the API would return
-        return Promise.reject({
+        throw {
           "response": {
             "status": 404
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, userName: 'account-exists@hibp-integration-tests.com', domain: "adobe.xxx", apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -155,12 +158,10 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('correctly handles no pwnage found (debug)', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        "response": {
-          "status": 404
-        }
-      });
+    sinon.stub(request, 'get').rejects({
+      "response": {
+        "status": 404
+      }
     });
 
     await command.action(logger, { options: { debug: true, userName: 'account-notexists@hibp-integration-tests.com', apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -168,12 +169,10 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('correctly handles no pwnage found (verbose)', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        "response": {
-          "status": 404
-        }
-      });
+    sinon.stub(request, 'get').rejects({
+      "response": {
+        "status": 404
+      }
     });
 
     await command.action(logger, { options: { verbose: true, userName: 'account-notexists@hibp-integration-tests.com', apiKey: "2975xc539c304xf797f665x43f8x557x" } });
@@ -181,9 +180,7 @@ describe(commands.USER_HIBP, () => {
   });
 
   it('correctly handles unauthorized request', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject("Access denied due to improperly formed hibp-api-key.");
-    });
+    sinon.stub(request, 'get').rejects(new Error("Access denied due to improperly formed hibp-api-key."));
 
     await assert.rejects(command.action(logger, { options: { userName: 'account-notexists@hibp-integration-tests.com' } } as any),
       new CommandError("Access denied due to improperly formed hibp-api-key."));
