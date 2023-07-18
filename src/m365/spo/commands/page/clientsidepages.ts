@@ -32,12 +32,12 @@ export enum CanvasSectionTemplate {
   /// <summary>
   /// Two columns, left one is 1/3, right one 2/3
   /// </summary>
-  TwoColumnRight
+  TwoColumnRight,
 }
 
 /**
  * Shorthand for Object.hasOwnProperty
- * 
+ *
  * @param o Object to check for
  * @param p Name of the property
  */
@@ -54,13 +54,14 @@ function hOP(o: any, p: string): boolean {
  *
  */
 function extend(target: any, source: any, noOverwrite = false): any {
-
   if (!objectDefinedNotNull(source)) {
     return target;
   }
 
   // ensure we don't overwrite things we don't want overwritten
-  const check: (o: any, i: string) => Boolean = noOverwrite ? (o, i) => !(i in o) : () => true;
+  const check: (o: any, i: string) => Boolean = noOverwrite
+    ? (o, i) => !(i in o)
+    : () => true;
 
   return Object.getOwnPropertyNames(source)
     .filter((v: string) => check(target, v))
@@ -85,11 +86,14 @@ function objectDefinedNotNull(obj: any): boolean {
  */
 function getGUID(): string {
   let d = new Date().getTime();
-  const guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    const r = (d + Math.random() * 16) % 16 | 0;
-    d = Math.floor(d / 16);
-    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
-  });
+  const guid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+    /[xy]/g,
+    function (c) {
+      const r = (d + Math.random() * 16) % 16 | 0;
+      d = Math.floor(d / 16);
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    },
+  );
   return guid;
 }
 
@@ -123,33 +127,37 @@ export type CanvasColumnFactorType = 0 | 2 | 4 | 6 | 8 | 12;
 
 /**
  * Gets the next order value 1 based for the provided collection
- * 
+ *
  * @param collection Collection of orderable things
  */
 function getNextOrder(collection: { order: number }[]): number {
-
   if (collection.length < 1) {
     return 1;
   }
 
-  return Math.max.apply(null, collection.map(i => i.order)) + 1;
+  return (
+    Math.max.apply(
+      null,
+      collection.map((i) => i.order),
+    ) + 1
+  );
 }
 
 /**
  * After https://stackoverflow.com/questions/273789/is-there-a-version-of-javascripts-string-indexof-that-allows-for-regular-expr/274094#274094
- * 
+ *
  * @param this Types the called context this to a string in which the search will be conducted
  * @param regex A regex or string to match
  * @param startpos A starting position from which the search will begin
  */
 function regexIndexOf(this: string, regex: RegExp | string, startpos = 0) {
   const indexOf = this.substring(startpos).search(regex);
-  return (indexOf >= 0) ? (indexOf + (startpos)) : indexOf;
+  return indexOf >= 0 ? indexOf + startpos : indexOf;
 }
 
 /**
  * Gets an attribute value from an html string block
- * 
+ *
  * @param html HTML to search
  * @param attrName The name of the attribute to find
  */
@@ -161,13 +169,16 @@ function getAttrValueFromString(html: string, attrName: string): string | null {
 
 /**
  * Finds bounded blocks of markup bounded by divs, ensuring to match the ending div even with nested divs in the interstitial markup
- * 
+ *
  * @param html HTML to search
  * @param boundaryStartPattern The starting pattern to find, typically a div with attribute
  * @param collector A func to take the found block and provide a way to form it into a useful return that is added into the return array
  */
-function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | string, collector: (s: string) => T): T[] {
-
+function getBoundedDivMarkup<T>(
+  html: string,
+  boundaryStartPattern: RegExp | string,
+  collector: (s: string) => T,
+): T[] {
   const blocks: T[] = [];
 
   if (typeof html === "undefined" || html === null) {
@@ -187,7 +198,6 @@ function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | str
 
   // this loop finds each of the blocks
   while (startIndex > -1) {
-
     // we have one open div counting from the one found above using boundaryStartPattern so we need to ensure we find it's close
     let openCounter = 1;
     let searchIndex = startIndex + 1;
@@ -196,7 +206,6 @@ function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | str
 
     // this loop finds the </div> tag that matches the opening of the control
     while (true) {
-
       // find both the next opening and closing div tags from our current searching index
       nextDivOpen = regexIndexOf.call(cleanedHtml, /<div[^>]*>/i, searchIndex);
       nextCloseDiv = regexIndexOf.call(cleanedHtml, /<\/div>/i, searchIndex);
@@ -219,9 +228,10 @@ function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | str
       // once we have no open divs back to the level of the opening control div
       // meaning we have all of the markup we intended to find
       if (openCounter === 0) {
-
         // get the bounded markup, +6 is the size of the ending </div> tag
-        const markup = cleanedHtml.substring(startIndex, nextCloseDiv + 6).trim();
+        const markup = cleanedHtml
+          .substring(startIndex, nextCloseDiv + 6)
+          .trim();
 
         // save the control data we found to the array
         blocks.push(collector(markup));
@@ -239,7 +249,11 @@ function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | str
     }
 
     // get the start of the next control
-    startIndex = regexIndexOf.call(cleanedHtml, boundaryStartPattern, nextCloseDiv);
+    startIndex = regexIndexOf.call(
+      cleanedHtml,
+      boundaryStartPattern,
+      nextCloseDiv,
+    );
   }
 
   return blocks;
@@ -247,10 +261,16 @@ function getBoundedDivMarkup<T>(html: string, boundaryStartPattern: RegExp | str
 
 /**
  * Normalizes the order value for all the sections, columns, and controls to be 1 based and stepped (1, 2, 3...)
- * 
+ *
  * @param collection The collection to normalize
  */
-function reindex(collection?: { order: number, columns?: { order: number }[], controls?: { order: number }[] }[]): void {
+function reindex(
+  collection?: {
+    order: number;
+    columns?: { order: number }[];
+    controls?: { order: number }[];
+  }[],
+): void {
   if (!collection) {
     return;
   }
@@ -274,27 +294,26 @@ export class ClientSidePage {
 
   /**
    * Converts a json object to an escaped string appropriate for use in attributes when storing client-side controls
-   * 
+   *
    * @param json The json object to encode into a string
    */
   public static jsonToEscapedString(json: any): string {
-
     return JSON.stringify(json)
       .replace(/"/g, "&quot;")
       .replace(/:/g, "&#58;")
       .replace(/{/g, "&#123;")
       .replace(/}/g, "&#125;")
-      .replace(/\[/g, "\[")
-      .replace(/\]/g, "\]")
-      .replace(/\*/g, "\*")
-      .replace(/\$/g, "\$")
-      .replace(/\./g, "\.");
+      .replace(/\[/g, "[")
+      .replace(/\]/g, "]")
+      .replace(/\*/g, "*")
+      .replace(/\$/g, "$")
+      .replace(/\./g, ".");
   }
 
   /**
    * Converts an escaped string from a client-side control attribute to a json object
-   * 
-   * @param escapedString 
+   *
+   * @param escapedString
    */
   public static escapedStringToJson<T = any>(escapedString: string | null): T {
     if (!escapedString) {
@@ -303,9 +322,21 @@ export class ClientSidePage {
 
     const unespace = (escaped: string): string => {
       const mapDict = [
-        [/\\/g, "\\\\"], [/&quot;/g, "\""], [/&#58;/g, ":"], [/&#123;/g, "{"], [/&#125;/g, "}"],
-        [/\\\\/g, "\\"], [/\\\?/g, "?"], [/\\\./g, "."], [/\\\[/g, "["], [/\\\]/g, "]"],
-        [/\\\(/g, "("], [/\\\)/g, ")"], [/\\\|/g, "|"], [/\\\+/g, "+"], [/\\\*/g, "*"],
+        [/\\/g, "\\\\"],
+        [/&quot;/g, '"'],
+        [/&#58;/g, ":"],
+        [/&#123;/g, "{"],
+        [/&#125;/g, "}"],
+        [/\\\\/g, "\\"],
+        [/\\\?/g, "?"],
+        [/\\\./g, "."],
+        [/\\\[/g, "["],
+        [/\\\]/g, "]"],
+        [/\\\(/g, "("],
+        [/\\\)/g, ")"],
+        [/\\\|/g, "|"],
+        [/\\\+/g, "+"],
+        [/\\\*/g, "*"],
         [/\\\$/g, "$"],
       ];
       return mapDict.reduce((r, m) => r.replace(m[0], m[1] as string), escaped);
@@ -317,8 +348,12 @@ export class ClientSidePage {
   /**
    * Add a section to this page
    */
-  public addSection(sectionTemplate?: CanvasSectionTemplate, order?: number): CanvasSection {
-    var sectionOrder = typeof order !== 'undefined' ? order : getNextOrder(this.sections);
+  public addSection(
+    sectionTemplate?: CanvasSectionTemplate,
+    order?: number,
+  ): CanvasSection {
+    var sectionOrder =
+      typeof order !== "undefined" ? order : getNextOrder(this.sections);
     var section: CanvasSection = new CanvasSection(this, sectionOrder);
     if (sectionTemplate) {
       switch (CanvasSectionTemplate[sectionTemplate].toString()) {
@@ -351,9 +386,8 @@ export class ClientSidePage {
 
     if (typeof order !== undefined) {
       // Insert the sections at the specified order.
-      this.sections.splice(sectionOrder - 1, 0, section)
-    }
-    else {
+      this.sections.splice(sectionOrder - 1, 0, section);
+    } else {
       this.sections.push(section);
     }
 
@@ -364,7 +398,6 @@ export class ClientSidePage {
    * Converts this page's content to html markup
    */
   public toHtml(): string {
-
     // trigger reindex of the entire tree
     reindex(this.sections);
 
@@ -383,7 +416,7 @@ export class ClientSidePage {
 
   /**
    * Loads this page instance's content from the supplied html
-   * 
+   *
    * @param html html string representing the page's content
    */
   public static fromHtml(html: string): ClientSidePage {
@@ -393,37 +426,41 @@ export class ClientSidePage {
     page.sections = [];
 
     // gather our controls from the supplied html
-    getBoundedDivMarkup(html, /<div\b[^>]*data-sp-canvascontrol[^>]*?>/i, markup => {
+    getBoundedDivMarkup(
+      html,
+      /<div\b[^>]*data-sp-canvascontrol[^>]*?>/i,
+      (markup) => {
+        // get the control type
+        const ct = /controlType&quot;&#58;(\d*?),/i.exec(markup);
 
-      // get the control type
-      const ct = /controlType&quot;&#58;(\d*?),/i.exec(markup);
+        // if no control type is present this is a column which we give type 0 to let us process it
+        const controlType =
+          ct == null || ct.length < 2 ? 0 : parseInt(ct[1], 10);
 
-      // if no control type is present this is a column which we give type 0 to let us process it
-      const controlType = ct == null || ct.length < 2 ? 0 : parseInt(ct[1], 10);
+        let control: CanvasControl | null = null;
 
-      let control: CanvasControl | null = null;
-
-      switch (controlType) {
-        case 0:
-          // empty canvas column
-          control = new CanvasColumn(null, 0);
-          control.fromHtml(markup);
-          page.mergeColumnToTree(<CanvasColumn>control);
-          break;
-        case 3:
-          // client side webpart
-          control = new ClientSideWebpart("");
-          control.fromHtml(markup);
-          page.mergePartToTree(<ClientSidePart>control);
-          break;
-        case 4:
-          // client side text
-          control = new ClientSideText();
-          control.fromHtml(markup);
-          page.mergePartToTree(<ClientSidePart>control);
-          break;
-      }
-    });
+        switch (controlType) {
+          case 0:
+            // empty canvas column
+            control = new CanvasColumn(null, 0);
+            control.fromHtml(markup);
+            page.mergeColumnToTree(<CanvasColumn>control);
+            break;
+          case 3:
+            // client side webpart
+            control = new ClientSideWebpart("");
+            control.fromHtml(markup);
+            page.mergePartToTree(<ClientSidePart>control);
+            break;
+          case 4:
+            // client side text
+            control = new ClientSideText();
+            control.fromHtml(markup);
+            page.mergePartToTree(<ClientSidePart>control);
+            break;
+        }
+      },
+    );
 
     // refresh all the orders within the tree
     reindex(page.sections);
@@ -433,19 +470,23 @@ export class ClientSidePage {
 
   /**
    * Finds a control by the specified instance id
-   * 
+   *
    * @param id Instance id of the control to find
    */
-  public findControlById<T extends ClientSidePart = ClientSidePart>(id: string): T | null {
+  public findControlById<T extends ClientSidePart = ClientSidePart>(
+    id: string,
+  ): T | null {
     return this.findControl((c) => c.id === id);
   }
 
   /**
    * Finds a control within this page's control tree using the supplied predicate
-   * 
+   *
    * @param predicate Takes a control and returns true or false, if true that control is returned by findControl
    */
-  public findControl<T extends ClientSidePart = ClientSidePart>(predicate: (c: ClientSidePart) => boolean): T | null {
+  public findControl<T extends ClientSidePart = ClientSidePart>(
+    predicate: (c: ClientSidePart) => boolean,
+  ): T | null {
     // check all sections
     for (let i = 0; i < this.sections.length; i++) {
       // check all columns
@@ -466,11 +507,10 @@ export class ClientSidePage {
 
   /**
    * Merges the control into the tree of sections and columns for this page
-   * 
+   *
    * @param control The control to merge
    */
   private mergePartToTree(control: ClientSidePart): void {
-
     let section: CanvasSection | null = null;
     let column: CanvasColumn | null = null;
     let sectionFactor: CanvasColumnFactorType = 12;
@@ -492,7 +532,7 @@ export class ClientSidePage {
       }
     }
 
-    const sections = this.sections.filter(s => s.order === zoneIndex);
+    const sections = this.sections.filter((s) => s.order === zoneIndex);
     if (sections.length < 1) {
       section = new CanvasSection(this, zoneIndex);
       this.sections.push(section);
@@ -500,7 +540,7 @@ export class ClientSidePage {
       section = sections[0];
     }
 
-    const columns = section.columns.filter(c => c.order === sectionIndex);
+    const columns = section.columns.filter((c) => c.order === sectionIndex);
     if (columns.length < 1) {
       column = new CanvasColumn(section, sectionIndex, sectionFactor);
       section.columns.push(column);
@@ -514,15 +554,19 @@ export class ClientSidePage {
 
   /**
    * Merges the supplied column into the tree
-   * 
+   *
    * @param column Column to merge
    * @param position The position data for the column
    */
   private mergeColumnToTree(column: CanvasColumn): void {
-
-    const order = column.controlData && hOP(column.controlData, "position") && hOP(column.controlData.position, "zoneIndex") ? column.controlData.position.zoneIndex : 0;
+    const order =
+      column.controlData &&
+      hOP(column.controlData, "position") &&
+      hOP(column.controlData.position, "zoneIndex")
+        ? column.controlData.position.zoneIndex
+        : 0;
     let section: CanvasSection | null = null;
-    const sections = this.sections.filter(s => s.order === order);
+    const sections = this.sections.filter((s) => s.order === order);
 
     if (sections.length < 1) {
       section = new CanvasSection(this, order);
@@ -537,13 +581,16 @@ export class ClientSidePage {
 }
 
 export class CanvasSection {
-
   /**
    * Used to track this object inside the collection at runtime
    */
   private _memId: string;
 
-  constructor(public page: ClientSidePage, public order: number, public columns: CanvasColumn[] = []) {
+  constructor(
+    public page: ClientSidePage,
+    public order: number,
+    public columns: CanvasColumn[] = [],
+  ) {
     this._memId = getGUID();
   }
 
@@ -551,7 +598,6 @@ export class CanvasSection {
    * Default column (this.columns[0]) for this section
    */
   public get defaultColumn(): CanvasColumn {
-
     if (this.columns.length < 1) {
       this.addColumn(12);
     }
@@ -563,7 +609,6 @@ export class CanvasSection {
    * Adds a new column to this section
    */
   public addColumn(factor: CanvasColumnFactorType): CanvasColumn {
-
     const column = new CanvasColumn(this, getNextOrder(this.columns), factor);
     this.columns.push(column);
     return column;
@@ -571,7 +616,7 @@ export class CanvasSection {
 
   /**
    * Adds a control to the default column for this section
-   * 
+   *
    * @param control Control to add to the default column
    */
   public addControl(control: ClientSidePart): this {
@@ -580,7 +625,6 @@ export class CanvasSection {
   }
 
   public toHtml(): string {
-
     const html = [];
 
     for (let i = 0; i < this.columns.length; i++) {
@@ -594,13 +638,14 @@ export class CanvasSection {
    * Removes this section and all contained columns and controls from the collection
    */
   public remove(): void {
-    this.page.sections = this.page.sections.filter(section => section._memId !== this._memId);
+    this.page.sections = this.page.sections.filter(
+      (section) => section._memId !== this._memId,
+    );
     reindex(this.page.sections);
   }
 }
 
 export abstract class CanvasControl {
-
   constructor(
     protected controlType: number | undefined,
     public dataVersion: string | null,
@@ -609,7 +654,8 @@ export abstract class CanvasControl {
     public id: string | undefined = getGUID(),
     public controlData: ClientSideControlData | null = null,
     public dynamicDataPaths: any = null,
-    public dynamicDataValues: any = null) { }
+    public dynamicDataValues: any = null,
+  ) {}
 
   /**
    * Value of the control's "data-sp-controldata" attribute
@@ -621,8 +667,14 @@ export abstract class CanvasControl {
   public abstract toHtml(index: number): string;
 
   public fromHtml(html: string): void {
-    this.controlData = ClientSidePage.escapedStringToJson<ClientSideControlData>(getAttrValueFromString(html, "data-sp-controldata"));
-    this.dataVersion = getAttrValueFromString(html, "data-sp-canvasdataversion");
+    this.controlData =
+      ClientSidePage.escapedStringToJson<ClientSideControlData>(
+        getAttrValueFromString(html, "data-sp-controldata"),
+      );
+    this.dataVersion = getAttrValueFromString(
+      html,
+      "data-sp-canvasdataversion",
+    );
     this.controlType = this.controlData.controlType;
     this.id = this.controlData.id;
   }
@@ -631,13 +683,13 @@ export abstract class CanvasControl {
 }
 
 export class CanvasColumn extends CanvasControl {
-
   constructor(
     public section: CanvasSection | null,
     public order: number,
     public factor: CanvasColumnFactorType = 12,
     public controls: ClientSidePart[] = [],
-    dataVersion = "1.0") {
+    dataVersion = "1.0",
+  ) {
     super(0, dataVersion);
   }
 
@@ -648,12 +700,13 @@ export class CanvasColumn extends CanvasControl {
   }
 
   public insertControl(control: ClientSidePart, index?: number): this {
-    if (typeof index === 'undefined' ||
+    if (
+      typeof index === "undefined" ||
       index < 0 ||
-      index >= this.controls.length) {
+      index >= this.controls.length
+    ) {
       this.addControl(control);
-    }
-    else {
+    } else {
       control.column = this;
       control.order = index;
       this.controls.splice(index, 0, control);
@@ -670,11 +723,10 @@ export class CanvasColumn extends CanvasControl {
     const html = [];
 
     if (this.controls.length < 1) {
-
-      html.push(`<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.dataVersion}" data-sp-controldata="${this.jsonData}"></div>`);
-
+      html.push(
+        `<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.dataVersion}" data-sp-controldata="${this.jsonData}"></div>`,
+      );
     } else {
-
       for (let i = 0; i < this.controls.length; i++) {
         html.push(this.controls[i].toHtml(i + 1));
       }
@@ -686,7 +738,10 @@ export class CanvasColumn extends CanvasControl {
   public fromHtml(html: string): void {
     super.fromHtml(html);
 
-    this.controlData = ClientSidePage.escapedStringToJson<ClientSideControlData>(getAttrValueFromString(html, "data-sp-controldata"));
+    this.controlData =
+      ClientSidePage.escapedStringToJson<ClientSideControlData>(
+        getAttrValueFromString(html, "data-sp-controldata"),
+      );
     if (hOP(this.controlData, "position")) {
       if (hOP(this.controlData.position, "sectionFactor")) {
         this.factor = this.controlData.position.sectionFactor;
@@ -703,7 +758,7 @@ export class CanvasColumn extends CanvasControl {
       position: {
         sectionFactor: this.factor,
         sectionIndex: this.order,
-        zoneIndex: this.section ? this.section.order : 0
+        zoneIndex: this.section ? this.section.order : 0,
       },
     };
   }
@@ -713,7 +768,9 @@ export class CanvasColumn extends CanvasControl {
    */
   public remove(): void {
     if (this.section) {
-      this.section.columns = this.section.columns.filter(column => column.id !== this.id);
+      this.section.columns = this.section.columns.filter(
+        (column) => column.id !== this.id,
+      );
       if (this.column) {
         reindex(this.column.controls);
       }
@@ -725,21 +782,21 @@ export class CanvasColumn extends CanvasControl {
  * Abstract class with shared functionality for parts
  */
 export abstract class ClientSidePart extends CanvasControl {
-
   /**
    * Removes this column and all contained controls from the collection
    */
   public remove(): void {
     if (this.column) {
-      this.column.controls = this.column.controls.filter(control => control.id !== this.id);
+      this.column.controls = this.column.controls.filter(
+        (control) => control.id !== this.id,
+      );
       reindex(this.column.controls);
     }
   }
 }
 
 export class ClientSideText extends ClientSidePart {
-
-  private _text: string = '';
+  private _text: string = "";
 
   constructor(text = "") {
     super(4, "1.0");
@@ -755,7 +812,6 @@ export class ClientSideText extends ClientSidePart {
   }
 
   public set text(text: string) {
-
     if (!text.startsWith("<p>")) {
       text = `<p>${text}</p>`;
     }
@@ -764,7 +820,6 @@ export class ClientSideText extends ClientSidePart {
   }
 
   public getControlData(): ClientSideControlData {
-
     return {
       controlType: this.controlType,
       editorType: "CKEditor",
@@ -773,20 +828,22 @@ export class ClientSideText extends ClientSidePart {
         controlIndex: this.order,
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
-        zoneIndex: this.column && this.column.section ? this.column.section.order : 0
+        zoneIndex:
+          this.column && this.column.section ? this.column.section.order : 0,
       },
     };
   }
 
   public toHtml(index: number): string {
-
     // set our order to the value passed in
     this.order = index;
 
     const html: string[] = [];
 
-    html.push(`<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.dataVersion}" data-sp-controldata="${this.jsonData}">`);
-    html.push("<div data-sp-rte=\"\">");
+    html.push(
+      `<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.dataVersion}" data-sp-controldata="${this.jsonData}">`,
+    );
+    html.push('<div data-sp-rte="">');
     html.push(`${this.text}`);
     html.push("</div>");
     html.push("</div>");
@@ -795,13 +852,11 @@ export class ClientSideText extends ClientSidePart {
   }
 
   public fromHtml(html: string): void {
-
     super.fromHtml(html);
 
     this.text = "";
 
     getBoundedDivMarkup(html, /<div[^>]*data-sp-rte[^>]*>/i, (s: string) => {
-
       // now we need to grab the inner text between the divs
       const match = /<div[^>]*data-sp-rte[^>]*>(.*?)<\/div>$/i.exec(s);
 
@@ -811,8 +866,8 @@ export class ClientSideText extends ClientSidePart {
 }
 
 export class ClientSideWebpart extends ClientSidePart {
-
-  constructor(public title: string,
+  constructor(
+    public title: string,
     public description = "",
     public propertieJson: TypedHash<any> = {},
     public webPartId = "",
@@ -820,11 +875,14 @@ export class ClientSideWebpart extends ClientSidePart {
     protected serverProcessedContent: ServerProcessedContent | null = null,
     protected canvasDataVersion: string | null = "1.0",
     public dynamicDataPaths: any = "",
-    public dynamicDataValues: any = "") {
+    public dynamicDataValues: any = "",
+  ) {
     super(3, "1.0");
   }
 
-  public static fromComponentDef(definition: ClientSidePageComponent): ClientSideWebpart {
+  public static fromComponentDef(
+    definition: ClientSidePageComponent,
+  ): ClientSideWebpart {
     const part = new ClientSideWebpart("");
     part.import(definition);
     return part;
@@ -832,11 +890,15 @@ export class ClientSideWebpart extends ClientSidePart {
 
   public import(component: ClientSidePageComponent): void {
     this.webPartId = component.Id.replace(/^\{|\}$/g, "").toLowerCase();
-    const manifest: ClientSidePageComponentManifest = JSON.parse(component.Manifest);
+    const manifest: ClientSidePageComponentManifest = JSON.parse(
+      component.Manifest,
+    );
     this.title = manifest.preconfiguredEntries[0].title.default;
     this.description = manifest.preconfiguredEntries[0].description.default;
     this.dataVersion = "1.0";
-    this.propertieJson = this.parseJsonProperties(manifest.preconfiguredEntries[0].properties);
+    this.propertieJson = this.parseJsonProperties(
+      manifest.preconfiguredEntries[0].properties,
+    );
   }
 
   public setProperties<T = any>(properties: T): this {
@@ -849,7 +911,6 @@ export class ClientSideWebpart extends ClientSidePart {
   }
 
   public toHtml(index: number): string {
-
     // set our order to the value passed in
     this.order = index;
 
@@ -861,22 +922,28 @@ export class ClientSideWebpart extends ClientSidePart {
       instanceId: this.id,
       properties: this.propertieJson,
       serverProcessedContent: this.serverProcessedContent,
-      title: this.title
+      title: this.title,
     };
 
     if (this.dynamicDataPaths) {
-      (data as any)['dynamicDataPaths'] = this.dynamicDataPaths;
+      (data as any)["dynamicDataPaths"] = this.dynamicDataPaths;
     }
 
     if (this.dynamicDataValues) {
-      (data as any)['dynamicDataValues'] = this.dynamicDataValues;
+      (data as any)["dynamicDataValues"] = this.dynamicDataValues;
     }
 
     const html: string[] = [];
 
-    html.push(`<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.canvasDataVersion}" data-sp-controldata="${this.jsonData}">`);
+    html.push(
+      `<div data-sp-canvascontrol="" data-sp-canvasdataversion="${this.canvasDataVersion}" data-sp-controldata="${this.jsonData}">`,
+    );
 
-    html.push(`<div data-sp-webpart="" data-sp-webpartdataversion="${this.dataVersion}" data-sp-webpartdata="${ClientSidePage.jsonToEscapedString(data)}">`);
+    html.push(
+      `<div data-sp-webpart="" data-sp-webpartdataversion="${
+        this.dataVersion
+      }" data-sp-webpartdata="${ClientSidePage.jsonToEscapedString(data)}">`,
+    );
 
     html.push(`<div data-sp-componentid>`);
     html.push(this.webPartId);
@@ -893,16 +960,22 @@ export class ClientSideWebpart extends ClientSidePart {
   }
 
   public fromHtml(html: string): void {
-
     super.fromHtml(html);
 
-    const webPartData = ClientSidePage.escapedStringToJson<ClientSideWebpartData>(getAttrValueFromString(html, "data-sp-webpartdata"));
+    const webPartData =
+      ClientSidePage.escapedStringToJson<ClientSideWebpartData>(
+        getAttrValueFromString(html, "data-sp-webpartdata"),
+      );
 
     this.title = webPartData.title;
     this.description = webPartData.description;
     this.webPartId = webPartData.id;
-    this.canvasDataVersion = (getAttrValueFromString(html, "data-sp-canvasdataversion") || '').replace(/\\\./, ".");
-    this.dataVersion = (getAttrValueFromString(html, "data-sp-webpartdataversion") || '').replace(/\\\./, ".");
+    this.canvasDataVersion = (
+      getAttrValueFromString(html, "data-sp-canvasdataversion") || ""
+    ).replace(/\\\./, ".");
+    this.dataVersion = (
+      getAttrValueFromString(html, "data-sp-webpartdataversion") || ""
+    ).replace(/\\\./, ".");
     this.setProperties(webPartData.properties);
 
     if (typeof webPartData.serverProcessedContent !== "undefined") {
@@ -918,15 +991,20 @@ export class ClientSideWebpart extends ClientSidePart {
     }
 
     // get our html properties
-    const htmlProps = getBoundedDivMarkup(html, /<div\b[^>]*data-sp-htmlproperties[^>]*?>/i, markup => {
-      return markup.replace(/^<div\b[^>]*data-sp-htmlproperties[^>]*?>/i, "").replace(/<\/div>$/i, "");
-    });
+    const htmlProps = getBoundedDivMarkup(
+      html,
+      /<div\b[^>]*data-sp-htmlproperties[^>]*?>/i,
+      (markup) => {
+        return markup
+          .replace(/^<div\b[^>]*data-sp-htmlproperties[^>]*?>/i, "")
+          .replace(/<\/div>$/i, "");
+      },
+    );
 
     this.htmlProperties = htmlProps.length > 0 ? htmlProps[0] : "";
   }
 
   public getControlData(): ClientSideControlData {
-
     return {
       controlType: this.controlType,
       id: this.id,
@@ -934,46 +1012,56 @@ export class ClientSideWebpart extends ClientSidePart {
         controlIndex: this.order,
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
-        zoneIndex: this.column && this.column.section ? this.column.section.order : 0
+        zoneIndex:
+          this.column && this.column.section ? this.column.section.order : 0,
       },
       webPartId: this.webPartId,
     };
-
   }
 
   protected renderHtmlProperties(): string {
-
     const html: string[] = [];
 
-    if (typeof this.serverProcessedContent === "undefined" || this.serverProcessedContent === null) {
-
+    if (
+      typeof this.serverProcessedContent === "undefined" ||
+      this.serverProcessedContent === null
+    ) {
       html.push(this.htmlProperties);
-
     } else if (typeof this.serverProcessedContent !== "undefined") {
-
-      if (typeof this.serverProcessedContent.searchablePlainTexts !== "undefined") {
-
-        const keys = Object.keys(this.serverProcessedContent.searchablePlainTexts);
+      if (
+        typeof this.serverProcessedContent.searchablePlainTexts !== "undefined"
+      ) {
+        const keys = Object.keys(
+          this.serverProcessedContent.searchablePlainTexts,
+        );
         for (let i = 0; i < keys.length; i++) {
-          html.push(`<div data-sp-prop-name="${keys[i]}" data-sp-searchableplaintext="true">`);
+          html.push(
+            `<div data-sp-prop-name="${keys[i]}" data-sp-searchableplaintext="true">`,
+          );
           html.push(this.serverProcessedContent.searchablePlainTexts[keys[i]]);
           html.push("</div>");
         }
       }
 
       if (typeof this.serverProcessedContent.imageSources !== "undefined") {
-
         const keys = Object.keys(this.serverProcessedContent.imageSources);
         for (let i = 0; i < keys.length; i++) {
-          html.push(`<img data-sp-prop-name="${keys[i]}" src="${this.serverProcessedContent.imageSources[keys[i]]}" />`);
+          html.push(
+            `<img data-sp-prop-name="${keys[i]}" src="${
+              this.serverProcessedContent.imageSources[keys[i]]
+            }" />`,
+          );
         }
       }
 
       if (typeof this.serverProcessedContent.links !== "undefined") {
-
         const keys = Object.keys(this.serverProcessedContent.links);
         for (let i = 0; i < keys.length; i++) {
-          html.push(`<a data-sp-prop-name="${keys[i]}" href="${this.serverProcessedContent.links[keys[i]]}"></a>`);
+          html.push(
+            `<a data-sp-prop-name="${keys[i]}" href="${
+              this.serverProcessedContent.links[keys[i]]
+            }"></a>`,
+          );
         }
       }
     }
@@ -982,9 +1070,11 @@ export class ClientSideWebpart extends ClientSidePart {
   }
 
   protected parseJsonProperties(props: TypedHash<any>): any {
-
     // If the web part has the serverProcessedContent property then keep this one as it might be needed as input to render the web part HTML later on
-    if (typeof props.webPartData !== "undefined" && typeof props.webPartData.serverProcessedContent !== "undefined") {
+    if (
+      typeof props.webPartData !== "undefined" &&
+      typeof props.webPartData.serverProcessedContent !== "undefined"
+    ) {
       this.serverProcessedContent = props.webPartData.serverProcessedContent;
     } else if (typeof props.serverProcessedContent !== "undefined") {
       this.serverProcessedContent = props.serverProcessedContent;
@@ -992,7 +1082,10 @@ export class ClientSideWebpart extends ClientSidePart {
       this.serverProcessedContent = null;
     }
 
-    if (typeof props.webPartData !== "undefined" && typeof props.webPartData.dynamicDataPaths !== "undefined") {
+    if (
+      typeof props.webPartData !== "undefined" &&
+      typeof props.webPartData.dynamicDataPaths !== "undefined"
+    ) {
       this.dynamicDataPaths = props.webPartData.dynamicDataPaths;
     } else if (typeof props.dynamicDataPaths !== "undefined") {
       this.dynamicDataPaths = props.dynamicDataPaths;
@@ -1000,7 +1093,10 @@ export class ClientSideWebpart extends ClientSidePart {
       this.dynamicDataPaths = null;
     }
 
-    if (typeof props.webPartData !== "undefined" && typeof props.webPartData.dynamicDataValues !== "undefined") {
+    if (
+      typeof props.webPartData !== "undefined" &&
+      typeof props.webPartData.dynamicDataValues !== "undefined"
+    ) {
       this.dynamicDataValues = props.webPartData.dynamicDataValues;
     } else if (typeof props.dynamicDataValues !== "undefined") {
       this.dynamicDataValues = props.dynamicDataValues;
@@ -1008,14 +1104,16 @@ export class ClientSideWebpart extends ClientSidePart {
       this.dynamicDataValues = null;
     }
 
-    if (typeof props.webPartData !== "undefined" && typeof props.webPartData.properties !== "undefined") {
+    if (
+      typeof props.webPartData !== "undefined" &&
+      typeof props.webPartData.properties !== "undefined"
+    ) {
       return props.webPartData.properties;
     } else if (typeof props.properties !== "undefined") {
       return props.properties;
     } else {
       return props;
     }
-
   }
 }
 
@@ -1068,7 +1166,6 @@ interface ClientSidePageComponentManifest {
     officeFabricIconFontName: string;
     properties: TypedHash<any>;
     title: { default: string };
-
   }[];
   preloadComponents: any | null;
   requiredCapabilities: any | null;
@@ -1111,8 +1208,7 @@ export interface ClientSideWebpartData {
   dynamicDataValues?: any;
 }
 
-export module ClientSideWebpartPropertyTypes {
-
+export namespace ClientSideWebpartPropertyTypes {
   /**
    * Propereties for Embed (component id: 490d7c76-1824-45b2-9de3-676421c997fa)
    */
