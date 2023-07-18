@@ -125,7 +125,7 @@ class SpoHubSiteListCommand extends SpoCommand {
       logger.logToStderr(`Retrieved ${res.Row.length} sites in batch ${batchNumber}`);
     }
 
-    if (!!res.NextHref) {
+    if (res.NextHref) {
       reqOptions.url = nonPagedUrl + res.NextHref;
       if (this.debug) {
         logger.logToStderr(`Url for next batch of sites: ${reqOptions.url}`);

@@ -107,7 +107,7 @@ class PaAppGetCommand extends PowerAppsCommand {
           const app = allApps.find((a: any) => {
             return a.properties.displayName.toLowerCase() === `${args.options.displayName}`.toLowerCase();
           });
-          if (!!app) {
+          if (app) {
             logger.log(this.setProperties(app));
           }
           else {
