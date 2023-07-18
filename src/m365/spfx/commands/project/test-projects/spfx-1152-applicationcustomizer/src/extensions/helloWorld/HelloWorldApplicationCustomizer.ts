@@ -6,7 +6,7 @@ import { Dialog } from '@microsoft/sp-dialog';
 
 import * as strings from 'HelloWorldApplicationCustomizerStrings';
 
-const LOG_SOURCE: string = 'HelloWorldApplicationCustomizer';
+const LOG_SOURCE = 'HelloWorldApplicationCustomizer';
 
 /**
  * If your command set uses the ClientSideComponentProperties JSON input,

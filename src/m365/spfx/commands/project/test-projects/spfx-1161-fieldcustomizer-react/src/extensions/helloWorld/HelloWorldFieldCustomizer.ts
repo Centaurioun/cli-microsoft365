@@ -20,7 +20,7 @@ export interface IHelloWorldFieldCustomizerProperties {
   sampleText?: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorldFieldCustomizer';
+const LOG_SOURCE = 'HelloWorldFieldCustomizer';
 
 export default class HelloWorldFieldCustomizer
   extends BaseFieldCustomizer<IHelloWorldFieldCustomizerProperties> {
@@ -36,7 +36,7 @@ export default class HelloWorldFieldCustomizer
 
   public onRenderCell(event: IFieldCustomizerCellEventParameters): void {
     // Use this method to perform your custom cell rendering.
-    const text: string = `${this.properties.sampleText}: ${event.fieldValue}`;
+    const text = `${this.properties.sampleText}: ${event.fieldValue}`;
 
     const helloWorld: React.ReactElement<{}> =
       React.createElement(HelloWorld, { text } as IHelloWorldProps);

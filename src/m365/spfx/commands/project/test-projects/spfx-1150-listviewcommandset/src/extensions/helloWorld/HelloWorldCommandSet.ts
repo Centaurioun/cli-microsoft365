@@ -18,7 +18,7 @@ export interface IHelloWorldCommandSetProperties {
   sampleTextTwo: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorldCommandSet';
+const LOG_SOURCE = 'HelloWorldCommandSet';
 
 export default class HelloWorldCommandSet extends BaseListViewCommandSet<IHelloWorldCommandSetProperties> {
 

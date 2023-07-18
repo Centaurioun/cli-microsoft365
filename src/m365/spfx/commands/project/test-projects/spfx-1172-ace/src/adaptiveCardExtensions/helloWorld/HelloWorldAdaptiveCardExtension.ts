@@ -11,8 +11,8 @@ export interface IHelloWorldAdaptiveCardExtensionProps {
 export interface IHelloWorldAdaptiveCardExtensionState {
 }
 
-const CARD_VIEW_REGISTRY_ID: string = 'HelloWorld_CARD_VIEW';
-export const QUICK_VIEW_REGISTRY_ID: string = 'HelloWorld_QUICK_VIEW';
+const CARD_VIEW_REGISTRY_ID = 'HelloWorld_CARD_VIEW';
+export const QUICK_VIEW_REGISTRY_ID = 'HelloWorld_QUICK_VIEW';
 
 export default class HelloWorldAdaptiveCardExtension extends BaseAdaptiveCardExtension<
   IHelloWorldAdaptiveCardExtensionProps,

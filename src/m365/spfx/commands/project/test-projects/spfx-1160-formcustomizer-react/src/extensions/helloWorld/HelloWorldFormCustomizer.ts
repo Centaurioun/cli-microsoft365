@@ -18,7 +18,7 @@ export interface IHelloWorldFormCustomizerProperties {
   sampleText?: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorldFormCustomizer';
+const LOG_SOURCE = 'HelloWorldFormCustomizer';
 
 export default class HelloWorldFormCustomizer
   extends BaseFormCustomizer<IHelloWorldFormCustomizerProperties> {

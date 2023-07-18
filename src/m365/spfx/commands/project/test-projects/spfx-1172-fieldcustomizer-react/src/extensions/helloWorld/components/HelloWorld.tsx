@@ -7,7 +7,7 @@ export interface IHelloWorldProps {
   text: string;
 }
 
-const LOG_SOURCE: string = 'HelloWorld';
+const LOG_SOURCE = 'HelloWorld';
 
 export default class HelloWorld extends React.Component<IHelloWorldProps, {}> {
   public componentDidMount(): void {
