@@ -1,4 +1,3 @@
-#!/usr/bin/env zx
 $.verbose = false;
 
 console.log('Deprecate beta versions of the @pnp/cli-microsoft365 npm package on npm');

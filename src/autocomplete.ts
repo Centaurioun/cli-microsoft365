@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 const omelette: (template: string) => Omelette = require('omelette');
 import * as fs from 'fs';

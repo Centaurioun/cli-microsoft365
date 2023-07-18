@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 
 import { chili } from './chili';
 
