@@ -24,7 +24,7 @@ export class BasePermissions {
 
   public parse(): string[] {
     const result: string[] = [];
-    for (const permissionKind in PermissionKind)  {
+    for (const permissionKind in PermissionKind) {
       if (this.has((<any>PermissionKind)[permissionKind])) {
         result.push(permissionKind);
       }
@@ -44,11 +44,10 @@ export class BasePermissions {
     let b = 1;
     if (a >= 0 && a < 32) {
       b = b << a;
-      hasPermission = 0 !== (this.low & b);
-    }
-    else if (a >= 32 && a < 64) {
-      b = b << a - 32;
-      hasPermission = (0 !== (this.high & b));
+      hasPermission = (this.low & b) !== 0;
+    } else if (a >= 32 && a < 64) {
+      b = b << (a - 32);
+      hasPermission = (this.high & b) !== 0;
     }
 
     return hasPermission;
@@ -58,23 +57,20 @@ export class BasePermissions {
     if (perm === PermissionKind.FullMask) {
       this._low = 65535;
       this._high = 32767;
-    }
-    else if (perm === PermissionKind.EmptyMask) {
+    } else if (perm === PermissionKind.EmptyMask) {
       this._low = 0;
       this._high = 0;
-    }
-    else {
-      const num1: number = (perm - 1);
+    } else {
+      const num1: number = perm - 1;
       const num2: number = 1;
       if (num1 >= 0 && num1 < 32) {
-        this._low = this._low | num2 << num1;
-      }
-      else {
+        this._low = this._low | (num2 << num1);
+      } else {
         if (num1 < 32 || num1 >= 64) {
           return;
         }
 
-        this._high = this._high | num2 << num1 - 32;
+        this._high = this._high | (num2 << (num1 - 32));
       }
     }
   }
@@ -121,5 +117,5 @@ export enum PermissionKind {
   CreateAlerts = 40,
   EditMyUserInfo = 41,
   EnumeratePermissions = 63,
-  FullMask = 65
+  FullMask = 65,
 }
