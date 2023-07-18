@@ -61,7 +61,7 @@ describe('utils/aadUser', () => {
         return ({ value: [] });
       }
 
-      throw `Invalid request`;
+      throw "Invalid request";
     });
 
     await assert.rejects(aadUser.getUserIdByEmail(validUserName), Error(`The specified user with email ${validUserName} does not exist`));

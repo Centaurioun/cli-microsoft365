@@ -227,11 +227,11 @@ export const spo = {
 
     return new Promise<string>((resolve: (spoUrl: string) => void, reject: (error: any) => void): void => {
       if (debug) {
-        logger.logToStderr(`No SPO URL available. Retrieving from MS Graph...`);
+        logger.logToStderr("No SPO URL available. Retrieving from MS Graph...");
       }
 
       const requestOptions: any = {
-        url: `https://graph.microsoft.com/v1.0/sites/root?$select=webUrl`,
+        url: "https://graph.microsoft.com/v1.0/sites/root?$select=webUrl",
         headers: {
           'accept': 'application/json;odata.metadata=none'
         },
@@ -280,7 +280,7 @@ export const spo = {
 
     return new Promise<string>((resolve: (spoUrl: string) => void, reject: (error: any) => void): void => {
       if (debug) {
-        logger.logToStderr(`No SPO Tenant ID available. Retrieving...`);
+        logger.logToStderr("No SPO Tenant ID available. Retrieving...");
       }
 
       let spoAdminUrl: string = '';
@@ -367,7 +367,7 @@ export const spo = {
     folderToEnsure = urlUtil.getWebRelativePath(webFullUrl, folderToEnsure);
 
     if (debug) {
-      logger.log(`folderToEnsure`);
+      logger.log("folderToEnsure");
       logger.log(folderToEnsure);
       logger.log('');
     }
@@ -389,7 +389,7 @@ export const spo = {
     const checkOrAddFolder = (resolve: () => void, reject: (error: any) => void): void => {
       if (folderIndex === folders.length) {
         if (debug) {
-          logger.log(`All sub-folders exist`);
+          logger.log("All sub-folders exist");
         }
 
         return resolve();

@@ -90,7 +90,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -120,7 +120,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com/sites/contoso',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -151,7 +151,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com/teams/contoso?param=value',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -164,7 +164,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert(admZipMockWriteZipSpy.called);
   });
 
-  it(`fails with an error if the specified site doesn't exist`, async () => {
+  it("fails with an error if the specified site doesn't exist", async () => {
     sinon.stub(Cli, 'executeCommandWithOutput').callsFake(() => Promise.reject({
       error: '404 - FILE NOT FOUND',
       stderr: '404 - FILE NOT FOUND'
@@ -176,7 +176,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -186,7 +186,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert(admZipMockWriteZipSpy.notCalled);
   });
 
-  it(`fails with an error if the specified site doesn't exist (debug)`, async () => {
+  it("fails with an error if the specified site doesn't exist (debug)", async () => {
     sinon.stub(Cli, 'executeCommandWithOutput').callsFake(() => Promise.reject({
       error: '404 - FILE NOT FOUND',
       stderr: '404 - FILE NOT FOUND stderr'
@@ -197,7 +197,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -221,7 +221,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com/sites/contoso',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -231,7 +231,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     } as any), new CommandError('Site https://contoso.sharepoint.com/sites/contoso is not a Communication Site. Please specify a different site and try again.'));
   });
 
-  it(`fails with an error if creating the zip file failed`, async () => {
+  it("fails with an error if creating the zip file failed", async () => {
     sinon.stub(Cli, 'executeCommandWithOutput').callsFake(() => Promise.resolve({
       stdout: JSON.stringify({
         Configuration: 0,
@@ -248,7 +248,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -257,14 +257,14 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     } as any), new CommandError('An error has occurred'));
   });
 
-  it(`fails validation if the specified app name is longer than 30 chars`, async () => {
+  it("fails validation if the specified app name is longer than 30 chars", async () => {
     sinon.stub(fs, 'existsSync').callsFake(() => false);
     const actual = await command.validate({
       options: {
         portalUrl: 'https://contoso.sharepoint.com',
-        name: `Stay on top of what's happening at Contoso`,
+        name: "Stay on top of what's happening at Contoso",
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -274,14 +274,14 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`fails validation if the specified description is longer than 80 chars`, async () => {
+  it("fails validation if the specified description is longer than 80 chars", async () => {
     sinon.stub(fs, 'existsSync').callsFake(() => false);
     const actual = await command.validate({
       options: {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
-        description: `Stay on top of what's happening at Contoso Stay on top of what's happening at Contoso`,
-        longDescription: `Stay on top of what's happening at Contoso`,
+        description: "Stay on top of what's happening at Contoso Stay on top of what's happening at Contoso",
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -291,7 +291,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`fails validation if the specified long description is longer than 4000 chars`, async () => {
+  it("fails validation if the specified long description is longer than 4000 chars", async () => {
     sinon.stub(fs, 'existsSync').callsFake(() => false);
     const actual = await command.validate({
       options: {
@@ -324,14 +324,14 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`fails validation if a file with the app name already exists and no force flag specified`, async () => {
+  it("fails validation if a file with the app name already exists and no force flag specified", async () => {
     sinon.stub(fs, 'existsSync').callsFake(() => true);
     const actual = await command.validate({
       options: {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -341,7 +341,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`fails validation if the specified colored icon doesn't exist`, async () => {
+  it("fails validation if the specified colored icon doesn't exist", async () => {
     sinon.stub(fs, 'existsSync').callsFake((path) => {
       const p = path.toString();
       if (p.indexOf('.zip') > -1) {
@@ -354,7 +354,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -364,7 +364,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`fails validation if the specified outline icon doesn't exist`, async () => {
+  it("fails validation if the specified outline icon doesn't exist", async () => {
     sinon.stub(fs, 'existsSync').callsFake((path) => {
       const p = path.toString();
       if (p.indexOf('.zip') > -1) {
@@ -377,7 +377,7 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -387,14 +387,14 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it(`passes validation if a file with the app name already exists and force flag specified`, async () => {
+  it("passes validation if a file with the app name already exists and force flag specified", async () => {
     sinon.stub(fs, 'existsSync').callsFake(() => true);
     const actual = await command.validate({
       options: {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',
@@ -405,14 +405,14 @@ describe(commands.CONNECTIONS_APP_CREATE, () => {
     assert.strictEqual(actual, true);
   });
 
-  it(`passes validation if all arguments are correct`, async () => {
+  it("passes validation if all arguments are correct", async () => {
     sinon.stub(fs, 'existsSync').callsFake((path) => path.toString().indexOf('.zip') < 0);
     const actual = await command.validate({
       options: {
         portalUrl: 'https://contoso.sharepoint.com',
         name: 'Contoso',
         description: 'Contoso',
-        longDescription: `Stay on top of what's happening at Contoso`,
+        longDescription: "Stay on top of what's happening at Contoso",
         companyName: 'Contoso',
         companyWebsiteUrl: 'https://contoso.com',
         coloredIconPath: 'icon-color.png',

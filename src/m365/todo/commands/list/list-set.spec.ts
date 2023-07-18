@@ -69,7 +69,7 @@ describe(commands.LIST_SET, () => {
 
   it('updates a To Do list by ID', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIjAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIjAAA=") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -100,7 +100,7 @@ describe(commands.LIST_SET, () => {
 
   it('updates a To Do list by Name', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -120,7 +120,7 @@ describe(commands.LIST_SET, () => {
     });
 
     sinon.stub(request, 'patch').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -151,7 +151,7 @@ describe(commands.LIST_SET, () => {
 
   it('Handles error when List name is not available', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'InvalidFooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'InvalidFooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('8bc5c293-4208-414e-9837-718a0385be6b')/todo/lists",
           "value": []
@@ -173,7 +173,7 @@ describe(commands.LIST_SET, () => {
 
   it('handles error correctly', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIjAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIjAAA=") {
         throw 'An error has occurred';
       }
 

@@ -83,11 +83,11 @@ class YammerMessageListCommand extends YammerCommand {
     this.validators.push(
       async (args: CommandArgs) => {
         if (args.options.groupId && args.options.threadId) {
-          return `You cannot specify groupId and threadId at the same time`;
+          return "You cannot specify groupId and threadId at the same time";
         }
 
         if (args.options.feedType && (args.options.groupId || args.options.threadId)) {
-          return `You cannot specify the feedType with groupId or threadId at the same time`;
+          return "You cannot specify the feedType with groupId or threadId at the same time";
         }
 
         if (args.options.feedType && YammerMessageListCommand.feedTypes.indexOf(args.options.feedType) < 0) {
@@ -132,25 +132,25 @@ class YammerMessageListCommand extends YammerCommand {
 
         switch (args.options.feedType) {
           case 'Top':
-            endpoint += `/messages/algo.json`;
+            endpoint += "/messages/algo.json";
             break;
           case 'My':
-            endpoint += `/messages/my_feed.json`;
+            endpoint += "/messages/my_feed.json";
             break;
           case 'Following':
-            endpoint += `/messages/following.json`;
+            endpoint += "/messages/following.json";
             break;
           case 'Sent':
-            endpoint += `/messages/sent.json`;
+            endpoint += "/messages/sent.json";
             break;
           case 'Private':
-            endpoint += `/messages/private.json`;
+            endpoint += "/messages/private.json";
             break;
           case 'Received':
-            endpoint += `/messages/received.json`;
+            endpoint += "/messages/received.json";
             break;
           default:
-            endpoint += `/messages.json`;
+            endpoint += "/messages.json";
         }
       }
 
@@ -169,7 +169,7 @@ class YammerMessageListCommand extends YammerCommand {
           endpoint += "?";
         }
 
-        endpoint += `threaded=true`;
+        endpoint += "threaded=true";
       }
 
       const requestOptions: any = {

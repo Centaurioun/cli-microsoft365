@@ -167,7 +167,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
 
   it('correctly returns list', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews") {
         return {
           value: serviceHealthResponse
         };
@@ -184,7 +184,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
 
   it('correctly returns list as csv with issues flag', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews") {
         return {
           value: serviceHealthResponseCSV
         };
@@ -204,7 +204,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
 
   it('correctly returns list with issues', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews?$expand=issues`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews?$expand=issues") {
         return {
           value: serviceHealthIssuesResponse
         };
@@ -223,7 +223,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_LIST, () => {
 
   it('fails when serviceAnnouncement endpoint fails', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews") {
         return {};
       }
 

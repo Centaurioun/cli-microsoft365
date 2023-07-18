@@ -197,7 +197,7 @@ class TodoTaskSetCommand extends GraphCommand {
         const taskList: { id: string } | undefined = response.value[0];
 
         if (!taskList) {
-          return Promise.reject(`The specified task list does not exist`);
+          return Promise.reject("The specified task list does not exist");
         }
 
         return Promise.resolve(taskList.id);

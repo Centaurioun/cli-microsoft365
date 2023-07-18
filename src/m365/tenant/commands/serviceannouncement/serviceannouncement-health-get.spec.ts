@@ -136,7 +136,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
 
   it('correctly returns service health', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online") {
         return serviceHealthResponse;
       }
 
@@ -154,7 +154,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
 
   it('correctly returns service health as csv with issues flag', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online") {
         return serviceHealthResponseCSV;
       }
 
@@ -173,7 +173,7 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
 
   it('correctly returns service health with issues', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online?$expand=issues`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online?$expand=issues") {
         return serviceHealthIssueResponse;
       }
 

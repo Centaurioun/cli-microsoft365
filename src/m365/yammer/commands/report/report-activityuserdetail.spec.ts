@@ -60,7 +60,7 @@ describe(commands.REPORT_ACTIVITYUSERDETAIL, () => {
 
   it('gets the report for the last week', async () => {
     const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/reports/getYammerActivityUserDetail(period='D7')`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/reports/getYammerActivityUserDetail(period='D7')") {
         return Promise.resolve(`
         Report Refresh Date,User Principal Name,Display Name,User State,State Change Date,Last Activity Date,Posted Count,Read Count,Liked Count,Assigned Products,Report Period
         `);

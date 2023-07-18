@@ -61,7 +61,7 @@ describe(commands.LIST_ADD, () => {
 
   it('adds To Do task list', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists/$entity",
           "@odata.etag": "W/\"m1fdwWoFiE2YS9yegTKoYwAA/ZGlTQ==\"",

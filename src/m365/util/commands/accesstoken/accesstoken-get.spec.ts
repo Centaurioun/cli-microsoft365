@@ -98,7 +98,7 @@ describe(commands.ACCESSTOKEN_GET, () => {
       accessToken: 'ABC'
     };
 
-    await assert.rejects(command.action(logger, { options: { resource: 'sharepoint' } } as any), new CommandError(`SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL`));
+    await assert.rejects(command.action(logger, { options: { resource: 'sharepoint' } } as any), new CommandError("SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL"));
   });
 
   it('retrieves access token for graph.microsoft.com when graph specified as the resource', async () => {

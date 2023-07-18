@@ -70,7 +70,7 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
     this.validators.push(
       async (args: CommandArgs) => {
         if (args.options.name.length > 30) {
-          return `App name must not exceed 30 characters`;
+          return "App name must not exceed 30 characters";
         }
 
         if (args.options.description &&

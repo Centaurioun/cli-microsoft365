@@ -822,7 +822,7 @@ describe('utils/spo', () => {
   const customActionsOnWebResponse = [customActionOnWebResponse1, customActionOnWebResponse2];
   //#endregion
 
-  it(`returns a list of custom actions with scope 'All'`, async () => {
+  it("returns a list of custom actions with scope 'All'", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
         return Promise.resolve({ value: customActionsOnSiteResponse });
@@ -841,7 +841,7 @@ describe('utils/spo', () => {
     ]);
   });
 
-  it(`returns a list of custom actions with scope 'Site'`, async () => {
+  it("returns a list of custom actions with scope 'Site'", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions') > -1) {
         return Promise.resolve({ value: customActionsOnSiteResponse });
@@ -854,7 +854,7 @@ describe('utils/spo', () => {
     assert.deepEqual(customActions, customActionsOnSiteResponse);
   });
 
-  it(`returns a list of custom actions with scope 'Web'`, async () => {
+  it("returns a list of custom actions with scope 'Web'", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions') > -1) {
         return Promise.resolve({ value: customActionsOnWebResponse });
@@ -867,25 +867,25 @@ describe('utils/spo', () => {
     assert.deepEqual(customActions, customActionsOnWebResponse);
   });
 
-  it(`returns a list of custom actions with scope 'Web' with a filter`, async () => {
+  it("returns a list of custom actions with scope 'Web' with a filter", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/_api/Web/UserCustomActions?$filter=ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'`) > -1) {
+      if ((opts.url as string).indexOf("/_api/Web/UserCustomActions?$filter=ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'") > -1) {
         return Promise.resolve({ value: [customActionOnWebResponse1] });
       }
 
       return Promise.reject('Invalid request');
     });
 
-    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Web', `ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'`);
+    const customActions = await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Web', "ClientSideComponentId eq guid'b41916e7-e69d-467f-b37f-ff8ecf8f99f2'");
     assert.deepEqual(customActions, [customActionOnWebResponse1]);
   });
 
-  it(`retrieves a custom action by id with scope 'All'`, async () => {
+  it("retrieves a custom action by id with scope 'All'", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+      if ((opts.url as string).indexOf("/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')") > -1) {
         return Promise.resolve(customActionOnSiteResponse1);
       }
-      else if ((opts.url as string).indexOf(`/_api/Web/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+      else if ((opts.url as string).indexOf("/_api/Web/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')") > -1) {
         return Promise.resolve({ 'odata.null': true });
       }
 
@@ -896,9 +896,9 @@ describe('utils/spo', () => {
     assert.deepEqual(customAction, customActionOnSiteResponse1);
   });
 
-  it(`retrieves a custom action by id with scope 'Site'`, async () => {
+  it("retrieves a custom action by id with scope 'Site'", async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')`) > -1) {
+      if ((opts.url as string).indexOf("/_api/Site/UserCustomActions(guid'd1e5e0d6-109d-40c4-a53e-924073fe9bbd')") > -1) {
         return Promise.resolve(customActionOnSiteResponse1);
       }
 
@@ -909,9 +909,9 @@ describe('utils/spo', () => {
     assert.deepEqual(customAction, customActionOnSiteResponse1);
   });
 
-  it(`retrieves Azure AD ID by SPO user ID sucessfully`, async () => {
+  it("retrieves Azure AD ID by SPO user ID sucessfully", async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/siteusers/GetById('9')?$select=AadObjectId`) {
+      if (opts.url === "https://contoso.sharepoint.com/sites/sales/_api/web/siteusers/GetById('9')?$select=AadObjectId") {
         return {
           AadObjectId: {
             NameId: '6cc1797e-5463-45ec-bb1a-b93ec198bab6',
@@ -927,7 +927,7 @@ describe('utils/spo', () => {
     assert.deepEqual(customAction, '6cc1797e-5463-45ec-bb1a-b93ec198bab6');
   });
 
-  it(`retrieves spo user by email sucessfully`, async () => {
+  it("retrieves spo user by email sucessfully", async () => {
     const userResponse = {
       Id: 11,
       IsHiddenInUI: false,
@@ -958,23 +958,23 @@ describe('utils/spo', () => {
     assert.deepEqual(user, userResponse);
   });
 
-  it(`throws error retrieving a custom action by id with a wrong scope value`, async () => {
+  it("throws error retrieving a custom action by id with a wrong scope value", async () => {
     try {
       await spo.getCustomActionById('https://contoso.sharepoint.com/sites/sales', 'd1e5e0d6-109d-40c4-a53e-924073fe9bbd', 'Invalid');
       assert.fail('Expected an error to be thrown');
     }
     catch (e) {
-      assert.deepEqual(e, `Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.`);
+      assert.deepEqual(e, "Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.");
     }
   });
 
-  it(`throws error retrieving a list of custom actions with a wrong scope value`, async () => {
+  it("throws error retrieving a list of custom actions with a wrong scope value", async () => {
     try {
       await spo.getCustomActions('https://contoso.sharepoint.com/sites/sales', 'Invalid');
       assert.fail('Expected an error to be thrown');
     }
     catch (e) {
-      assert.deepEqual(e, `Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.`);
+      assert.deepEqual(e, "Invalid scope 'Invalid'. Allowed values are 'Site', 'Web' or 'All'.");
     }
   });
 
@@ -984,7 +984,7 @@ describe('utils/spo', () => {
   const webUrl = 'https://contoso.sharepoint.com/sites/sales';
   //#endregion
 
-  it(`retrieves the quick launch navigation response`, async () => {
+  it("retrieves the quick launch navigation response", async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
         return quickLaunchResponse;
@@ -997,7 +997,7 @@ describe('utils/spo', () => {
     assert.deepEqual(quickLaunch, quickLaunchResponse);
   });
 
-  it(`retrieves the top navigation response`, async () => {
+  it("retrieves the top navigation response", async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
         return topNavigationResponse;
@@ -1010,7 +1010,7 @@ describe('utils/spo', () => {
     assert.deepEqual(topNavigation, topNavigationResponse);
   });
 
-  it(`saves the menu state for the top navigation`, async () => {
+  it("saves the menu state for the top navigation", async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/navigation/MenuState`) {
         return topNavigationResponse;
@@ -1028,7 +1028,7 @@ describe('utils/spo', () => {
     assert.deepStrictEqual(postStub.lastCall.args[0].data, { menuState: topNavigation });
   });
 
-  it(`retrieves spo group by name sucessfully`, async () => {
+  it("retrieves spo group by name sucessfully", async () => {
     const groupResponse = {
       Id: 11,
       IsHiddenInUI: false,
@@ -1056,7 +1056,7 @@ describe('utils/spo', () => {
     assert.deepEqual(group, groupResponse);
   });
 
-  it(`retrieves roledefinition by name sucessfully`, async () => {
+  it("retrieves roledefinition by name sucessfully", async () => {
     const roledefinitionResponse: RoleDefinition = {
       BasePermissions: {
         High: 176,
@@ -1085,7 +1085,7 @@ describe('utils/spo', () => {
     };
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions`) {
+      if (opts.url === "https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions") {
         return { value: [roledefinitionResponse] };
       }
 
@@ -1096,9 +1096,9 @@ describe('utils/spo', () => {
     assert.deepEqual(roledefintion, roledefinitionResponse);
   });
 
-  it(`handles error when no roledefinition by name is found`, async () => {
+  it("handles error when no roledefinition by name is found", async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions`) {
+      if (opts.url === "https://contoso.sharepoint.com/sites/sales/_api/web/roledefinitions") {
         return { value: [] };
       }
 

@@ -130,7 +130,7 @@ describe('utils/md', () => {
     assert.strictEqual(actual, 'This is<br>new<br>line');
   });
 
-  it(`doesn't fail escaping special md characters if the specified arg is undefined`, () => {
+  it("doesn't fail escaping special md characters if the specified arg is undefined", () => {
     const actual = md.escapeMd(undefined);
     assert.strictEqual(actual, undefined);
   });

@@ -80,7 +80,7 @@ class YammerGroupListCommand extends YammerCommand {
       endpoint += `/groups/for_user/${args.options.userId}.json`;
     }
     else {
-      endpoint += `/groups.json`;
+      endpoint += "/groups.json";
     }
     endpoint += `?page=${page}`;
 

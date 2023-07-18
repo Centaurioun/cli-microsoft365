@@ -59,7 +59,7 @@ class YammerUserGetCommand extends YammerCommand {
     this.validators.push(
       async (args: CommandArgs) => {
         if (args.options.id !== undefined && args.options.email !== undefined) {
-          return `You are only allowed to search by ID or e-mail but not both`;
+          return "You are only allowed to search by ID or e-mail but not both";
         }
 
         return true;
