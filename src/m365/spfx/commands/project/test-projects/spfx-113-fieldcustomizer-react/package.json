@@ -6,11 +6,11 @@
     "node": ">=0.10.0"
   },
   "dependencies": {
-    "@microsoft/sp-core-library": "~1.1.0",
-    "@microsoft/sp-webpart-base": "~1.1.1",
+    "@microsoft/sp-core-library": "~1.4.0",
+    "@microsoft/sp-webpart-base": "~1.4.0",
     "@types/webpack-env": ">=1.12.1 <1.14.0",
-    "@microsoft/sp-listview-extensibility": "0.1.1",
-    "@microsoft/sp-application-base": "1.1.1",
+    "@microsoft/sp-listview-extensibility": "1.4.0",
+    "@microsoft/sp-application-base": "1.4.0",
     "react": "15.4.2",
     "react-dom": "15.4.2",
     "@types/react": "0.14.46",
