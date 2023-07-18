@@ -1,8 +1,8 @@
-import * as React from 'react';
-import { Log, FormDisplayMode } from '@microsoft/sp-core-library';
-import { FormCustomizerContext } from '@microsoft/sp-listview-extensibility';
+import * as React from "react";
+import { Log, FormDisplayMode } from "@microsoft/sp-core-library";
+import { FormCustomizerContext } from "@microsoft/sp-listview-extensibility";
 
-import styles from './HelloWorld.module.scss';
+import styles from "./HelloWorld.module.scss";
 
 export interface IHelloWorldProps {
   context: FormCustomizerContext;
@@ -11,15 +11,15 @@ export interface IHelloWorldProps {
   onClose: () => void;
 }
 
-const LOG_SOURCE = 'HelloWorld';
+const LOG_SOURCE = "HelloWorld";
 
 export default class HelloWorld extends React.Component<IHelloWorldProps, {}> {
   public componentDidMount(): void {
-    Log.info(LOG_SOURCE, 'React Element: HelloWorld mounted');
+    Log.info(LOG_SOURCE, "React Element: HelloWorld mounted");
   }
 
   public componentWillUnmount(): void {
-    Log.info(LOG_SOURCE, 'React Element: HelloWorld unmounted');
+    Log.info(LOG_SOURCE, "React Element: HelloWorld unmounted");
   }
 
   public render(): React.ReactElement<{}> {
