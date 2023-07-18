@@ -1,23 +1,23 @@
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
-import auth from '../../../../Auth';
-import { Cli } from '../../../../cli/Cli';
-import { CommandInfo } from '../../../../cli/CommandInfo';
-import { Logger } from '../../../../cli/Logger';
-import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
-import { pid } from '../../../../utils/pid';
-import { session } from '../../../../utils/session';
-import { sinonUtil } from '../../../../utils/sinonUtil';
-import commands from '../../commands';
-const command: Command = require('./serviceannouncement-health-get');
+import * as assert from "assert";
+import * as sinon from "sinon";
+import { telemetry } from "../../../../telemetry";
+import auth from "../../../../Auth";
+import { Cli } from "../../../../cli/Cli";
+import { CommandInfo } from "../../../../cli/CommandInfo";
+import { Logger } from "../../../../cli/Logger";
+import Command, { CommandError } from "../../../../Command";
+import request from "../../../../request";
+import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
+import { sinonUtil } from "../../../../utils/sinonUtil";
+import commands from "../../commands";
+const command: Command = require("./serviceannouncement-health-get");
 
 describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
   const serviceHealthResponse = {
-    "service": "Exchange Online",
-    "status": "serviceOperational",
-    "id": "Exchange"
+    service: "Exchange Online",
+    status: "serviceOperational",
+    id: "Exchange",
   };
 
   const serviceHealthResponseCSV = `service,status,id
@@ -25,38 +25,41 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
 
   const serviceHealthIssueResponse = [
     {
-      "service": "Exchange Online",
-      "status": "serviceOperational",
-      "id": "Exchange",
-      "issues": [
+      service: "Exchange Online",
+      status: "serviceOperational",
+      id: "Exchange",
+      issues: [
         {
-          "startDateTime": "2020-11-04T00:00:00Z",
-          "endDateTime": "2020-11-20T17:00:00Z",
-          "lastModifiedDateTime": "2020-11-20T17:56:31.39Z",
-          "title": "Admins are unable to migrate some user mailboxes from IMAP using the Exchange admin center or PowerShell",
-          "id": "EX226574",
-          "impactDescription": "Admins attempting to migrate some user mailboxes using the Exchange admin center or PowerShell experienced failures.",
-          "classification": "Advisory",
-          "origin": "Microsoft",
-          "status": "ServiceRestored",
-          "service": "Exchange Online",
-          "feature": "Tenant Administration (Provisioning, Remote PowerShell)",
-          "featureGroup": "Management and Provisioning",
-          "isResolved": true,
-          "details": [],
-          "posts": [
+          startDateTime: "2020-11-04T00:00:00Z",
+          endDateTime: "2020-11-20T17:00:00Z",
+          lastModifiedDateTime: "2020-11-20T17:56:31.39Z",
+          title:
+            "Admins are unable to migrate some user mailboxes from IMAP using the Exchange admin center or PowerShell",
+          id: "EX226574",
+          impactDescription:
+            "Admins attempting to migrate some user mailboxes using the Exchange admin center or PowerShell experienced failures.",
+          classification: "Advisory",
+          origin: "Microsoft",
+          status: "ServiceRestored",
+          service: "Exchange Online",
+          feature: "Tenant Administration (Provisioning, Remote PowerShell)",
+          featureGroup: "Management and Provisioning",
+          isResolved: true,
+          details: [],
+          posts: [
             {
-              "createdDateTime": "2020-11-12T07:07:38.97Z",
-              "postType": "Regular",
-              "description": {
-                "contentType": "Text",
-                "content": "Title: Exchange Online service has login issue. We'll provide an update within 30 minutes."
-              }
-            }
-          ]
-        }
-      ]
-    }
+              createdDateTime: "2020-11-12T07:07:38.97Z",
+              postType: "Regular",
+              description: {
+                contentType: "Text",
+                content:
+                  "Title: Exchange Online service has login issue. We'll provide an update within 30 minutes.",
+              },
+            },
+          ],
+        },
+      ],
+    },
   ];
 
   let log: string[];
@@ -65,10 +68,10 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -84,18 +87,16 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
-    loggerLogSpy = sinon.spy(logger, 'log');
+    loggerLogSpy = sinon.spy(logger, "log");
     (command as any).items = [];
     (command as any).planId = undefined;
     (command as any).bucketId = undefined;
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.get
-    ]);
+    sinonUtil.restore([request.get]);
   });
 
   after(() => {
@@ -103,96 +104,120 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTH_GET, () => {
     auth.service.connected = false;
   });
 
-  it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SERVICEANNOUNCEMENT_HEALTH_GET), true);
+  it("has correct name", () => {
+    assert.strictEqual(
+      command.name.startsWith(commands.SERVICEANNOUNCEMENT_HEALTH_GET),
+      true,
+    );
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('defines correct properties for the default output', () => {
-    assert.deepStrictEqual(command.defaultProperties(), ['id', 'status', 'service']);
+  it("defines correct properties for the default output", () => {
+    assert.deepStrictEqual(command.defaultProperties(), [
+      "id",
+      "status",
+      "service",
+    ]);
   });
 
-  it('passes validation when command called', async () => {
-    const actual = await command.validate({
-      options: {
-        serviceName: "Exchange Online"
-      }
-    }, commandInfo);
+  it("passes validation when command called", async () => {
+    const actual = await command.validate(
+      {
+        options: {
+          serviceName: "Exchange Online",
+        },
+      },
+      commandInfo,
+    );
     assert.strictEqual(actual, true);
   });
 
-  it('passes validation when command called with issues', async () => {
-    const actual = await command.validate({
-      options: {
-        serviceName: "Exchange Online",
-        issues: true
-      }
-    }, commandInfo);
+  it("passes validation when command called with issues", async () => {
+    const actual = await command.validate(
+      {
+        options: {
+          serviceName: "Exchange Online",
+          issues: true,
+        },
+      },
+      commandInfo,
+    );
     assert.strictEqual(actual, true);
   });
 
-  it('correctly returns service health', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online") {
+  it("correctly returns service health", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        opts.url ===
+        "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online"
+      ) {
         return serviceHealthResponse;
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     const options: any = {
-      serviceName: "Exchange Online"
+      serviceName: "Exchange Online",
     };
 
     await command.action(logger, { options } as any);
     assert(loggerLogSpy.calledWith(serviceHealthResponse));
   });
 
-
-  it('correctly returns service health as csv with issues flag', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online") {
+  it("correctly returns service health as csv with issues flag", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        opts.url ===
+        "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online"
+      ) {
         return serviceHealthResponseCSV;
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     const options: any = {
       serviceName: "Exchange Online",
       issues: true,
-      output: "csv"
+      output: "csv",
     };
 
     await command.action(logger, { options } as any);
     assert(loggerLogSpy.calledWith(serviceHealthResponseCSV));
   });
 
-  it('correctly returns service health with issues', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online?$expand=issues") {
+  it("correctly returns service health with issues", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        opts.url ===
+        "https://graph.microsoft.com/v1.0/admin/serviceAnnouncement/healthOverviews/Exchange Online?$expand=issues"
+      ) {
         return serviceHealthIssueResponse;
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     const options: any = {
       serviceName: "Exchange Online",
-      issues: true
+      issues: true,
     };
 
     await command.action(logger, { options } as any);
     assert(loggerLogSpy.calledWith(serviceHealthIssueResponse));
   });
 
-  it('correctly handles random API error', async () => {
+  it("correctly handles random API error", async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
+    sinon.stub(request, "get").rejects(new Error("An error has occurred"));
 
-    await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
+    await assert.rejects(
+      command.action(logger, { options: {} } as any),
+      new CommandError("An error has occurred"),
+    );
   });
 });

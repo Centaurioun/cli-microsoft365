@@ -1,9 +1,9 @@
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { formatting } from '../../../../utils/formatting';
-import YammerCommand from '../../../base/YammerCommand';
-import commands from '../../commands';
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import request from "../../../../request";
+import { formatting } from "../../../../utils/formatting";
+import YammerCommand from "../../../base/YammerCommand";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -20,11 +20,11 @@ class YammerUserGetCommand extends YammerCommand {
   }
 
   public get description(): string {
-    return 'Retrieves the current user or searches for a user by ID or e-mail';
+    return "Retrieves the current user or searches for a user by ID or e-mail";
   }
 
   public defaultProperties(): string[] | undefined {
-    return ['id', 'full_name', 'email', 'job_title', 'state', 'url'];
+    return ["id", "full_name", "email", "job_title", "state", "url"];
   }
 
   constructor() {
@@ -39,7 +39,7 @@ class YammerUserGetCommand extends YammerCommand {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
         userId: args.options.id !== undefined,
-        email: args.options.email !== undefined
+        email: args.options.email !== undefined,
       });
     });
   }
@@ -47,24 +47,22 @@ class YammerUserGetCommand extends YammerCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-i, --id [id]'
+        option: "-i, --id [id]",
       },
       {
-        option: '--email [email]'
-      }
+        option: "--email [email]",
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (args.options.id !== undefined && args.options.email !== undefined) {
-          return "You are only allowed to search by ID or e-mail but not both";
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      if (args.options.id !== undefined && args.options.email !== undefined) {
+        return "You are only allowed to search by ID or e-mail but not both";
       }
-    );
+
+      return true;
+    });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
@@ -72,26 +70,28 @@ class YammerUserGetCommand extends YammerCommand {
 
     if (args.options.id) {
       endPoint = `${this.resource}/v1/users/${args.options.id}.json`;
-    }
-    else if (args.options.email) {
-      endPoint = `${this.resource}/v1/users/by_email.json?email=${formatting.encodeQueryParameter(args.options.email)}`;
+    } else if (args.options.email) {
+      endPoint = `${
+        this.resource
+      }/v1/users/by_email.json?email=${formatting.encodeQueryParameter(
+        args.options.email,
+      )}`;
     }
 
     const requestOptions: any = {
       url: endPoint,
       headers: {
-        accept: 'application/json;odata.metadata=none',
-        'content-type': 'application/json;odata=nometadata'
+        accept: "application/json;odata.metadata=none",
+        "content-type": "application/json;odata=nometadata",
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
     try {
       const res: any = await request.get(requestOptions);
 
       logger.log(res);
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }

@@ -1,11 +1,11 @@
-import { Cli } from '../../../../cli/Cli';
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { odata } from '../../../../utils/odata';
-import GraphCommand from '../../../base/GraphCommand';
-import commands from '../../commands';
-import { ToDoTask } from '../../ToDoTask';
+import { Cli } from "../../../../cli/Cli";
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import request from "../../../../request";
+import { odata } from "../../../../utils/odata";
+import GraphCommand from "../../../base/GraphCommand";
+import commands from "../../commands";
+import { ToDoTask } from "../../ToDoTask";
 
 interface CommandArgs {
   options: Options;
@@ -22,11 +22,11 @@ class TodoTaskListCommand extends GraphCommand {
   }
 
   public get description(): string {
-    return 'List tasks from a Microsoft To Do task list';
+    return "List tasks from a Microsoft To Do task list";
   }
 
   public defaultProperties(): string[] | undefined {
-    return ['id', 'title', 'status', 'createdDateTime', 'lastModifiedDateTime'];
+    return ["id", "title", "status", "createdDateTime", "lastModifiedDateTime"];
   }
 
   constructor() {
@@ -40,8 +40,8 @@ class TodoTaskListCommand extends GraphCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        listId: typeof args.options.listId !== 'undefined',
-        listName: typeof args.options.listName !== 'undefined'
+        listId: typeof args.options.listId !== "undefined",
+        listName: typeof args.options.listName !== "undefined",
       });
     });
   }
@@ -49,16 +49,16 @@ class TodoTaskListCommand extends GraphCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '--listName [listName]'
+        option: "--listName [listName]",
       },
       {
-        option: '--listId [listId]'
-      }
+        option: "--listId [listId]",
+      },
     );
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['listId', 'listName'] });
+    this.optionSets.push({ options: ["listId", "listName"] });
   }
 
   private getTodoListId(args: CommandArgs): Promise<string> {
@@ -67,15 +67,20 @@ class TodoTaskListCommand extends GraphCommand {
     }
 
     const requestOptions: any = {
-      url: `${this.resource}/v1.0/me/todo/lists?$filter=displayName eq '${escape(args.options.listName as string)}'`,
+      url: `${
+        this.resource
+      }/v1.0/me/todo/lists?$filter=displayName eq '${escape(
+        args.options.listName as string,
+      )}'`,
       headers: {
-        accept: 'application/json;odata.metadata=none'
+        accept: "application/json;odata.metadata=none",
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
-    return request.get<{ value: [{ id: string }] }>(requestOptions)
-      .then(response => {
+    return request
+      .get<{ value: [{ id: string }] }>(requestOptions)
+      .then((response) => {
         const taskList: { id: string } | undefined = response.value[0];
 
         if (!taskList) {
@@ -94,20 +99,20 @@ class TodoTaskListCommand extends GraphCommand {
 
       if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(items);
+      } else {
+        logger.log(
+          items.map((m) => {
+            return {
+              id: m.id,
+              title: m.title,
+              status: m.status,
+              createdDateTime: m.createdDateTime,
+              lastModifiedDateTime: m.lastModifiedDateTime,
+            };
+          }),
+        );
       }
-      else {
-        logger.log(items.map(m => {
-          return {
-            id: m.id,
-            title: m.title,
-            status: m.status,
-            createdDateTime: m.createdDateTime,
-            lastModifiedDateTime: m.lastModifiedDateTime
-          };
-        }));
-      }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }

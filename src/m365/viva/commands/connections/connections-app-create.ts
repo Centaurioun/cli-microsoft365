@@ -1,16 +1,16 @@
-import * as AdmZip from 'adm-zip';
-import * as fs from 'fs';
-import * as path from 'path';
-import { v4 } from 'uuid';
-import { Cli } from '../../../../cli/Cli';
-import { CommandOutput } from '../../../../cli/Cli';
-import { Logger } from '../../../../cli/Logger';
-import Command from '../../../../Command';
-import GlobalOptions from '../../../../GlobalOptions';
-import AnonymousCommand from '../../../base/AnonymousCommand';
-import * as spoWebGetCommand from '../../../spo/commands/web/web-get';
-import { Options as SpoWebGetCommandOptions } from '../../../spo/commands/web/web-get';
-import commands from '../../commands';
+import * as AdmZip from "adm-zip";
+import * as fs from "fs";
+import * as path from "path";
+import { v4 } from "uuid";
+import { Cli } from "../../../../cli/Cli";
+import { CommandOutput } from "../../../../cli/Cli";
+import { Logger } from "../../../../cli/Logger";
+import Command from "../../../../Command";
+import GlobalOptions from "../../../../GlobalOptions";
+import AnonymousCommand from "../../../base/AnonymousCommand";
+import * as spoWebGetCommand from "../../../spo/commands/web/web-get";
+import { Options as SpoWebGetCommandOptions } from "../../../spo/commands/web/web-get";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -39,7 +39,7 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
   }
 
   public get description(): string {
-    return 'Creates Viva Connections app';
+    return "Creates Viva Connections app";
   }
 
   constructor() {
@@ -51,66 +51,68 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
 
   #initOptions(): void {
     this.options.unshift(
-      { option: '--portalUrl <portalUrl>' },
-      { option: '--name <name>' },
-      { option: '--description <description>' },
-      { option: '--longDescription <longDescription>' },
-      { option: '--privacyPolicyUrl [privacyPolicyUrl]' },
-      { option: '--termsOfUseUrl [termsOfUseUrl]' },
-      { option: '--companyName <companyName>' },
-      { option: '--companyWebsiteUrl <companyWebsiteUrl>' },
-      { option: '--coloredIconPath <coloredIconPath>' },
-      { option: '--outlineIconPath <outlineIconPath>' },
-      { option: '--accentColor [accentColor]' },
-      { option: '--force' }
+      { option: "--portalUrl <portalUrl>" },
+      { option: "--name <name>" },
+      { option: "--description <description>" },
+      { option: "--longDescription <longDescription>" },
+      { option: "--privacyPolicyUrl [privacyPolicyUrl]" },
+      { option: "--termsOfUseUrl [termsOfUseUrl]" },
+      { option: "--companyName <companyName>" },
+      { option: "--companyWebsiteUrl <companyWebsiteUrl>" },
+      { option: "--coloredIconPath <coloredIconPath>" },
+      { option: "--outlineIconPath <outlineIconPath>" },
+      { option: "--accentColor [accentColor]" },
+      { option: "--force" },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (args.options.name.length > 30) {
-          return "App name must not exceed 30 characters";
-        }
-
-        if (args.options.description &&
-          args.options.description.length > 80) {
-          return 'Description must not exceed 80 characters';
-        }
-
-        if (args.options.longDescription &&
-          args.options.longDescription.length > 4000) {
-          return 'Long description must not exceed 4000 characters';
-        }
-
-        const appFilePath = path.resolve(`${args.options.name}.zip`);
-        if (fs.existsSync(appFilePath) && !args.options.force) {
-          return `File ${appFilePath} already exists. Delete the file or use the --force option to overwrite the existing file`;
-        }
-
-        const coloredIconPath = path.resolve(args.options.coloredIconPath);
-        if (!fs.existsSync(coloredIconPath)) {
-          return `File ${coloredIconPath} doesn't exist`;
-        }
-
-        const outlineIconPath = path.resolve(args.options.outlineIconPath);
-        if (!fs.existsSync(outlineIconPath)) {
-          return `File ${outlineIconPath} doesn't exist`;
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      if (args.options.name.length > 30) {
+        return "App name must not exceed 30 characters";
       }
-    );
+
+      if (args.options.description && args.options.description.length > 80) {
+        return "Description must not exceed 80 characters";
+      }
+
+      if (
+        args.options.longDescription &&
+        args.options.longDescription.length > 4000
+      ) {
+        return "Long description must not exceed 4000 characters";
+      }
+
+      const appFilePath = path.resolve(`${args.options.name}.zip`);
+      if (fs.existsSync(appFilePath) && !args.options.force) {
+        return `File ${appFilePath} already exists. Delete the file or use the --force option to overwrite the existing file`;
+      }
+
+      const coloredIconPath = path.resolve(args.options.coloredIconPath);
+      if (!fs.existsSync(coloredIconPath)) {
+        return `File ${coloredIconPath} doesn't exist`;
+      }
+
+      const outlineIconPath = path.resolve(args.options.outlineIconPath);
+      if (!fs.existsSync(outlineIconPath)) {
+        return `File ${outlineIconPath} doesn't exist`;
+      }
+
+      return true;
+    });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     try {
-      const getWebOutput: CommandOutput = await this.getWeb(args, logger); if (this.debug) {
+      const getWebOutput: CommandOutput = await this.getWeb(args, logger);
+      if (this.debug) {
         logger.logToStderr(getWebOutput.stderr);
       }
 
       if (this.verbose) {
-        logger.logToStderr(`Site found at ${args.options.portalUrl}. Checking if it's a communication site...`);
+        logger.logToStderr(
+          `Site found at ${args.options.portalUrl}. Checking if it's a communication site...`,
+        );
       }
 
       const web: {
@@ -118,20 +120,27 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
         WebTemplate: string;
       } = JSON.parse(getWebOutput.stdout);
 
-      if (web.WebTemplate !== 'SITEPAGEPUBLISHING' ||
-        web.Configuration !== 0) {
+      if (web.WebTemplate !== "SITEPAGEPUBLISHING" || web.Configuration !== 0) {
         throw `Site ${args.options.portalUrl} is not a Communication Site. Please specify a different site and try again.`;
       }
 
       if (this.verbose) {
-        logger.logToStderr(`Site ${args.options.portalUrl} is a Communication Site. Building app...`);
+        logger.logToStderr(
+          `Site ${args.options.portalUrl} is a Communication Site. Building app...`,
+        );
       }
 
       const portalUrl: URL = new URL(args.options.portalUrl);
-      const appPortalUrl: string = `${args.options.portalUrl}${args.options.portalUrl.indexOf('?') > -1 ? '&' : '?'}app=portals`;
+      const appPortalUrl: string = `${args.options.portalUrl}${
+        args.options.portalUrl.indexOf("?") > -1 ? "&" : "?"
+      }app=portals`;
       let searchUrlPath: string = portalUrl.hostname;
-      if (portalUrl.pathname.indexOf('/teams') > -1 || portalUrl.pathname.indexOf('/sites') > -1) {
-        const firstTwoUrlSegments = portalUrl.pathname.match(/^\/[^\/]+\/[^\/]+/);
+      if (
+        portalUrl.pathname.indexOf("/teams") > -1 ||
+        portalUrl.pathname.indexOf("/sites") > -1
+      ) {
+        const firstTwoUrlSegments =
+          portalUrl.pathname.match(/^\/[^\/]+\/[^\/]+/);
         if (firstTwoUrlSegments) {
           searchUrlPath += firstTwoUrlSegments[0];
         }
@@ -144,47 +153,49 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
       const appId: string = v4();
 
       const manifest: any = {
-        "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.9/MicrosoftTeams.schema.json",
-        "manifestVersion": "1.9",
-        "version": "1.0",
-        "id": appId,
-        "packageName": `com.microsoft.teams.${args.options.name}`,
-        "developer": {
-          "name": args.options.companyName,
-          "websiteUrl": args.options.companyWebsiteUrl,
-          "privacyUrl": args.options.privacyPolicyUrl || 'https://privacy.microsoft.com/en-us/privacystatement',
-          "termsOfUseUrl": args.options.termsOfUseUrl || 'https://go.microsoft.com/fwlink/?linkid=2039674'
+        $schema:
+          "https://developer.microsoft.com/en-us/json-schemas/teams/v1.9/MicrosoftTeams.schema.json",
+        manifestVersion: "1.9",
+        version: "1.0",
+        id: appId,
+        packageName: `com.microsoft.teams.${args.options.name}`,
+        developer: {
+          name: args.options.companyName,
+          websiteUrl: args.options.companyWebsiteUrl,
+          privacyUrl:
+            args.options.privacyPolicyUrl ||
+            "https://privacy.microsoft.com/en-us/privacystatement",
+          termsOfUseUrl:
+            args.options.termsOfUseUrl ||
+            "https://go.microsoft.com/fwlink/?linkid=2039674",
         },
-        "icons": {
-          "color": coloredIconFileName,
-          "outline": outlineIconFileName
+        icons: {
+          color: coloredIconFileName,
+          outline: outlineIconFileName,
         },
-        "name": {
-          "short": args.options.name,
-          "full": args.options.name
+        name: {
+          short: args.options.name,
+          full: args.options.name,
         },
-        "description": {
-          "short": `${args.options.description}`,
-          "full": `${args.options.longDescription}`
+        description: {
+          short: `${args.options.description}`,
+          full: `${args.options.longDescription}`,
         },
-        "accentColor": args.options.accentColor || '#40497E',
-        "isFullScreen": true,
-        "staticTabs": [
+        accentColor: args.options.accentColor || "#40497E",
+        isFullScreen: true,
+        staticTabs: [
           {
-            "entityId": `sharepointportal_${appId}`,
-            "name": `Portals-${args.options.name}`,
-            "contentUrl": `https://${domain}/_layouts/15/teamslogon.aspx?spfx=true&dest=${appPortalUrl}`,
-            "websiteUrl": portalUrl,
-            "searchUrl": `https://${searchUrlPath}/_layouts/15/search.aspx?q={searchQuery}`,
-            "scopes": ["personal"],
-            "supportedPlatform": ["desktop"]
-          }
+            entityId: `sharepointportal_${appId}`,
+            name: `Portals-${args.options.name}`,
+            contentUrl: `https://${domain}/_layouts/15/teamslogon.aspx?spfx=true&dest=${appPortalUrl}`,
+            websiteUrl: portalUrl,
+            searchUrl: `https://${searchUrlPath}/_layouts/15/search.aspx?q={searchQuery}`,
+            scopes: ["personal"],
+            supportedPlatform: ["desktop"],
+          },
         ],
-        "permissions": [
-          "identity",
-          "messageTeamMembers"
-        ],
-        "validDomains": [
+        permissions: ["identity", "messageTeamMembers"],
+        validDomains: [
           domain,
           "*.login.microsoftonline.com",
           "*.sharepoint.com",
@@ -192,12 +203,12 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
           "spoppe-a.akamaihd.net",
           "spoprod-a.akamaihd.net",
           "resourceseng.blob.core.windows.net",
-          "msft.spoppe.com"
+          "msft.spoppe.com",
         ],
-        "webApplicationInfo": {
-          "id": "00000003-0000-0ff1-ce00-000000000000",
-          "resource": `https://${domain}`
-        }
+        webApplicationInfo: {
+          id: "00000003-0000-0ff1-ce00-000000000000",
+          resource: `https://${domain}`,
+        },
       };
       const manifestString = JSON.stringify(manifest, null, 2);
 
@@ -207,16 +218,25 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
         if (!this.archive) {
           this.archive = new AdmZip();
         }
-        this.archive.addFile('manifest.json', Buffer.alloc(manifestString.length, manifestString, 'utf8'));
-        this.archive.addLocalFile(coloredIconPath, undefined, coloredIconFileName);
-        this.archive.addLocalFile(outlineIconPath, undefined, outlineIconFileName);
+        this.archive.addFile(
+          "manifest.json",
+          Buffer.alloc(manifestString.length, manifestString, "utf8"),
+        );
+        this.archive.addLocalFile(
+          coloredIconPath,
+          undefined,
+          coloredIconFileName,
+        );
+        this.archive.addLocalFile(
+          outlineIconPath,
+          undefined,
+          outlineIconFileName,
+        );
         this.archive.writeZip(`${args.options.name}.zip`);
-      }
-      catch (ex: any) {
+      } catch (ex: any) {
         throw ex.message;
       }
-    } 
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }
@@ -228,11 +248,13 @@ class VivaConnectionsAppCreateCommand extends AnonymousCommand {
 
     const options: SpoWebGetCommandOptions = {
       url: args.options.portalUrl,
-      output: 'json',
+      output: "json",
       debug: this.debug,
-      verbose: this.verbose
+      verbose: this.verbose,
     };
-    return Cli.executeCommandWithOutput(spoWebGetCommand as Command, { options: { ...options, _: [] } });
+    return Cli.executeCommandWithOutput(spoWebGetCommand as Command, {
+      options: { ...options, _: [] },
+    });
   }
 }
 

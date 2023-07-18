@@ -1,10 +1,10 @@
-import { Cli } from '../../../../cli/Cli';
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import request, { CliRequestOptions } from '../../../../request';
-import GraphCommand from '../../../base/GraphCommand';
-import commands from '../../commands';
-import { ToDoTask } from '../../ToDoTask';
+import { Cli } from "../../../../cli/Cli";
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import request, { CliRequestOptions } from "../../../../request";
+import GraphCommand from "../../../base/GraphCommand";
+import commands from "../../commands";
+import { ToDoTask } from "../../ToDoTask";
 
 interface CommandArgs {
   options: Options;
@@ -22,11 +22,11 @@ class TodoTaskGetCommand extends GraphCommand {
   }
 
   public get description(): string {
-    return 'Get a specific task from a Microsoft To Do task list';
+    return "Get a specific task from a Microsoft To Do task list";
   }
 
   public defaultProperties(): string[] | undefined {
-    return ['id', 'title', 'status', 'createdDateTime', 'lastModifiedDateTime'];
+    return ["id", "title", "status", "createdDateTime", "lastModifiedDateTime"];
   }
 
   constructor() {
@@ -40,8 +40,8 @@ class TodoTaskGetCommand extends GraphCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        listId: typeof args.options.listId !== 'undefined',
-        listName: typeof args.options.listName !== 'undefined'
+        listId: typeof args.options.listId !== "undefined",
+        listName: typeof args.options.listName !== "undefined",
       });
     });
   }
@@ -49,19 +49,19 @@ class TodoTaskGetCommand extends GraphCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-i, --id <id>'
+        option: "-i, --id <id>",
       },
       {
-        option: '--listName [listName]'
+        option: "--listName [listName]",
       },
       {
-        option: '--listId [listId]'
-      }
+        option: "--listId [listId]",
+      },
     );
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['listId', 'listName'] });
+    this.optionSets.push({ options: ["listId", "listName"] });
   }
 
   private async getTodoListId(args: CommandArgs): Promise<string> {
@@ -70,14 +70,20 @@ class TodoTaskGetCommand extends GraphCommand {
     }
 
     const requestOptions: CliRequestOptions = {
-      url: `${this.resource}/v1.0/me/todo/lists?$filter=displayName eq '${escape(args.options.listName as string)}'`,
+      url: `${
+        this.resource
+      }/v1.0/me/todo/lists?$filter=displayName eq '${escape(
+        args.options.listName as string,
+      )}'`,
       headers: {
-        accept: 'application/json;odata.metadata=none'
+        accept: "application/json;odata.metadata=none",
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
-    const response = await request.get<{ value: [{ id: string }] }>(requestOptions);
+    const response = await request.get<{ value: [{ id: string }] }>(
+      requestOptions,
+    );
 
     const taskList = response.value[0];
     if (!taskList) {
@@ -93,27 +99,25 @@ class TodoTaskGetCommand extends GraphCommand {
       const requestOptions: any = {
         url: `${this.resource}/v1.0/me/todo/lists/${listId}/tasks/${args.options.id}`,
         headers: {
-          accept: 'application/json;odata.metadata=none'
+          accept: "application/json;odata.metadata=none",
         },
-        responseType: 'json'
+        responseType: "json",
       };
 
       const item: ToDoTask = await request.get(requestOptions);
 
       if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(item);
-      }
-      else {
+      } else {
         logger.log({
           id: item.id,
           title: item.title,
           status: item.status,
           createdDateTime: item.createdDateTime,
-          lastModifiedDateTime: item.lastModifiedDateTime
+          lastModifiedDateTime: item.lastModifiedDateTime,
         });
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }
