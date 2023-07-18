@@ -44,11 +44,11 @@ export class BasePermissions {
     let b = 1;
     if (a >= 0 && a < 32) {
       b = b << a;
-      hasPermission = 0 !== (this.low & b);
+      hasPermission = (this.low & b) !== 0;
     }
     else if (a >= 32 && a < 64) {
       b = b << a - 32;
-      hasPermission = (0 !== (this.high & b));
+      hasPermission = ((this.high & b) !== 0);
     }
 
     return hasPermission;
