@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./app-list');
@@ -20,9 +21,10 @@ describe(commands.APP_LIST, () => {
   let loggerLogToStderrSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -51,16 +53,12 @@ describe(commands.APP_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.APP_LIST), true);
+    assert.strictEqual(command.name, commands.APP_LIST);
   });
 
   it('has a description', () => {
@@ -113,35 +111,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -239,7 +237,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -311,35 +309,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -421,35 +419,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -540,16 +538,16 @@ describe(commands.APP_LIST, () => {
       }
     ];
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/apps?api-version=2017-08-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ "value": apps });
+          return { "value": apps };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true } });
@@ -594,35 +592,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -720,7 +718,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -793,35 +791,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -904,35 +902,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1067,35 +1065,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1193,7 +1191,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -1265,35 +1263,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1375,35 +1373,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1494,16 +1492,16 @@ describe(commands.APP_LIST, () => {
       }
     ];
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/apps?api-version=2017-08-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ "value": apps });
+          return { "value": apps };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: {} });
@@ -1548,35 +1546,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1674,7 +1672,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -1747,35 +1745,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -1858,35 +1856,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2021,35 +2019,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2147,7 +2145,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -2219,35 +2217,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2329,35 +2327,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2448,16 +2446,16 @@ describe(commands.APP_LIST, () => {
       }
     ];
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/scopes/admin/environments/4ce50206-9576-4237-8b17-38d8aadfaa35/apps?api-version=2017-08-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ "value": apps });
+          return { "value": apps };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { asAdmin: true, environment: '4ce50206-9576-4237-8b17-38d8aadfaa35' } });
@@ -2502,35 +2500,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2628,7 +2626,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -2701,35 +2699,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2812,35 +2810,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -2935,13 +2933,11 @@ describe(commands.APP_LIST, () => {
 
 
   it('correctly handles no environment found', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        "error": {
-          "code": "EnvironmentAccessDenied",
-          "message": "Access to the environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' is denied."
-        }
-      });
+    sinon.stub(request, 'get').rejects({
+      "error": {
+        "code": "EnvironmentAccessDenied",
+        "message": "Access to the environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' is denied."
+      }
     });
 
     await assert.rejects(command.action(logger, { options: { environment: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' } } as any),
@@ -2990,35 +2986,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(37, 62, 143, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200708t000000z4d9d5509e6c745d3bbd4d6d317890ccd/13103204444004720806/N0eb33631-4950-45e8-b569-8ba8611af629-logoSmallFile?sv=2018-03-28&sr=c&sig=rTJyePWWDMM6mvIhZaOkRsEdLxFE4X6UGXjrqrz3iYo%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -3116,7 +3112,7 @@ describe(commands.APP_LIST, () => {
               "isOnPremiseConnection": false,
               "bypassConsent": false,
               "dataSets": {
-                "https://m365x023142.sharepoint.com/sites/RequestateamApp": {
+                "https://contoso.sharepoint.com/sites/RequestateamApp": {
                   "dataSources": {
                     "Teams Templates": {
                       "tableName": "298485ad-73cc-4b5f-a013-b56111ec351a"
@@ -3188,35 +3184,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200608t000000z1cbf48a3f3b54583b8932510cbdf20b0/6342866521103212774/N90efe94c-af45-4639-885e-d69f32cd6c9f-logoSmallFile?sv=2018-03-28&sr=c&sig=mm7Cj0z%2FlX42FaSCSA9MtwBxMVEEnveqb1%2FsQhfLsRw%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -3298,35 +3294,35 @@ describe(commands.APP_LIST, () => {
           },
           "owner": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "createdBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastModifiedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "lastPublishedBy": {
             "id": "a86f34fb-fc0b-476f-b2d3-84b2648cc87a",
-            "displayName": "Garry Trinder",
-            "email": "garry@trinder365dev.onmicrosoft.com",
+            "displayName": "John Doe",
+            "email": "john.doe@contoso.onmicrosoft.com",
             "type": "User",
             "tenantId": "e8954f17-a373-4b61-b54d-45c038fe3188",
-            "userPrincipalName": "garry@trinder365dev.onmicrosoft.com"
+            "userPrincipalName": "john.doe@contoso.onmicrosoft.com"
           },
           "backgroundColor": "rgba(0, 176, 240, 1)",
           "backgroundImageUri": "https://pafeblobprodln.blob.core.windows.net:443/20200812t000000z1766ec3fd78941bea695c957e898a62a/logoSmallFile?sv=2018-03-28&sr=c&sig=sqK6%2FXY4cHidwE%2Brb3JoBV3bNToOaA6EM3%2FczbWMQDc%3D&se=2020-10-05T18%3A56%3A46Z&sp=rl",
@@ -3417,16 +3413,16 @@ describe(commands.APP_LIST, () => {
       }
     ];
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/apps?api-version=2017-08-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({ "value": apps });
+          return { "value": apps };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { output: 'json' } });
@@ -3434,35 +3430,29 @@ describe(commands.APP_LIST, () => {
   });
 
   it('correctly handles no apps found', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.resolve({ value: [] });
-    });
+    sinon.stub(request, 'get').resolves({ value: [] });
 
     await command.action(logger, { options: {} });
     assert(loggerLogSpy.notCalled);
   });
 
   it('correctly handles no apps found (debug)', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.resolve({ value: [] });
-    });
+    sinon.stub(request, 'get').resolves({ value: [] });
 
     await command.action(logger, { options: { debug: true } });
     assert(loggerLogToStderrSpy.calledWith('No apps found'));
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        error: {
-          'odata.error': {
-            code: '-1, InvalidOperationException',
-            message: {
-              value: 'An error has occurred'
-            }
+    sinon.stub(request, 'get').rejects({
+      error: {
+        'odata.error': {
+          code: '-1, InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
           }
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: {} } as any),

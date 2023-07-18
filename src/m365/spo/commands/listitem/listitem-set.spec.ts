@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
+import * as os from 'os';
 import { telemetry } from '../../../../telemetry';
 import auth from '../../../../Auth';
 import { Cli } from '../../../../cli/Cli';
@@ -9,6 +10,7 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import { urlUtil } from '../../../../utils/urlUtil';
@@ -16,6 +18,7 @@ import commands from '../../commands';
 const command: Command = require('./listitem-set');
 
 describe(commands.LISTITEM_SET, () => {
+  let cli: Cli;
   let log: any[];
   let logger: Logger;
   let commandInfo: CommandInfo;
@@ -38,7 +41,7 @@ describe(commands.LISTITEM_SET, () => {
         const bodyString = JSON.stringify(opts.data);
         const ctMatch = bodyString.match(/\"?FieldName\"?:\s*\"?ContentType\"?,\s*\"?FieldValue\"?:\s*\"?(\w*)\"?/i);
         actualContentType = ctMatch ? ctMatch[1] : "";
-        if (bodyString.indexOf("fail updating me") > -1) { return Promise.resolve({ value: [{ ErrorMessage: 'failed updating' }] }); }
+        if (bodyString.indexOf("fail updating me") > -1) { return { value: [{ ErrorMessage: 'failed updating', 'FieldName': 'Title', 'HasException': true }] }; }
         return { value: [{ ItemId: expectedId }] };
       }
     }
@@ -145,15 +148,17 @@ describe(commands.LISTITEM_SET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
-    sinon.stub(spo, 'getRequestDigest').callsFake(() => Promise.resolve({
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
+    sinon.stub(spo, 'getRequestDigest').resolves({
       FormDigestValue: 'ABC',
       FormDigestTimeoutSeconds: 1800,
       FormDigestExpiresAt: new Date(),
       WebFullUrl: 'https://contoso.sharepoint.com'
-    }));
+    });
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -171,27 +176,24 @@ describe(commands.LISTITEM_SET, () => {
         log.push(msg);
       }
     };
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.post,
-      request.get
+      request.get,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      spo.getRequestDigest
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.LISTITEM_SET), true);
+    assert.strictEqual(command.name,commands.LISTITEM_SET);
   });
 
   it('has a description', () => {
@@ -257,7 +259,7 @@ describe(commands.LISTITEM_SET, () => {
       Title: "fail updating me"
     };
 
-    await assert.rejects(command.action(logger, { options: options } as any), new CommandError("Item didn't update successfully"));
+    await assert.rejects(command.action(logger, { options: options } as any), new CommandError(`Updating the items has failed with the following errors: ${os.EOL}- Title - failed updating`));
     assert.strictEqual(actualId, 0);
   });
 
@@ -346,7 +348,6 @@ describe(commands.LISTITEM_SET, () => {
 
     await assert.rejects(command.action(logger, { options: options } as any), new CommandError("Specified content type 'Unexpected content type' doesn't exist on the target list"));
   });
-
 
   it('successfully updates the listitem when the systemUpdate parameter is specified', async () => {
     sinon.stub(request, 'get').callsFake(getFakes);

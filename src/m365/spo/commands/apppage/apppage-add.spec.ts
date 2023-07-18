@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./apppage-add');
@@ -18,9 +19,10 @@ describe(commands.APPPAGE_ADD, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -48,16 +50,12 @@ describe(commands.APPPAGE_ADD, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.APPPAGE_ADD), true);
+    assert.strictEqual(command.name, commands.APPPAGE_ADD);
   });
 
   it('has a description', () => {
@@ -65,13 +63,11 @@ describe(commands.APPPAGE_ADD, () => {
   });
 
   it('creates a single-part app page', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/CreateAppPage`) > -1 &&
         opts.data.webPartDataAsJson ===
         "{\"id\": \"e84a4f44-30d2-4962-b203-f8bf42114860\", \"instanceId\": \"15353e8b-cb55-4794-b871-4cd74abf78b4\", \"title\": \"Milestone Tracking\", \"description\": \"A tool used for tracking project milestones\", \"serverProcessedContent\": { \"htmlStrings\": {}, \"searchablePlainTexts\": {}, \"imageSources\": {}, \"links\": {} }, \"dataVersion\": \"1.0\", \"properties\": {\"description\": \"Milestone Tracking\"}}") {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/UpdateAppPage`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
@@ -79,16 +75,14 @@ describe(commands.APPPAGE_ADD, () => {
           "webPartDataAsJson": "{\"id\": \"e84a4f44-30d2-4962-b203-f8bf42114860\", \"instanceId\": \"15353e8b-cb55-4794-b871-4cd74abf78b4\", \"title\": \"Milestone Tracking\", \"description\": \"A tool used for tracking project milestones\", \"serverProcessedContent\": { \"htmlStrings\": {}, \"searchablePlainTexts\": {}, \"imageSources\": {}, \"links\": {} }, \"dataVersion\": \"1.0\", \"properties\": {\"description\": \"Milestone Tracking\"}}",
           "title": "test-single"
         })) {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('/SitePages/lp4blf70.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "FileSystemObjectType": 0,
             "Id": 20,
@@ -144,22 +138,20 @@ describe(commands.APPPAGE_ADD, () => {
           "UIVersion": 1,
           "UIVersionLabel": "0.1",
           "UniqueId": "d1408169-ebc1-4a96-b839-95e2d4f439b3"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, title: 'test-single', webUrl: 'https://contoso.sharepoint.com/', webPartData: "{\"id\": \"e84a4f44-30d2-4962-b203-f8bf42114860\", \"instanceId\": \"15353e8b-cb55-4794-b871-4cd74abf78b4\", \"title\": \"Milestone Tracking\", \"description\": \"A tool used for tracking project milestones\", \"serverProcessedContent\": { \"htmlStrings\": {}, \"searchablePlainTexts\": {}, \"imageSources\": {}, \"links\": {} }, \"dataVersion\": \"1.0\", \"properties\": {\"description\": \"Milestone Tracking\"}}" } });
   });
 
   it('creates a single-part app page showing on quicklaunch', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/CreateAppPage`) > -1 &&
         opts.data.webPartDataAsJson ===
         "{\"id\": \"e84a4f44-30d2-4962-b203-f8bf42114860\", \"instanceId\": \"15353e8b-cb55-4794-b871-4cd74abf78b4\", \"title\": \"Milestone Tracking\", \"description\": \"A tool used for tracking project milestones\", \"serverProcessedContent\": { \"htmlStrings\": {}, \"searchablePlainTexts\": {}, \"imageSources\": {}, \"links\": {} }, \"dataVersion\": \"1.0\", \"properties\": {\"description\": \"Milestone Tracking\"}}") {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/UpdateAppPage`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
@@ -168,16 +160,14 @@ describe(commands.APPPAGE_ADD, () => {
           "title": "test-single",
           "includeInNavigation": true
         })) {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('/SitePages/lp4blf70.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "FileSystemObjectType": 0,
             "Id": 20,
@@ -233,20 +223,20 @@ describe(commands.APPPAGE_ADD, () => {
           "UIVersion": 1,
           "UIVersionLabel": "0.1",
           "UniqueId": "d1408169-ebc1-4a96-b839-95e2d4f439b3"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, addToQuickLaunch: true, title: 'test-single', webUrl: 'https://contoso.sharepoint.com/', webPartData: "{\"id\": \"e84a4f44-30d2-4962-b203-f8bf42114860\", \"instanceId\": \"15353e8b-cb55-4794-b871-4cd74abf78b4\", \"title\": \"Milestone Tracking\", \"description\": \"A tool used for tracking project milestones\", \"serverProcessedContent\": { \"htmlStrings\": {}, \"searchablePlainTexts\": {}, \"imageSources\": {}, \"links\": {} }, \"dataVersion\": \"1.0\", \"properties\": {\"description\": \"Milestone Tracking\"}}" } });
   });
 
   it('fails to create a single-part app page if creating page failed', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/CreateAppPage`) > -1) {
-        return Promise.reject('Failed to create a single-part app page');
+        throw 'Failed to create a single-part app page';
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { title: 'failme', webUrl: 'https://contoso.sharepoint.com/', webPartData: JSON.stringify({}) } } as any),
@@ -254,20 +244,18 @@ describe(commands.APPPAGE_ADD, () => {
   });
 
   it('fails to create a single-part app page if retrieving the created page failed', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/CreateAppPage`) > -1) {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('/SitePages/lp4blf70.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.reject('Page not found');
+        throw 'Page not found';
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
 
@@ -276,21 +264,19 @@ describe(commands.APPPAGE_ADD, () => {
   });
 
   it('fails to create a single-part app page if updating the created page failed', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/CreateAppPage`) > -1) {
-        return Promise.resolve({
-          value: "SitePages/lp4blf70.aspx"
-        });
+        return { value: "SitePages/lp4blf70.aspx" };
       }
       if ((opts.url as string).indexOf(`_api/sitepages/Pages/UpdateAppPage`) > -1) {
-        return Promise.reject('An error has occurred');
+        throw 'An error has occurred';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/getfilebyserverrelativeurl('/SitePages/lp4blf70.aspx')?$expand=ListItemAllFields`) > -1) {
-        return Promise.resolve({
+        return {
           "ListItemAllFields": {
             "FileSystemObjectType": 0,
             "Id": 20,
@@ -346,9 +332,9 @@ describe(commands.APPPAGE_ADD, () => {
           "UIVersion": 1,
           "UIVersionLabel": "0.1",
           "UniqueId": "d1408169-ebc1-4a96-b839-95e2d4f439b3"
-        });
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { title: 'failme', webUrl: 'https://contoso.sharepoint.com/', webPartData: JSON.stringify({}) } } as any),

@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./hidedefaultthemes-set');
@@ -19,9 +20,10 @@ describe(commands.HIDEDEFAULTTHEMES_SET, () => {
   let requests: any[];
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.spoUrl = 'https://contoso.sharepoint.com';
     commandInfo = Cli.getCommandInfo(command);
@@ -40,31 +42,23 @@ describe(commands.HIDEDEFAULTTHEMES_SET, () => {
         log.push(msg);
       }
     };
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
     requests = [];
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.post,
-      Cli.prompt
+      request.post
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.HIDEDEFAULTTHEMES_SET), true);
+    assert.strictEqual(command.name, commands.HIDEDEFAULTTHEMES_SET);
   });
 
   it('has a description', () => {
@@ -72,13 +66,13 @@ describe(commands.HIDEDEFAULTTHEMES_SET, () => {
   });
 
   it('sets the value of the HideDefaultThemes setting', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       requests.push(opts);
       if ((opts.url as string).indexOf('/_api/thememanager/SetHideDefaultThemes') > -1) {
-        return Promise.resolve('Correct Url');
+        return 'Correct Url';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -99,13 +93,13 @@ describe(commands.HIDEDEFAULTTHEMES_SET, () => {
   });
 
   it('sets the value of the HideDefaultThemes setting (debug)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       requests.push(opts);
       if ((opts.url as string).indexOf('/_api/thememanager/SetHideDefaultThemes') > -1) {
-        return Promise.resolve('Correct Url');
+        return 'Correct Url';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
@@ -127,19 +121,25 @@ describe(commands.HIDEDEFAULTTHEMES_SET, () => {
   });
 
   it('handles error when setting the value of the HideDefaultThemes setting', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    const error = {
+      error: {
+        'odata.error': {
+          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
+          }
+        }
+      }
+    };
+
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       requests.push(opts);
       if ((opts.url as string).indexOf('/_api/thememanager/SetHideDefaultThemes') > -1) {
-        return Promise.reject('An error has occurred');
+        throw error;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
-
-    sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
 
     await assert.rejects(command.action(logger, {
       options: {

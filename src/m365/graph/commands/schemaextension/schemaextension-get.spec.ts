@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./schemaextension-get');
@@ -16,9 +17,10 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -46,26 +48,22 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SCHEMAEXTENSION_GET), true);
+    assert.strictEqual(command.name, commands.SCHEMAEXTENSION_GET);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
   });
   it('gets schema extension', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`schemaExtensions`) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#schemaExtensions/$entity",
           "id": "adatumisv_exo2",
           "description": "sample description",
@@ -84,10 +82,10 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
               "type": "String"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
     await command.action(logger, {
       options: {
@@ -121,9 +119,9 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
     }
   });
   it('gets schema extension(debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`schemaExtensions`) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#schemaExtensions/$entity",
           "id": "adatumisv_exo2",
           "description": "sample description",
@@ -142,10 +140,10 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
               "type": "String"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
     await command.action(logger, {
       options: {
@@ -175,12 +173,12 @@ describe(commands.SCHEMAEXTENSION_GET, () => {
     }));
   });
   it('handles error', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`schemaExtensions`) > -1) {
-        return Promise.reject('An error has occurred');
+        throw 'An error has occurred';
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
     await assert.rejects(command.action(logger, {
       options: {

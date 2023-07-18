@@ -1,7 +1,6 @@
-import { AxiosRequestConfig } from 'axios';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
@@ -30,6 +29,7 @@ interface Options extends GlobalOptions {
   defaultEditFormUrl?: string;
   description?: string;
   direction?: string;
+  disableCommenting?: boolean;
   disableGridEditing?: boolean;
   draftVersionVisibility?: string;
   emailAlias?: string;
@@ -89,6 +89,7 @@ class SpoListSetCommand extends SpoCommand {
     'allowMultiResponses',
     'contentTypesEnabled',
     'crawlNonDefaultViews',
+    'disableCommenting',
     'disableGridEditing',
     'enableAssignToEmail',
     'enableAttachments',
@@ -284,6 +285,10 @@ class SpoListSetCommand extends SpoCommand {
       {
         option: '--direction [direction]',
         autocomplete: ['NONE', 'LTR', 'RTL']
+      },
+      {
+        option: '--disableCommenting [disableCommenting]',
+        autocomplete: ['true', 'false']
       },
       {
         option: '--disableGridEditing [disableGridEditing]',
@@ -509,7 +514,7 @@ class SpoListSetCommand extends SpoCommand {
         if (args.options.draftVersionVisibility) {
           const draftType: DraftVisibilityType = DraftVisibilityType[(args.options.draftVersionVisibility.trim() as keyof typeof DraftVisibilityType)];
 
-          if (!draftType) {
+          if (draftType === undefined) {
             return `${args.options.draftVersionVisibility} is not a valid draftVisibilityType value`;
           }
         }
@@ -573,6 +578,10 @@ class SpoListSetCommand extends SpoCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
+    if (args.options.schemaXml) {
+      this.warn(logger, `Option 'schemaXml' is deprecated.`);
+    }
+
     if (this.verbose) {
       logger.logToStderr(`Updating list in site at ${args.options.webUrl}...`);
     }
@@ -591,7 +600,7 @@ class SpoListSetCommand extends SpoCommand {
       requestUrl += `GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')/`;
     }
 
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: requestUrl,
       method: 'POST',
       headers: {
@@ -667,12 +676,16 @@ class SpoListSetCommand extends SpoCommand {
       requestBody.Direction = options.direction;
     }
 
+    if (options.disableCommenting !== undefined) {
+      requestBody.DisableCommenting = options.disableCommenting;
+    }
+
     if (options.disableGridEditing !== undefined) {
       requestBody.DisableGridEditing = options.disableGridEditing;
     }
 
     if (options.draftVersionVisibility) {
-      requestBody.DraftVersionVisibility = options.draftVersionVisibility;
+      requestBody.DraftVersionVisibility = DraftVisibilityType[(options.draftVersionVisibility.trim() as keyof typeof DraftVisibilityType)];
     }
 
     if (options.emailAlias) {
@@ -776,7 +789,7 @@ class SpoListSetCommand extends SpoCommand {
     }
 
     if (options.listExperienceOptions) {
-      requestBody.ListExperienceOptions = options.listExperienceOptions;
+      requestBody.ListExperienceOptions = ListExperience[(options.listExperienceOptions.trim() as keyof typeof ListExperience)];
     }
 
     if (options.majorVersionLimit) {

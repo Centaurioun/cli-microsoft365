@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./report-deviceusageusercounts');
@@ -15,9 +16,10 @@ describe(commands.REPORT_DEVICEUSAGEUSERCOUNTS, () => {
   let logger: Logger;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -44,16 +46,12 @@ describe(commands.REPORT_DEVICEUSAGEUSERCOUNTS, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.REPORT_DEVICEUSAGEUSERCOUNTS), true);
+    assert.strictEqual(command.name, commands.REPORT_DEVICEUSAGEUSERCOUNTS);
   });
 
   it('has a description', () => {
@@ -61,16 +59,16 @@ describe(commands.REPORT_DEVICEUSAGEUSERCOUNTS, () => {
   });
 
   it('gets the number of Microsoft Teams daily unique users by device type for the given period', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/reports/getTeamsDeviceUsageUserCounts(period='D7')`) {
-        return Promise.resolve(`
+        return `
         Report Refresh Date,Web,Windows Phone,Android Phone,iOS,Mac,Windows,Report Date,Report Period
         2019-08-28,0,0,0,0,0,0,2019-08-28,7
         2019-08-28,0,0,0,0,0,0,2019-08-27,7
-        `);
+        `;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { period: 'D7' } });

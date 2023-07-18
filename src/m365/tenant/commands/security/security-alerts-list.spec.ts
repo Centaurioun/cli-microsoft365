@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./security-alerts-list');
@@ -533,9 +534,10 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -562,16 +564,12 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SECURITY_ALERTS_LIST), true);
+    assert.strictEqual(command.name, commands.SECURITY_ALERTS_LIST);
   });
 
   it('has a description', () => {
@@ -583,16 +581,14 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('correctly returns list of security alerts for vendor with name Azure Security Center', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts?$filter=vendorInformation/provider eq 'ASC'`) {
-        return Promise.resolve(
-          {
-            value: alertASC
-          }
-        );
+        return {
+          value: alertASC
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -604,16 +600,14 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('correctly returns list of security alerts for vendor with name Microsoft Cloud App Security', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts?$filter=vendorInformation/provider eq 'MCAS'`) {
-        return Promise.resolve(
-          {
-            value: alertMCAS
-          }
-        );
+        return {
+          value: alertMCAS
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -625,16 +619,14 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('correctly returns list of security alerts for vendor with name Azure Active Directory Identity Protection', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts?$filter=vendorInformation/provider eq 'IPC'`) {
-        return Promise.resolve(
-          {
-            value: alertIPC
-          }
-        );
+        return {
+          value: alertIPC
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -646,16 +638,14 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('correctly returns list of security alerts as csv', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts`) {
-        return Promise.resolve(
-          {
-            value: alertResponseCSV
-          }
-        );
+        return {
+          value: alertResponseCSV
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -667,16 +657,14 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('correctly returns list with security alerts', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts`) {
-        return Promise.resolve(
-          {
-            value: alertResponse
-          }
-        );
+        return {
+          value: alertResponse
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     const options: any = {
@@ -687,12 +675,12 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
   });
 
   it('fails when serviceAnnouncement endpoint fails', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/security/alerts`) {
-        return Promise.resolve({});
+        return {};
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('Error fetching security alerts'));
@@ -700,7 +688,7 @@ describe(commands.SECURITY_ALERTS_LIST, () => {
 
   it('correctly handles random API error', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(request, 'get').rejects(new Error('An error has occurred'));
 
     await assert.rejects(command.action(logger, { options: {} } as any), new CommandError('An error has occurred'));
   });

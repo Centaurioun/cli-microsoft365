@@ -1,30 +1,11 @@
-import { AxiosRequestConfig } from 'axios';
+import { Group, TeamsAsyncOperation } from '@microsoft/microsoft-graph-types';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { aadGroup } from '../../../../utils/aadGroup';
 import GraphCommand from '../../../base/GraphCommand';
 import commands from '../../commands';
-
-enum TeamsAsyncOperationStatus {
-  Invalid = "invalid",
-  NotStarted = "notStarted",
-  InProgress = "inProgress",
-  Succeeded = "succeeded",
-  Failed = "failed"
-}
-
-interface TeamsAsyncOperation {
-  id: string;
-  operationType: string;
-  createdDateTime: Date;
-  status: TeamsAsyncOperationStatus;
-  lastActionDateTime: Date;
-  attemptsCount: number;
-  targetResourceId: string;
-  targetResourceLocation: string;
-  error?: any;
-}
+import { setTimeout } from "timers/promises";
 
 interface CommandArgs {
   options: Options;
@@ -34,12 +15,11 @@ interface Options extends GlobalOptions {
   description?: string;
   name?: string;
   template?: string;
-  wait: boolean;
+  wait?: boolean;
 }
 
 class TeamsTeamAddCommand extends GraphCommand {
-  private dots?: string;
-  private pollingInterval: number = 30000;
+  private pollingInterval: number = 30_000;
 
   public get name(): string {
     return commands.TEAM_ADD;
@@ -54,7 +34,7 @@ class TeamsTeamAddCommand extends GraphCommand {
 
     this.#initTelemetry();
     this.#initOptions();
-    this.#initValidators();
+    this.#initOptionSets();
   }
 
   #initTelemetry(): void {
@@ -63,7 +43,7 @@ class TeamsTeamAddCommand extends GraphCommand {
         name: typeof args.options.name !== 'undefined',
         description: typeof args.options.description !== 'undefined',
         template: typeof args.options.template !== 'undefined',
-        wait: args.options.wait
+        wait: !!args.options.wait
       });
     });
   }
@@ -85,27 +65,24 @@ class TeamsTeamAddCommand extends GraphCommand {
     );
   }
 
-  #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (!args.options.template) {
-          if (!args.options.name) {
-            return `Required parameter name missing`;
-          }
-
-          if (!args.options.description) {
-            return `Required parameter description missing`;
-          }
+  #initOptionSets(): void {
+    this.optionSets.push(
+      {
+        options: ['name'],
+        runsWhen: (args) => {
+          return !args.options.template;
         }
-
-        return true;
+      },
+      {
+        options: ['description'],
+        runsWhen: (args) => {
+          return !args.options.template;
+        }
       }
     );
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    this.dots = '';
-
     let requestBody: any;
     if (args.options.template) {
       if (this.verbose) {
@@ -128,6 +105,10 @@ class TeamsTeamAddCommand extends GraphCommand {
       }
     }
     else {
+      if (this.verbose) {
+        logger.logToStderr(`Creating team with name ${args.options.name} and description ${args.options.description}`);
+      }
+
       requestBody = {
         'template@odata.bind': `https://graph.microsoft.com/v1.0/teamsTemplates('standard')`,
         displayName: args.options.name,
@@ -135,7 +116,7 @@ class TeamsTeamAddCommand extends GraphCommand {
       };
     }
 
-    const requestOptionsPost: AxiosRequestConfig = {
+    const requestOptionsPost: CliRequestOptions = {
       url: `${this.resource}/v1.0/teams`,
       headers: {
         'accept': 'application/json;odata.metadata=none'
@@ -145,8 +126,8 @@ class TeamsTeamAddCommand extends GraphCommand {
     };
 
     try {
-      const res: any = await request.post(requestOptionsPost);
-      const requestOptions: any = {
+      const res = await request.post<any>(requestOptionsPost);
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0${res.headers.location}`,
         headers: {
           accept: 'application/json;odata.metadata=minimal'
@@ -154,58 +135,57 @@ class TeamsTeamAddCommand extends GraphCommand {
         responseType: 'json'
       };
 
-      const teamsAsyncOperation: TeamsAsyncOperation = await new Promise(async (resolve, reject) => {
-        const teamsAsyncOperation: TeamsAsyncOperation = await request.get<TeamsAsyncOperation>(requestOptions);
-        if (!args.options.wait) {
-          resolve(teamsAsyncOperation);
-        }
-        else {
-          setTimeout(() => {
-            this.waitUntilFinished(requestOptions, resolve, reject, logger, this.dots);
-          }, this.pollingInterval);
-        }
-      });
+      const teamsAsyncOperation: TeamsAsyncOperation = await request.get<TeamsAsyncOperation>(requestOptions);
 
-      let output;
-
-      if (teamsAsyncOperation.status !== TeamsAsyncOperationStatus.Succeeded) {
-        output = teamsAsyncOperation;
-      } 
-      else {
-        output = await aadGroup.getGroupById(teamsAsyncOperation.targetResourceId);
+      if (!args.options.wait) {
+        logger.log(teamsAsyncOperation);
       }
-
-      logger.log(output);
-    } 
+      else {
+        await this.waitUntilTeamFinishedProvisioning(teamsAsyncOperation, requestOptions, logger);
+        const aadGroup = await this.getAadGroup(teamsAsyncOperation.targetResourceId!, logger);
+        logger.log(aadGroup);
+      }
+    }
     catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }
 
-  private waitUntilFinished(requestOptions: any, resolve: (teamsAsyncOperation: TeamsAsyncOperation) => void, reject: (error: any) => void, logger: Logger, dots?: string): void {
-    if (!this.debug && this.verbose) {
-      dots += '.';
-      process.stdout.write(`\r${dots}`);
+  private async waitUntilTeamFinishedProvisioning(teamsAsyncOperation: TeamsAsyncOperation, requestOptions: CliRequestOptions, logger: Logger): Promise<void> {
+    if (teamsAsyncOperation.status === 'succeeded') {
+      if (this.verbose) {
+        logger.logToStderr('Team provisioned succesfully. Returning...');
+      }
+      return;
+    }
+    else if (teamsAsyncOperation.error) {
+      throw teamsAsyncOperation.error;
+    }
+    else {
+      if (this.verbose) {
+        logger.logToStderr(`Team still provisioning. Retrying in ${this.pollingInterval / 1000} seconds...`);
+      }
+      await setTimeout(this.pollingInterval);
+      teamsAsyncOperation = await request.get<TeamsAsyncOperation>(requestOptions);
+      await this.waitUntilTeamFinishedProvisioning(teamsAsyncOperation, requestOptions, logger);
+    }
+  }
+
+  private async getAadGroup(id: string, logger: Logger): Promise<Group> {
+    let group: Group;
+
+    try {
+      group = await aadGroup.getGroupById(id);
+    }
+    catch {
+      if (this.verbose) {
+        logger.logToStderr(`Error occured on retrieving the aad group. Retrying in ${this.pollingInterval / 1000} seconds.`);
+      }
+      await setTimeout(this.pollingInterval);
+      return await this.getAadGroup(id, logger);
     }
 
-    request
-      .get<TeamsAsyncOperation>(requestOptions)
-      .then((teamsAsyncOperation: TeamsAsyncOperation): void => {
-        if (teamsAsyncOperation.status === TeamsAsyncOperationStatus.Succeeded) {
-          if (this.verbose) {
-            process.stdout.write('\n');
-          }
-          resolve(teamsAsyncOperation);
-          return;
-        }
-        if (teamsAsyncOperation.error) {
-          reject(teamsAsyncOperation.error);
-          return;
-        }
-        setTimeout(() => {
-          this.waitUntilFinished(requestOptions, resolve, reject, logger, dots);
-        }, this.pollingInterval);
-      }).catch(err => reject(err));
+    return group!;
   }
 }
 

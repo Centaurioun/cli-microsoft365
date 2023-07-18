@@ -8,9 +8,9 @@ import { CommandInfo } from '../../../cli/CommandInfo';
 import { Logger } from '../../../cli/Logger';
 import Command, { CommandError } from '../../../Command';
 import { pid } from '../../../utils/pid';
-import { sinonUtil } from '../../../utils/sinonUtil';
-import * as open from 'open';
+import { session } from '../../../utils/session';
 import commands from '../commands';
+import { browserUtil } from '../../../utils/browserUtil';
 const command: Command = require('./app-open');
 
 describe(commands.OPEN, () => {
@@ -23,12 +23,13 @@ describe(commands.OPEN, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
-    sinon.stub(fs, 'readFileSync').callsFake(() => JSON.stringify({
+    sinon.stub(fs, 'existsSync').returns(true);
+    sinon.stub(fs, 'readFileSync').returns(JSON.stringify({
       "apps": [
         {
           "appId": "9b1b1e42-794b-4c71-93ac-5ed92488b67f",
@@ -54,8 +55,7 @@ describe(commands.OPEN, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
-    (command as any)._open = open;
-    openStub = sinon.stub(command as any, '_open').callsFake(() => Promise.resolve(null));
+    openStub = sinon.stub(browserUtil, 'open').resolves();
     getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').callsFake((() => false));
   });
 
@@ -65,18 +65,12 @@ describe(commands.OPEN, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName,
-      fs.existsSync,
-      fs.readFileSync
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.OPEN), true);
+    assert.strictEqual(command.name, commands.OPEN);
   });
 
   it('has a description', () => {
@@ -127,7 +121,15 @@ describe(commands.OPEN, () => {
 
   it('shows message with url when the app specified with the appId is found (using autoOpenInBrowser)', async () => {
     getSettingWithDefaultValueStub.restore();
-    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').callsFake((() => true));
+    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').returns(true);
+
+    openStub.restore();
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === `https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Overview/appId/${appId}/isMSAApp/`) {
+        return;
+      }
+      throw 'Invalid url';
+    });
 
     const appId = "9b1b1e42-794b-4c71-93ac-5ed92488b67f";
     await command.action(logger, {
@@ -140,7 +142,15 @@ describe(commands.OPEN, () => {
 
   it('shows message with preview-url when the app specified with the appId is found (using autoOpenInBrowser)', async () => {
     getSettingWithDefaultValueStub.restore();
-    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').callsFake((() => true));
+    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').returns(true);
+
+    openStub.restore();
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === `https://preview.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Overview/appId/${appId}/isMSAApp/`) {
+        return;
+      }
+      throw 'Invalid url';
+    });
 
     const appId = "9b1b1e42-794b-4c71-93ac-5ed92488b67f";
     await command.action(logger, {
@@ -154,9 +164,15 @@ describe(commands.OPEN, () => {
 
   it('throws error when open in browser fails', async () => {
     openStub.restore();
-    openStub = sinon.stub(command as any, '_open').callsFake(() => Promise.reject("An error occurred"));
+    openStub = sinon.stub(browserUtil, 'open').callsFake(async (url) => {
+      if (url === `https://preview.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Overview/appId/${appId}/isMSAApp/`) {
+        throw 'An error occurred';
+      }
+      throw 'Invalid url';
+    });
+
     getSettingWithDefaultValueStub.restore();
-    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').callsFake((() => true));
+    getSettingWithDefaultValueStub = sinon.stub(cli, 'getSettingWithDefaultValue').returns(true);
 
     const appId = "9b1b1e42-794b-4c71-93ac-5ed92488b67f";
     await assert.rejects(command.action(logger, {
@@ -164,7 +180,7 @@ describe(commands.OPEN, () => {
         appId: appId,
         preview: true
       }
-    }), new CommandError("An error occurred"));
+    }), new CommandError('An error occurred'));
     assert(loggerLogSpy.calledWith(`Opening the following page in your browser: https://preview.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Overview/appId/${appId}/isMSAApp/`));
   });
 });

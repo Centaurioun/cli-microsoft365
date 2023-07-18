@@ -1,8 +1,7 @@
 import { Drive, DriveItem, Site } from '@microsoft/microsoft-graph-types';
-import { AxiosRequestConfig } from 'axios';
 import { Logger } from '../../../cli/Logger';
 import GlobalOptions from '../../../GlobalOptions';
-import request from '../../../request';
+import request, { CliRequestOptions } from '../../../request';
 import { formatting } from '../../../utils/formatting';
 import { odata } from '../../../utils/odata';
 import { validation } from '../../../utils/validation';
@@ -69,7 +68,13 @@ class FileListCommand extends GraphCommand {
     if (!webUrl.endsWith('/')) {
       webUrl += '/';
     }
-    const folderUrl: URL = new URL(args.options.folderUrl, webUrl);
+
+    let folderUrlValue: string = args.options.folderUrl;
+    if (folderUrlValue.endsWith('/')) {
+      folderUrlValue = folderUrlValue.slice(0, -1);
+    }
+
+    const folderUrl: URL = new URL(folderUrlValue, webUrl);
     let driveId: string = '';
 
     try {
@@ -103,7 +108,7 @@ class FileListCommand extends GraphCommand {
     }
 
     const url: URL = new URL(webUrl);
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/sites/${formatting.encodeQueryParameter(url.host)}:${url.pathname}?$select=id`,
       headers: {
         accept: 'application/json;odata.metadata=none'
@@ -121,112 +126,103 @@ class FileListCommand extends GraphCommand {
       });
   }
 
-  private getDocumentLibrary(siteId: string, folderUrl: URL, folderUrlFromUser: string, logger: Logger): Promise<Drive> {
+  private async getDocumentLibrary(siteId: string, folderUrl: URL, folderUrlFromUser: string, logger: Logger): Promise<Drive> {
     if (this.verbose) {
       logger.logToStderr(`Getting document library...`);
     }
 
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/sites/${siteId}/drives?$select=webUrl,id`,
       headers: {
         accept: 'application/json;odata.metadata=none'
       },
       responseType: 'json'
     };
-    return request
-      .get<{ value: Drive[] }>(requestOptions)
-      .then((drives: { value: Drive[] }): Promise<Drive> => {
-        const lowerCaseFolderUrl: string = folderUrl.href.toLowerCase();
-        const drive: Drive | undefined = drives.value
-          .sort((a, b) => (b.webUrl as string).localeCompare(a.webUrl as string))
-          .find((d: Drive) => {
-            const driveUrl: string = (d.webUrl as string).toLowerCase();
-            // ensure that the drive url is a prefix of the folder url
-            return lowerCaseFolderUrl.startsWith(driveUrl) &&
-              (driveUrl.length === lowerCaseFolderUrl.length ||
-                lowerCaseFolderUrl[driveUrl.length] === '/');
-          });
 
-        if (!drive) {
-          return Promise.reject(`Document library '${folderUrlFromUser}' not found`);
-        }
+    const drives = await request.get<{ value: Drive[] }>(requestOptions);
+    const lowerCaseFolderUrl: string = folderUrl.href.toLowerCase();
 
-        if (this.verbose) {
-          logger.logToStderr(`Document library: ${drive.webUrl}, ${drive.id}`);
-        }
-
-        return Promise.resolve(drive);
+    const drive: Drive | undefined = drives.value
+      .sort((a, b) => (b.webUrl as string).localeCompare(a.webUrl as string))
+      .find((d: Drive) => {
+        const driveUrl: string = (d.webUrl as string).toLowerCase();
+        // ensure that the drive url is a prefix of the folder url
+        return lowerCaseFolderUrl.startsWith(driveUrl) &&
+          (driveUrl.length === lowerCaseFolderUrl.length ||
+            lowerCaseFolderUrl[driveUrl.length] === '/');
       });
+
+    if (!drive) {
+      throw `Document library '${folderUrlFromUser}' not found`;
+    }
+
+    if (this.verbose) {
+      logger.logToStderr(`Document library: ${drive.webUrl}, ${drive.id}`);
+    }
+
+    return drive;
   }
 
-  private getStartingFolderId(documentLibrary: Drive, folderUrl: URL, logger: Logger): Promise<string> {
+  private async getStartingFolderId(documentLibrary: Drive, folderUrl: URL, logger: Logger): Promise<string> {
     if (this.verbose) {
       logger.logToStderr(`Getting starting folder id...`);
     }
 
     const documentLibraryRelativeFolderUrl: string = folderUrl.href.replace(new RegExp(documentLibrary.webUrl as string, 'i'), '');
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/drives/${documentLibrary.id}/root${documentLibraryRelativeFolderUrl.length > 0 ? `:${documentLibraryRelativeFolderUrl}` : ''}?$select=id`,
       headers: {
         accept: 'application/json;odata.metadata=none'
       },
       responseType: 'json'
     };
-    return request
-      .get<DriveItem>(requestOptions)
-      .then((folder: DriveItem): string => {
-        if (this.verbose) {
-          logger.logToStderr(`Starting folder id: ${folder.id}`);
-        }
+    const folder = await request.get<DriveItem>(requestOptions);
 
-        return folder.id as string;
-      });
-  }
-
-  private loadFoldersToGetFilesFrom(folderId: string, driveId: string, recursive: boolean | undefined): Promise<void> {
-    if (!recursive) {
-      return Promise.resolve();
+    if (this.verbose) {
+      logger.logToStderr(`Starting folder id: ${folder.id}`);
     }
 
-    const requestOptions: AxiosRequestConfig = {
+    return folder.id as string;
+  }
+
+  private async loadFoldersToGetFilesFrom(folderId: string, driveId: string, recursive: boolean | undefined): Promise<void> {
+    if (!recursive) {
+      return;
+    }
+
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/drives/${driveId}/items('${folderId}')/children?$filter=folder ne null&$select=id`,
       headers: {
         accept: 'application/json;odata.metadata=none'
       },
       responseType: 'json'
     };
-    return request
-      .get<{ value: DriveItem[] }>(requestOptions)
-      .then((subfolders: { value: DriveItem[] }): Promise<void> => {
-        const subfolderIds: string[] = subfolders.value.map((subfolder: DriveItem) => subfolder.id as string);
-        this.foldersToGetFilesFrom = this.foldersToGetFilesFrom.concat(subfolderIds);
-        return Promise
-          .all(subfolderIds.map((subfolderId: string) => this.loadFoldersToGetFilesFrom(subfolderId, driveId, recursive)))
-          .then(_ => Promise.resolve());
-      });
+    const subfolders = await request.get<{ value: DriveItem[] }>(requestOptions);
+    const subfolderIds: string[] = subfolders.value.map((subfolder: DriveItem) => subfolder.id as string);
+    this.foldersToGetFilesFrom = this.foldersToGetFilesFrom.concat(subfolderIds);
+    await Promise.all(subfolderIds.map((subfolderId: string) => this.loadFoldersToGetFilesFrom(subfolderId, driveId, recursive)));
   }
 
-  private loadFilesFromFolders(driveId: string, folderIds: string[], logger: Logger): Promise<DriveItem[]> {
+  private async loadFilesFromFolders(driveId: string, folderIds: string[], logger: Logger): Promise<DriveItem[]> {
     if (this.verbose) {
       logger.logToStderr(`Loading files from folders...`);
     }
 
     let files: DriveItem[] = [];
 
-    return Promise
-      .all(folderIds.map((folderId: string): Promise<DriveItem[]> =>
-        // get items from folder. Because we can't filter out folders here
-        // we need to get all items from the folder and filter them out later
-        odata.getAllItems<DriveItem>(`${this.resource}/v1.0/drives/${driveId}/items/${folderId}/children`)))
-      .then(res => {
-        // flatten data from all promises
-        files = files.concat(...res);
+    const res = await Promise.all(folderIds.map((folderId: string): Promise<DriveItem[]> =>
+      // get items from folder. Because we can't filter out folders here
+      // we need to get all items from the folder and filter them out later
+      odata.getAllItems<DriveItem>(`${this.resource}/v1.0/drives/${driveId}/items/${folderId}/children`)));
 
-        // remove folders from the list of files
-        files = files.filter((item: DriveItem) => item.file);
-        files.forEach(file => (file as any).lastModifiedByUser = file.lastModifiedBy?.user?.displayName);
-        return files;
-      });
+    // flatten data from all promises
+    files = files.concat(...res);
+
+    // remove folders from the list of files
+    files = files.filter((item: DriveItem) => item.file);
+    files.forEach(file => (file as any).lastModifiedByUser = file.lastModifiedBy?.user?.displayName);
+    return files;
+
   }
 }
 

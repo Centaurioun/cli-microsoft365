@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./hubsite-data-get');
@@ -20,9 +21,10 @@ describe(commands.HUBSITE_DATA_GET, () => {
   let loggerLogToStderrSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -51,16 +53,12 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.HUBSITE_DATA_GET), true);
+    assert.strictEqual(command.name, commands.HUBSITE_DATA_GET);
   });
 
   it('has a description', () => {
@@ -68,9 +66,9 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('gets information about the specified hub site', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/HubSiteData(false)`) > -1) {
-        return Promise.resolve({
+        return {
           value: JSON.stringify({
             "themeKey": null,
             "name": "CommunicationSite",
@@ -79,10 +77,10 @@ describe(commands.HUBSITE_DATA_GET, () => {
             "usesMetadataNavigation": false,
             "navigation": []
           })
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/Project-X' } });
@@ -97,9 +95,9 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('gets information about the specified hub site with forced refresh', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/HubSiteData(true)`) > -1) {
-        return Promise.resolve({
+        return {
           value: JSON.stringify({
             "themeKey": null,
             "name": "CommunicationSite",
@@ -108,10 +106,10 @@ describe(commands.HUBSITE_DATA_GET, () => {
             "usesMetadataNavigation": false,
             "navigation": []
           })
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/Project-X', forceRefresh: true } });
@@ -126,9 +124,9 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('gets information about the specified hub site (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/HubSiteData`) > -1) {
-        return Promise.resolve({
+        return {
           value: JSON.stringify({
             "themeKey": null,
             "name": "CommunicationSite",
@@ -137,10 +135,10 @@ describe(commands.HUBSITE_DATA_GET, () => {
             "usesMetadataNavigation": false,
             "navigation": []
           })
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, webUrl: 'https://contoso.sharepoint.com/sites/Project-X' } });
@@ -155,12 +153,12 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('correctly handles empty response', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/HubSiteData`) > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/Project-X' } });
@@ -168,12 +166,12 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('correctly handles error when specified site is not connect to or is a hub site (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/HubSiteData`) > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, webUrl: 'https://contoso.sharepoint.com/sites/Project-X' } });
@@ -181,44 +179,20 @@ describe(commands.HUBSITE_DATA_GET, () => {
   });
 
   it('correctly handles error when hub site not found', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        error: {
-          "odata.error": {
-            "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
-            "message": {
-              "lang": "en-US",
-              "value": "Exception of type 'Microsoft.SharePoint.Client.ResourceNotFoundException' was thrown."
-            }
+    sinon.stub(request, 'get').rejects({
+      error: {
+        "odata.error": {
+          "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
+          "message": {
+            "lang": "en-US",
+            "value": "Exception of type 'Microsoft.SharePoint.Client.ResourceNotFoundException' was thrown."
           }
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/Project-X' } } as any),
       new CommandError("Exception of type 'Microsoft.SharePoint.Client.ResourceNotFoundException' was thrown."));
-  });
-
-  it('supports specifying webUrl', () => {
-    const options = command.options;
-    let containsOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('--webUrl') > -1) {
-        containsOption = true;
-      }
-    });
-    assert(containsOption);
-  });
-
-  it('supports specifying forceRefresh', () => {
-    const options = command.options;
-    let containsOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('--forceRefresh') > -1) {
-        containsOption = true;
-      }
-    });
-    assert(containsOption);
   });
 
   it('fails validation if webUrl is not a valid SharePoint URL', async () => {

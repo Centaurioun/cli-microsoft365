@@ -2,16 +2,18 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as fs from 'fs';
 import { telemetry } from '../../../../telemetry';
-import auth, { Auth } from '../../../../Auth';
+import auth from '../../../../Auth';
 import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import { formatting } from '../../../../utils/formatting';
+import { accessToken } from '../../../../utils/accessToken';
 const command: Command = require('./mail-send');
 
 describe(commands.MAIL_SEND, () => {
@@ -20,9 +22,10 @@ describe(commands.MAIL_SEND, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[auth.defaultResource] = {
       expiresOn: 'abc',
@@ -45,13 +48,13 @@ describe(commands.MAIL_SEND, () => {
       }
     };
     (command as any).items = [];
-    sinon.stub(Auth, 'isAppOnlyAuth').callsFake(() => false);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.post,
-      Auth.isAppOnlyAuth,
+      accessToken.isAppOnlyAccessToken,
       fs.existsSync,
       fs.readFileSync,
       fs.lstatSync
@@ -59,17 +62,13 @@ describe(commands.MAIL_SEND, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.MAIL_SEND), true);
+    assert.strictEqual(command.name, commands.MAIL_SEND);
   });
 
   it('has a description', () => {
@@ -89,13 +88,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -115,13 +114,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, subject: 'Lorem ipsum', to: 'mail@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -144,13 +143,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com,mail2@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -177,13 +176,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com,mail2@domain.com', cc: 'mail3@domain.com,mail4@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -210,13 +209,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com,mail2@domain.com', bcc: 'mail3@domain.com,mail4@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -237,13 +236,13 @@ describe(commands.MAIL_SEND, () => {
       saveToSentItems: false
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com', bodyContents: 'Lorem ipsum', saveToSentItems: false } });
@@ -297,17 +296,15 @@ describe(commands.MAIL_SEND, () => {
   });
 
   it('correctly handles error', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject({
-        "error": {
-          "code": "Error",
-          "message": "An error has occurred",
-          "innerError": {
-            "request-id": "9b0df954-93b5-4de9-8b99-43c204a8aaf8",
-            "date": "2018-04-24T18:56:48"
-          }
+    sinon.stub(request, 'post').rejects({
+      "error": {
+        "code": "Error",
+        "message": "An error has occurred",
+        "innerError": {
+          "request-id": "9b0df954-93b5-4de9-8b99-43c204a8aaf8",
+          "date": "2018-04-24T18:56:48"
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com', bodyContents: 'Lorem ipsum' } } as any),
@@ -338,7 +335,7 @@ describe(commands.MAIL_SEND, () => {
     assert.notStrictEqual(actual, true);
   });
 
-  it('fails vlaidation if attachment is not a file', async () => {
+  it('fails validation if attachment is not a file', async () => {
     sinon.stub(fs, 'existsSync').returns(true);
     sinon.stub(fs, 'lstatSync').callsFake(path => {
       if (path.toString() === 'C:/File2.txt') {
@@ -416,13 +413,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/me/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com', mailbox: 'sales@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -442,13 +439,13 @@ describe(commands.MAIL_SEND, () => {
       },
       saveToSentItems: undefined
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       actual = JSON.stringify(opts.data);
       if (opts.url === `https://graph.microsoft.com/v1.0/users/${formatting.encodeQueryParameter('some-user@domain.com')}/sendMail`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { subject: 'Lorem ipsum', to: 'mail@domain.com', sender: 'some-user@domain.com', bodyContents: 'Lorem ipsum' } });
@@ -456,8 +453,8 @@ describe(commands.MAIL_SEND, () => {
   });
 
   it('throws an error when the sender is not defined when signed in using app only authentication', async () => {
-    sinonUtil.restore([Auth.isAppOnlyAuth]);
-    sinon.stub(Auth, 'isAppOnlyAuth').callsFake(() => true);
+    sinonUtil.restore([accessToken.isAppOnlyAccessToken]);
+    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
 
     await assert.rejects(command.action(logger, {
       options: {

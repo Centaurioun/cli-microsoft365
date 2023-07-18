@@ -8,35 +8,40 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./customaction-clear');
 
 describe(commands.CUSTOMACTION_CLEAR, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
   let promptOptions: any;
   const defaultPostCallsStub = (): sinon.SinonStub => {
-    return sinon.stub(request, 'post').callsFake((opts) => {
+    return sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes clear custom actions success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions/clear') > -1) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
       // fakes clear custom actions success (site collection)
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions/clear') > -1) {
-        return Promise.resolve(undefined);
+        return undefined;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -60,26 +65,24 @@ describe(commands.CUSTOMACTION_CLEAR, () => {
       return { continue: false };
     });
     promptOptions = undefined;
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.post,
-      Cli.prompt
+      Cli.prompt,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CUSTOMACTION_CLEAR), true);
+    assert.strictEqual(command.name, commands.CUSTOMACTION_CLEAR);
   });
 
   it('has a description', () => {
@@ -114,9 +117,7 @@ describe(commands.CUSTOMACTION_CLEAR, () => {
     const postCallsSpy: sinon.SinonStub = defaultPostCallsStub();
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com' } } as any);
     assert(postCallsSpy.notCalled);
   });
@@ -126,9 +127,7 @@ describe(commands.CUSTOMACTION_CLEAR, () => {
     const clearScopedCustomActionsSpy = sinon.spy((command as any), 'clearScopedCustomActions');
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     try {
       await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com' } } as any);
@@ -253,13 +252,13 @@ describe(commands.CUSTOMACTION_CLEAR, () => {
   it('should correctly handle custom action reject request (web)', async () => {
     const err = 'abc error';
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // fakes clear custom actions success (site)
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions/clear') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -274,17 +273,17 @@ describe(commands.CUSTOMACTION_CLEAR, () => {
   it('should correctly handle custom action reject request (site)', async () => {
     const err = 'abc error';
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       // should return null to proceed with site when scope is All
       if ((opts.url as string).indexOf('/_api/Web/UserCustomActions/clear') > -1) {
-        return Promise.resolve({ "odata.null": true });
+        return { "odata.null": true };
       }
 
       if ((opts.url as string).indexOf('/_api/Site/UserCustomActions/clear') > -1) {
-        return Promise.reject(err);
+        throw err;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {

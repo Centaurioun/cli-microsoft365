@@ -5,8 +5,13 @@ import auth from '../Auth';
 import { Logger } from "../cli/Logger";
 import config from "../config";
 import { BasePermissions } from '../m365/spo/base-permissions';
-import request from "../request";
+import request, { CliRequestOptions } from "../request";
 import { formatting } from './formatting';
+import { CustomAction } from '../m365/spo/commands/customaction/customaction';
+import { odata } from './odata';
+import { MenuState } from '../m365/spo/commands/navigation/NavigationNode';
+import { RoleDefinition } from '../m365/spo/commands/roledefinition/RoleDefinition';
+import { RoleType } from '../m365/spo/commands/roledefinition/RoleType';
 
 export interface ContextInfo {
   FormDigestTimeoutSeconds: number;
@@ -61,6 +66,12 @@ export interface IdentityResponse {
   serverRelativeUrl: string;
 }
 
+export interface GraphFileDetails {
+  SiteId: string;
+  VroomDriveID: string;
+  VroomItemID: string;
+}
+
 export const spo = {
   getRequestDigest(siteUrl: string): Promise<FormDigestInfo> {
     const requestOptions: any = {
@@ -104,7 +115,7 @@ export const spo = {
     });
   },
 
-  waitUntilFinished({ operationId, siteUrl, resolve, reject, logger, currentContext, dots, debug, verbose }: { operationId: string, siteUrl: string, resolve: () => void, reject: (error: any) => void, logger: Logger, currentContext: FormDigestInfo, dots?: string, debug: boolean, verbose: boolean }): void {
+  waitUntilFinished({ operationId, siteUrl, resolve, reject, logger, currentContext, debug, verbose }: { operationId: string, siteUrl: string, resolve: () => void, reject: (error: any) => void, logger: Logger, currentContext: FormDigestInfo, debug: boolean, verbose: boolean }): void {
     spo
       .ensureFormDigest(siteUrl, logger, currentContext, debug)
       .then((res: FormDigestInfo): Promise<string> => {
@@ -112,11 +123,6 @@ export const spo = {
 
         if (debug) {
           logger.logToStderr(`Checking if operation ${operationId} completed...`);
-        }
-
-        if (!debug && verbose) {
-          dots += '.';
-          process.stdout.write(`\r${dots}`);
         }
 
         const requestOptions: any = {
@@ -155,7 +161,6 @@ export const spo = {
               reject,
               logger,
               currentContext,
-              dots,
               debug,
               verbose
             });
@@ -164,7 +169,7 @@ export const spo = {
       });
   },
 
-  waitUntilCopyJobFinished({ copyJobInfo, siteUrl, pollingInterval, resolve, reject, logger, dots, debug, verbose }: { copyJobInfo: any, siteUrl: string, pollingInterval: number, resolve: () => void, reject: (error: any) => void, logger: Logger, dots?: string, debug: boolean, verbose: boolean }): void {
+  waitUntilCopyJobFinished({ copyJobInfo, siteUrl, pollingInterval, resolve, reject, logger, debug, verbose }: { copyJobInfo: any, siteUrl: string, pollingInterval: number, resolve: () => void, reject: (error: any) => void, logger: Logger, debug: boolean, verbose: boolean }): void {
     const requestUrl: string = `${siteUrl}/_api/site/GetCopyJobProgress`;
     const requestOptions: any = {
       url: requestUrl,
@@ -174,11 +179,6 @@ export const spo = {
       data: { "copyJobInfo": copyJobInfo },
       responseType: 'json'
     };
-
-    if (!debug && verbose) {
-      dots += '.';
-      process.stdout.write(`\r${dots}`);
-    }
 
     request
       .post<{ JobState?: number, Logs: string[] }>(requestOptions)
@@ -210,7 +210,7 @@ export const spo = {
         }
         else {
           setTimeout(() => {
-            spo.waitUntilCopyJobFinished({ copyJobInfo, siteUrl, pollingInterval, resolve, reject, logger, dots, debug, verbose });
+            spo.waitUntilCopyJobFinished({ copyJobInfo, siteUrl, pollingInterval, resolve, reject, logger, debug, verbose });
           }, pollingInterval);
         }
       });
@@ -319,6 +319,25 @@ export const spo = {
           }
         });
     });
+  },
+
+  /**
+   * Returns the Graph id of a site 
+   * @param webUrl web url e.g. https://contoso.sharepoint.com/sites/site1
+   */
+  async getSpoGraphSiteId(webUrl: string): Promise<string> {
+    const url = new URL(webUrl);
+
+    const requestOptions: CliRequestOptions = {
+      url: `https://graph.microsoft.com/v1.0/sites/${url.hostname}:${url.pathname}?$select=id`,
+      headers: {
+        'accept': 'application/json;odata.metadata=none'
+      },
+      responseType: 'json'
+    };
+
+    const result = await request.get<{ id: string }>(requestOptions);
+    return result.id;
   },
 
   /**
@@ -545,5 +564,276 @@ export const spo = {
         reject('Cannot proceed. Folder _ObjectIdentity_ not found'); // this is not suppose to happen
       }, (err: any): void => { reject(err); });
     });
+  },
+
+  /**
+   * Retrieves the SiteId, VroomItemId and VroomDriveId from a specific file.
+   * @param webUrl Web url
+   * @param fileId GUID ID of the file
+   * @param fileUrl Decoded site-relative or server-relative URL of the file
+   */
+  async getVroomFileDetails(webUrl: string, fileId?: string, fileUrl?: string): Promise<GraphFileDetails> {
+    let requestUrl: string = `${webUrl}/_api/web/`;
+
+    if (fileUrl) {
+      const fileServerRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, fileUrl);
+      requestUrl += `GetFileByServerRelativePath(decodedUrl='${formatting.encodeQueryParameter(fileServerRelativeUrl)}')`;
+    }
+    else {
+      requestUrl += `GetFileById('${fileId}')`;
+    }
+
+    requestUrl += '?$select=SiteId,VroomItemId,VroomDriveId';
+
+    const requestOptions: CliRequestOptions = {
+      url: requestUrl,
+      headers: {
+        accept: 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    const res = await request.get<GraphFileDetails>(requestOptions);
+    return res;
+  },
+
+  /**
+   * Retrieves a list of Custom Actions from a SharePoint site.
+   * @param webUrl Web url
+   * @param scope The scope of custom actions to retrieve, allowed values "Site", "Web" or "All".
+   * @param filter An OData filter query to limit the results.
+   */
+  async getCustomActions(webUrl: string, scope: string | undefined, filter?: string): Promise<CustomAction[]> {
+    if (scope && scope !== "All" && scope !== "Site" && scope !== "Web") {
+      throw `Invalid scope '${scope}'. Allowed values are 'Site', 'Web' or 'All'.`;
+    }
+
+    const queryString = filter ? `?$filter=${filter}` : "";
+
+    if (scope && scope !== "All") {
+      return await odata.getAllItems<CustomAction>(`${webUrl}/_api/${scope}/UserCustomActions${queryString}`);
+    }
+
+    const customActions = [
+      ...await odata.getAllItems<CustomAction>(`${webUrl}/_api/Site/UserCustomActions${queryString}`),
+      ...await odata.getAllItems<CustomAction>(`${webUrl}/_api/Web/UserCustomActions${queryString}`)
+    ];
+
+    return customActions;
+  },
+
+
+  /**
+   * Retrieves a Custom Actions from a SharePoint site by Id.
+   * @param webUrl Web url
+   * @param id The Id of the Custom Action
+   * @param scope The scope of custom actions to retrieve, allowed values "Site", "Web" or "All".
+   */
+  async getCustomActionById(webUrl: string, id: string, scope?: string): Promise<CustomAction | undefined> {
+    if (scope && scope !== "All" && scope !== "Site" && scope !== "Web") {
+      throw `Invalid scope '${scope}'. Allowed values are 'Site', 'Web' or 'All'.`;
+    }
+
+    async function getById(webUrl: string, id: string, scope: string): Promise<CustomAction | undefined> {
+      const requestOptions: any = {
+        url: `${webUrl}/_api/${scope}/UserCustomActions(guid'${id}')`,
+        headers: {
+          accept: 'application/json;odata=nometadata'
+        },
+        responseType: 'json'
+      };
+
+      const result = await request.get<CustomAction>(requestOptions);
+
+      if (result["odata.null"] === true) {
+        return undefined;
+      }
+
+      return result;
+    }
+
+    if (scope && scope !== "All") {
+      return await getById(webUrl, id, scope);
+    }
+
+    const customActionOnWeb = await getById(webUrl, id, "Web");
+    if (customActionOnWeb) {
+      return customActionOnWeb;
+    }
+
+    const customActionOnSite = await getById(webUrl, id, "Site");
+    return customActionOnSite;
+  },
+
+  async getTenantAppCatalogUrl(logger: Logger, debug: boolean): Promise<string | null> {
+    const spoUrl = await spo.getSpoUrl(logger, debug);
+
+    const requestOptions: any = {
+      url: `${spoUrl}/_api/SP_TenantSettings_Current`,
+      headers: {
+        accept: 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    const result = await request.get<{ CorporateCatalogUrl: string }>(requestOptions);
+    return result.CorporateCatalogUrl;
+  },
+
+  /**
+   * Retrieves the Azure AD ID from a SP user.
+   * @param webUrl Web url
+   * @param id The Id of the user
+   */
+  async getUserAzureIdBySpoId(webUrl: string, id: string): Promise<any> {
+    const requestOptions: CliRequestOptions = {
+      url: `${webUrl}/_api/web/siteusers/GetById('${formatting.encodeQueryParameter(id)}')?$select=AadObjectId`,
+      headers: {
+        accept: 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    const res = await request.get<{ AadObjectId: { NameId: string, NameIdIssuer: string } }>(requestOptions);
+
+    return res.AadObjectId.NameId;
+  },
+
+  /**
+ * Retrieves the spo user by email.
+ * @param webUrl Web url
+ * @param email The email of the user
+ * @param logger the Logger object
+ * @param debug set if debug logging should be logged 
+ */
+  async getUserByEmail(webUrl: string, email: string, logger: Logger, debug?: boolean): Promise<any> {
+    if (debug) {
+      logger.logToStderr(`Retrieving the spo user by email ${email}`);
+    }
+    const requestUrl = `${webUrl}/_api/web/siteusers/GetByEmail('${formatting.encodeQueryParameter(email)}')`;
+
+    const requestOptions: any = {
+      url: requestUrl,
+      headers: {
+        'accept': 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    const userInstance: any = await request.get(requestOptions);
+
+    return userInstance;
+  },
+
+  /**
+   * Retrieves the menu state for the quick launch.
+   * @param webUrl Web url
+   */
+  async getQuickLaunchMenuState(webUrl: string): Promise<MenuState> {
+    return this.getMenuState(webUrl);
+  },
+
+  /**
+   * Retrieves the menu state for the top navigation.
+   * @param webUrl Web url
+   */
+  async getTopNavigationMenuState(webUrl: string): Promise<MenuState> {
+    return this.getMenuState(webUrl, '1002');
+  },
+
+  /**
+   * Retrieves the menu state.
+   * @param webUrl Web url
+   * @param menuNodeKey Menu node key
+   */
+  async getMenuState(webUrl: string, menuNodeKey?: string): Promise<MenuState> {
+    const requestBody = {
+      customProperties: null,
+      depth: 10,
+      mapProviderName: null,
+      menuNodeKey: menuNodeKey || null
+    };
+    const requestOptions: CliRequestOptions = {
+      url: `${webUrl}/_api/navigation/MenuState`,
+      headers: {
+        accept: 'application/json;odata=nometadata'
+      },
+      data: requestBody,
+      responseType: 'json'
+    };
+
+    return request.post<MenuState>(requestOptions);
+  },
+
+  /**
+  * Saves the menu state.
+  * @param webUrl Web url
+  * @param menuState Updated menu state
+  */
+  async saveMenuState(webUrl: string, menuState: MenuState): Promise<void> {
+    const requestOptions: CliRequestOptions = {
+      url: `${webUrl}/_api/navigation/SaveMenuState`,
+      headers: {
+        accept: 'application/json;odata=nometadata'
+      },
+      data: { menuState: menuState },
+      responseType: 'json'
+    };
+
+    return request.post(requestOptions);
+  },
+
+  /**
+* Retrieves the spo group by name.
+* @param webUrl Web url
+* @param name The name of the group
+* @param logger the Logger object
+* @param debug set if debug logging should be logged 
+*/
+  async getGroupByName(webUrl: string, name: string, logger: Logger, debug?: boolean): Promise<any> {
+    if (debug) {
+      logger.logToStderr(`Retrieving the group by name ${name}`);
+    }
+    const requestUrl = `${webUrl}/_api/web/sitegroups/GetByName('${formatting.encodeQueryParameter(name)}')`;
+
+    const requestOptions: any = {
+      url: requestUrl,
+      headers: {
+        'accept': 'application/json;odata=nometadata'
+      },
+      responseType: 'json'
+    };
+
+    const groupInstance: any = await request.get(requestOptions);
+
+    return groupInstance;
+  },
+
+  /**
+* Retrieves the role definition by name.
+* @param webUrl Web url
+* @param name the name of the role definition
+* @param logger the Logger object
+* @param debug set if debug logging should be logged 
+*/
+  async getRoleDefinitionByName(webUrl: string, name: string, logger: Logger, debug?: boolean): Promise<RoleDefinition> {
+    if (debug) {
+      logger.logToStderr(`Retrieving the role definitions for ${name}`);
+    }
+
+    const roledefinitions = await odata.getAllItems<RoleDefinition>(`${webUrl}/_api/web/roledefinitions`);
+    const roledefinition = roledefinitions.find((role: RoleDefinition) => role.Name === name);
+
+    if (!roledefinition) {
+      throw `No roledefinition is found for ${name}`;
+    }
+
+    const permissions: BasePermissions = new BasePermissions();
+    permissions.high = roledefinition.BasePermissions.High as number;
+    permissions.low = roledefinition.BasePermissions.Low as number;
+    roledefinition.BasePermissionsValue = permissions.parse();
+    roledefinition.RoleTypeKindValue = RoleType[roledefinition.RoleTypeKind];
+
+    return roledefinition;
   }
 };

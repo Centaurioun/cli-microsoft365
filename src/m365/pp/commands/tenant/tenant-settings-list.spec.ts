@@ -7,6 +7,8 @@ import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
+import { session } from '../../../../utils/session';
+import { pid } from '../../../../utils/pid';
 const command: Command = require('./tenant-settings-list');
 
 describe(commands.TENANT_SETTINGS_LIST, () => {
@@ -51,8 +53,10 @@ describe(commands.TENANT_SETTINGS_LIST, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -79,15 +83,12 @@ describe(commands.TENANT_SETTINGS_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TENANT_SETTINGS_LIST), true);
+    assert.strictEqual(command.name, commands.TENANT_SETTINGS_LIST);
   });
 
   it('has a description', () => {

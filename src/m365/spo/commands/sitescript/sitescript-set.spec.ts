@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -20,14 +21,16 @@ describe(commands.SITESCRIPT_SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(spo, 'getRequestDigest').callsFake(() => Promise.resolve({
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
+    sinon.stub(spo, 'getRequestDigest').resolves({
       FormDigestValue: 'ABC',
       FormDigestTimeoutSeconds: 1800,
       FormDigestExpiresAt: new Date(),
       WebFullUrl: 'https://contoso.sharepoint.com'
-    }));
+    });
     auth.service.connected = true;
     auth.service.spoUrl = 'https://contoso.sharepoint.com';
     commandInfo = Cli.getCommandInfo(command);
@@ -56,18 +59,13 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      spo.getRequestDigest,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SITESCRIPT_SET), true);
+    assert.strictEqual(command.name, commands.SITESCRIPT_SET);
   });
 
   it('has a description', () => {
@@ -75,7 +73,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates title of an existing site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -83,16 +81,16 @@ describe(commands.SITESCRIPT_SET, () => {
             'Title': 'Contoso'
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 0
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', title: 'Contoso' } });
@@ -106,7 +104,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates title of an existing site script (debug)', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -114,16 +112,16 @@ describe(commands.SITESCRIPT_SET, () => {
             'Title': 'Contoso'
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 0
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', title: 'Contoso' } });
@@ -137,7 +135,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates description of an existing site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -145,16 +143,16 @@ describe(commands.SITESCRIPT_SET, () => {
             'Description': 'My contoso script'
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 0
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', description: 'My contoso script' } });
@@ -168,7 +166,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates version of an existing site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -176,16 +174,16 @@ describe(commands.SITESCRIPT_SET, () => {
             'Version': 1
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 1
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', version: '1' } });
@@ -199,7 +197,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates content of an existing site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -207,16 +205,16 @@ describe(commands.SITESCRIPT_SET, () => {
             'Content': JSON.stringify({})
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 1
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', content: JSON.stringify({}) } });
@@ -230,7 +228,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('updates all properties of an existing site script', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/Microsoft.Sharepoint.Utilities.WebTemplateExtensions.SiteScriptUtility.UpdateSiteScript`) > -1 &&
         JSON.stringify(opts.data) === JSON.stringify({
           updateInfo: {
@@ -241,16 +239,16 @@ describe(commands.SITESCRIPT_SET, () => {
             Content: JSON.stringify({})
           }
         })) {
-        return Promise.resolve({
+        return {
           "Content": JSON.stringify({}),
           "Description": "My contoso script",
           "Id": "0f27a016-d277-4bb4-b3c3-b5b040c9559b",
           "Title": "Contoso",
           "Version": 1
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '0f27a016-d277-4bb4-b3c3-b5b040c9559b', title: 'Contoso', description: 'My contoso script', version: '1', content: JSON.stringify({}) } });
@@ -264,9 +262,7 @@ describe(commands.SITESCRIPT_SET, () => {
   });
 
   it('correctly handles OData error when creating site script', async () => {
-    sinon.stub(request, 'post').callsFake(() => {
-      return Promise.reject({ error: { 'odata.error': { message: { value: 'An error has occurred' } } } });
-    });
+    sinon.stub(request, 'post').rejects({ error: { 'odata.error': { message: { value: 'An error has occurred' } } } });
 
     await assert.rejects(command.action(logger, { options: { id: '449c0c6d-5380-4df2-b84b-622e0ac8ec24', title: 'Contoso' } } as any), new CommandError('An error has occurred'));
   });

@@ -1,11 +1,13 @@
 import * as fs from 'fs';
-import auth, { AuthType } from '../../Auth';
+import auth, { AuthType, CloudType } from '../../Auth';
 import { Logger } from '../../cli/Logger';
 import Command, {
   CommandError
 } from '../../Command';
 import config from '../../config';
 import GlobalOptions from '../../GlobalOptions';
+import { accessToken } from '../../utils/accessToken';
+import { misc } from '../../utils/misc';
 import commands from './commands';
 
 interface CommandArgs {
@@ -14,6 +16,7 @@ interface CommandArgs {
 
 interface Options extends GlobalOptions {
   authType?: string;
+  cloud?: string;
   userName?: string;
   password?: string;
   certificateFile?: string;
@@ -46,7 +49,8 @@ class LoginCommand extends Command {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        authType: args.options.authType || 'deviceCode'
+        authType: args.options.authType || 'deviceCode',
+        cloud: args.options.cloud ?? CloudType.Public
       });
     });
   }
@@ -79,7 +83,11 @@ class LoginCommand extends Command {
         option: '--tenant [tenant]'
       },
       {
-        option: '--secret [secret]'
+        option: '-s, --secret [secret]'
+      },
+      {
+        option: '--cloud [cloud]',
+        autocomplete: misc.getEnums(CloudType)
       }
     );
   }
@@ -122,6 +130,11 @@ class LoginCommand extends Command {
           if (!args.options.secret) {
             return 'Required option secret missing';
           }
+        }
+
+        if (args.options.cloud &&
+          typeof CloudType[args.options.cloud as keyof typeof CloudType] === 'undefined') {
+          return `${args.options.cloud} is not a valid value for cloud. Valid options are ${misc.getEnums(CloudType).join(', ')}`;
         }
 
         return true;
@@ -170,6 +183,13 @@ class LoginCommand extends Command {
           break;
       }
 
+      if (args.options.cloud) {
+        auth.service.cloudType = CloudType[args.options.cloud as keyof typeof CloudType];
+      }
+      else {
+        auth.service.cloudType = CloudType.Public;
+      }
+
       try {
         await auth.ensureAccessToken(auth.defaultResource, logger, this.debug);
         auth.service.connected = true;
@@ -182,6 +202,26 @@ class LoginCommand extends Command {
         }
 
         throw new CommandError(error.message);
+      }
+
+      if (this.debug) {
+        logger.logToStderr({
+          connectedAs: accessToken.getUserNameFromAccessToken(auth.service.accessTokens[auth.defaultResource].accessToken),
+          authType: AuthType[auth.service.authType],
+          appId: auth.service.appId,
+          appTenant: auth.service.tenant,
+          accessToken: JSON.stringify(auth.service.accessTokens, null, 2),
+          cloudType: CloudType[auth.service.cloudType]
+        });
+      }
+      else {
+        logger.logToStderr({
+          connectedAs: accessToken.getUserNameFromAccessToken(auth.service.accessTokens[auth.defaultResource].accessToken),
+          authType: AuthType[auth.service.authType],
+          appId: auth.service.appId,
+          appTenant: auth.service.tenant,
+          cloudType: CloudType[auth.service.cloudType]
+        });
       }
     };
 

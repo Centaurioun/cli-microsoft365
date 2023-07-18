@@ -15,8 +15,8 @@
       alt="GitHub" />
   </a>
 
-  <a href="https://discord.com/invite/7rfW4kg6B5">
-    <img src="https://img.shields.io/badge/Discord-Join-7289da?style=flat-square"
+  <a href="https://aka.ms/cli-m365/discord">
+    <img src="https://img.shields.io/badge/Discord-aka.ms/cli--m365/discord-7289da?style=flat-square"
       alt="Discord" />
   </a>
 
@@ -31,7 +31,7 @@
     <img src="https://img.shields.io/npm/v/@pnp/cli-microsoft365/latest?style=flat-square"
       alt="npm @pnp/cli-microsoft365@latest" />
   </a>
-  
+
   <a href="https://www.npmjs.com/package/@pnp/cli-microsoft365">
     <img src="https://img.shields.io/npm/v/@pnp/cli-microsoft365/next?style=flat-square"
       alt="npm @pnp/cli-microsoft365@next" />
@@ -41,19 +41,21 @@
 <p align="center">CLI for Microsoft 365 helps you manage your Microsoft 365 tenant and SharePoint Framework projects.</p>
 
 <p align="center">
-  <a href="https://pnp.github.io/cli-microsoft365">Website</a> | 
+  <a href="https://pnp.github.io/cli-microsoft365">Website</a> |
   <a href="#features">Features</a> |
-  <a href="#install">Install</a> | 
-  <a href="#usage">Usage</a> | 
-  <a href="#build">Build</a> | 
+  <a href="#install">Install</a> |
+  <a href="#usage">Usage</a> |
+  <a href="#build">Build</a> |
   <a href="#contribute">Contribute</a>
 </p>
 <p align="center">
-  <a href="#sharing-is-caring">Sharing is Caring</a> |
-  <a href="#code-of-conduct">Code of Conduct</a> | 
+  <a href="https://github.com/pnp/cli-microsoft365/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a> | 
+  <a href="#need-help">Need help?</a> |
   <a href="#disclaimer">Disclaimer</a>
 </p>
-
+<p align="center">
+  <a href="#microsoft-365--power-platform-community">Microsoft 365 & Power Platform Community</a>
+</p>
 <p align="center">
   <img alt="CLI for Microsoft 365" src="./docs/docs/images/cli-microsoft365.gif" height="500" />
 </p>
@@ -74,15 +76,20 @@
   - Access all your Microsoft 365 workloads
 - Supported workloads
   - Azure Active Directory
+  - Bookings
   - Microsoft Teams
   - Microsoft To Do
   - OneDrive
+  - OneNote
   - Outlook
   - Planner
   - Power Automate
   - Power Apps
+  - Power Platform
+  - Purview
   - Skype for Business
   - SharePoint Online
+  - To Do
   - Yammer
 - Supported authentication methods
   - Azure Managed Identity
@@ -91,21 +98,21 @@
   - Device Code
   - Username and Password
 - Manage your SharePoint Framework projects
-  - Uprade your projects
+  - Upgrade your projects
   - Check your environment compatibility
 
 > Follow our [Twitter](https://twitter.com/climicrosoft365) account to keep yourself updated about new features, improvements, and bug fixes.
 
 ## Install
 
-To install this CLI, you will need [`node`](https://nodejs.org) `>= 8.0.0` installed.
+To use the CLI for Microsoft 365 you need [`Node.js`](https://nodejs.org). The CLI has been tested with Node.js versions 18 and higher, but we recommend you to use the Node.js LTS version available at the moment.
 
 ```
 npm install -g @pnp/cli-microsoft365
 ```
 
 <details>
-  <summary>Install beta version  β</summary>
+  <summary>Install beta version β</summary>
 
   ```
   npm install -g @pnp/cli-microsoft365@next
@@ -140,7 +147,7 @@ npm install -g @pnp/cli-microsoft365
 
 ## Usage
 
-Use the `login` command to start the Device Code login flow to authenticate with your Microsoft 365 tenant. 
+Use the `login` command to start the Device Code login flow to authenticate with your Microsoft 365 tenant.
 
 ```sh
 m365 login
@@ -184,7 +191,7 @@ m365 spo site get --url https://contoso.sharepoint.com --output text
 
 ## Build
 
-To build and run this CLI locally, you will need [`node`](https://nodejs.org) `>= 16.0.0` installed.
+To build and run this CLI locally, you will need [`node`](https://nodejs.org) `>= 18.0.0` installed.
 
 ```sh
 # Clone this repository
@@ -213,9 +220,20 @@ If you want to get involved with helping us grow the CLI, whether that is sugges
 
 Checkout our [Wiki](https://github.com/pnp/cli-microsoft365/wiki) for guides on how to contribute to this project.
 
-## Microsoft 365 Platform Community
+## Need Help?
 
-CLI for Microsoft 365 is a [Microsoft 365 Platform Community](https://pnp.github.io) (PnP) project. Microsoft 365 Platform Community is a virtual team consisting of Microsoft employees and community members focused on helping the community make the best use of Microsoft products. CLI for Microsoft 365 is an open-source project not affiliated with Microsoft and not covered by Microsoft support. If you experience any issues using the CLI, please submit an issue in the [issues list](https://github.com/pnp/cli-microsoft365/issues).
+<h4 align="center">
+  Join our community
+</h4>
+<p align="center">
+  <a href="https://aka.ms/cli-m365/discord">
+    <img alt="Discord" src="./docs/docs/images/discord-logo.png" width="100"/>
+  </a>
+</p>
+
+## Microsoft 365 & Power Platform Community
+
+CLI for Microsoft 365 is a [Microsoft 365 & Power Platform Community](https://pnp.github.io) (PnP) project. Microsoft 365 & Power Platform Community is a virtual team consisting of Microsoft employees and community members focused on helping the community make the best use of Microsoft products. CLI for Microsoft 365 is an open-source project not affiliated with Microsoft and not covered by Microsoft support. If you experience any issues using the CLI, please submit an issue in the [issues list](https://github.com/pnp/cli-microsoft365/issues).
 
 ## Disclaimer
 

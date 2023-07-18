@@ -1,7 +1,8 @@
 import { TeamsAppDefinition, TeamsAppInstallation } from '@microsoft/microsoft-graph-types';
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import { odata } from '../../../../utils/odata';
 import { validation } from '../../../../utils/validation';
@@ -87,7 +88,7 @@ class TeamsUserAppListCommand extends GraphCommand {
         (i as any).appId = appId;
       });
 
-      if (args.options.output === 'json') {
+      if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(items);
       }
       else {
@@ -106,12 +107,12 @@ class TeamsUserAppListCommand extends GraphCommand {
     }
   }
 
-  private getUserId(args: CommandArgs): Promise<{ value: string }> {
+  private async getUserId(args: CommandArgs): Promise<{ value: string }> {
     if (args.options.userId) {
-      return Promise.resolve({ value: args.options.userId });
+      return { value: args.options.userId };
     }
 
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/users/${formatting.encodeQueryParameter(args.options.userName)}/id`,
       headers: {
         accept: 'application/json;odata.metadata=none'

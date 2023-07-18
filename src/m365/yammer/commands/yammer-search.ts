@@ -1,7 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
+import { Cli } from '../../../cli/Cli';
 import { Logger } from '../../../cli/Logger';
 import GlobalOptions from '../../../GlobalOptions';
-import request from '../../../request';
+import request, { CliRequestOptions } from '../../../request';
 import { formatting } from '../../../utils/formatting';
 import YammerCommand from '../../base/YammerCommand';
 import commands from '../commands';
@@ -174,7 +174,7 @@ class YammerSearchCommand extends YammerCommand {
   private getAllItems(logger: Logger, args: CommandArgs, page: number): Promise<void> {
     return new Promise<void>((resolve: () => void, reject: (error: any) => void): void => {
       const endpoint = `${this.resource}/v1/search.json?search=${formatting.encodeQueryParameter(args.options.queryText)}&page=${page}`;
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: endpoint,
         responseType: 'json',
         headers: {
@@ -269,7 +269,7 @@ class YammerSearchCommand extends YammerCommand {
     try {
       await this.getAllItems(logger, args, 1);
 
-      if (args.options.output === 'json') {
+      if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(
           {
             summary: this.summary,

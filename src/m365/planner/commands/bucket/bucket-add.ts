@@ -1,9 +1,6 @@
-import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { AxiosRequestConfig } from 'axios';
-import { accessToken } from '../../../../utils/accessToken';
+import request, { CliRequestOptions } from '../../../../request';
 import { validation } from '../../../../utils/validation';
 import { aadGroup } from '../../../../utils/aadGroup';
 import { planner } from '../../../../utils/planner';
@@ -105,15 +102,10 @@ class PlannerBucketAddCommand extends GraphCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    if (accessToken.isAppOnlyAccessToken(auth.service.accessTokens[this.resource].accessToken)) {
-      this.handleError('This command does not support application permissions.');
-      return;
-    }
-
     try {
       const planId = await this.getPlanId(args);
 
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/planner/buckets`,
         headers: {
           'accept': 'application/json;odata.metadata=none'
@@ -134,25 +126,23 @@ class PlannerBucketAddCommand extends GraphCommand {
     }
   }
 
-  private getPlanId(args: CommandArgs): Promise<string> {
+  private async getPlanId(args: CommandArgs): Promise<string> {
     if (args.options.planId) {
-      return Promise.resolve(args.options.planId);
+      return args.options.planId;
     }
 
-    return this
-      .getGroupId(args)
-      .then(groupId => planner.getPlanByTitle(args.options.planTitle!, groupId))
-      .then(plan => plan.id!);
+    const groupId = await this.getGroupId(args);
+    const plan = await planner.getPlanByTitle(args.options.planTitle!, groupId);
+    return plan.id!;
   }
 
-  private getGroupId(args: CommandArgs): Promise<string> {
+  private async getGroupId(args: CommandArgs): Promise<string> {
     if (args.options.ownerGroupId) {
-      return Promise.resolve(args.options.ownerGroupId);
+      return args.options.ownerGroupId;
     }
 
-    return aadGroup
-      .getGroupByDisplayName(args.options.ownerGroupName!)
-      .then(group => group.id!);
+    const group = await aadGroup.getGroupByDisplayName(args.options.ownerGroupName!);
+    return group.id!;
   }
 }
 

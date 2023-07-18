@@ -1,7 +1,6 @@
-import { AxiosRequestConfig } from 'axios';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { odata } from '../../../../utils/odata';
 import { spo } from '../../../../utils/spo';
 import SpoCommand from '../../../base/SpoCommand';
@@ -70,7 +69,7 @@ class SpoHubSiteListCommand extends SpoCommand {
           logger.logToStderr('');
         }
 
-        const requestOptions: AxiosRequestConfig = {
+        const requestOptions: CliRequestOptions = {
           url: `${spoAdminUrl}/_api/web/lists/GetByTitle('DO_NOT_DELETE_SPLIST_TENANTADMIN_AGGREGATED_SITECOLLECTIONS')/RenderListDataAsStream`,
           headers: {
             accept: 'application/json;odata=nometadata'
@@ -116,44 +115,30 @@ class SpoHubSiteListCommand extends SpoCommand {
     }
   }
 
-  private getSites(reqOptions: any, nonPagedUrl: string, logger: Logger, sites: AssociatedSite[] = [], batchNumber: number = 0): Promise<AssociatedSite[]> {
-    return new Promise<AssociatedSite[]>((resolve: (associatedSites: AssociatedSite[]) => void, reject: (error: any) => void): void => {
-      request
-        .post<QueryListResult>(reqOptions)
-        .then((res: QueryListResult): void => {
-          batchNumber++;
-          const retrievedSites: AssociatedSite[] = res.Row.length > 0 ? sites.concat(res.Row) : sites;
+  private async getSites(reqOptions: any, nonPagedUrl: string, logger: Logger, sites: AssociatedSite[] = [], batchNumber: number = 0): Promise<AssociatedSite[]> {
+    const res = await request.post<QueryListResult>(reqOptions);
+    batchNumber++;
+    const retrievedSites: AssociatedSite[] = res.Row.length > 0 ? sites.concat(res.Row) : sites;
 
-          if (this.debug) {
-            logger.logToStderr(res);
-            logger.logToStderr(`Retrieved ${res.Row.length} sites in batch ${batchNumber}`);
-          }
+    if (this.debug) {
+      logger.logToStderr(res);
+      logger.logToStderr(`Retrieved ${res.Row.length} sites in batch ${batchNumber}`);
+    }
 
-          if (!!res.NextHref) {
-            reqOptions.url = nonPagedUrl + res.NextHref;
-            if (this.debug) {
-              logger.logToStderr(`Url for next batch of sites: ${reqOptions.url}`);
-            }
+    if (!!res.NextHref) {
+      reqOptions.url = nonPagedUrl + res.NextHref;
+      if (this.debug) {
+        logger.logToStderr(`Url for next batch of sites: ${reqOptions.url}`);
+      }
+      return this.getSites(reqOptions, nonPagedUrl, logger, retrievedSites, batchNumber);
+    }
+    else {
+      if (this.debug) {
+        logger.logToStderr(`Retrieved ${retrievedSites.length} sites in total`);
+      }
 
-            this
-              .getSites(reqOptions, nonPagedUrl, logger, retrievedSites, batchNumber)
-              .then((associatedSites: AssociatedSite[]): void => {
-                resolve(associatedSites);
-              }, (err: any): void => {
-                reject(err);
-              });
-          }
-          else {
-            if (this.debug) {
-              logger.logToStderr(`Retrieved ${retrievedSites.length} sites in total`);
-            }
-
-            resolve(retrievedSites);
-          }
-        }, (err: any): void => {
-          reject(err);
-        });
-    });
+      return retrievedSites;
+    }
   }
 }
 

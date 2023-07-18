@@ -1,7 +1,6 @@
-import { AxiosRequestConfig } from 'axios';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
@@ -91,11 +90,7 @@ class SpoFileCopyCommand extends SpoCommand {
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     try {
-      if (this.verbose) {
-        logger.logToStderr(`Copying file '${args.options.sourceUrl}' to '${args.options.targetUrl}'...`);
-      }
-
-      const sourcePath = this.getAbsoluteUrl(args.options.webUrl, args.options.sourceUrl);
+      const sourcePath = this.getAbsoluteUrl(args.options.webUrl, urlUtil.getServerRelativePath(args.options.webUrl, args.options.sourceUrl));
       let destinationPath = this.getAbsoluteUrl(args.options.webUrl, args.options.targetUrl) + '/';
 
       if (args.options.newName) {
@@ -106,7 +101,11 @@ class SpoFileCopyCommand extends SpoCommand {
         destinationPath += sourcePath.substring(sourcePath.lastIndexOf('/') + 1);
       }
 
-      const requestOptions: AxiosRequestConfig = {
+      if (this.verbose) {
+        logger.logToStderr(`Copying file '${sourcePath}' to '${destinationPath}'...`);
+      }
+
+      const requestOptions: CliRequestOptions = {
         url: `${args.options.webUrl}/_api/SP.MoveCopyUtil.CopyFileByPath`,
         headers: {
           accept: 'application/json;odata=nometadata'

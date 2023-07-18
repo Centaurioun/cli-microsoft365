@@ -8,11 +8,13 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./app-remove');
 
 describe(commands.APP_REMOVE, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
@@ -20,9 +22,11 @@ describe(commands.APP_REMOVE, () => {
   let deleteRequestStub: sinon.SinonStub;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -47,28 +51,31 @@ describe(commands.APP_REMOVE, () => {
     });
 
     promptOptions = undefined;
-    sinon.stub(request, 'get').callsFake((opts: any) => {
+
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
+
+    sinon.stub(request, 'get').callsFake(async (opts: any) => {
       if ((opts.url as string).indexOf(`/v1.0/myorganization/applications?$filter=`) > -1) {
         // fake call for getting app
         if (opts.url.indexOf('startswith') === -1) {
-          return Promise.resolve({
+          return {
             "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#applications(id)",
             "value": [
               {
                 "id": "d75be2e1-0204-4f95-857d-51a37cf40be8"
               }
             ]
-          });
+          };
         }
       }
-      return Promise.reject();
+      throw 'Invalid request';
     });
 
-    deleteRequestStub = sinon.stub(request, 'delete').callsFake((opts: any) => {
+    deleteRequestStub = sinon.stub(request, 'delete').callsFake(async (opts: any) => {
       if (opts.url === 'https://graph.microsoft.com/v1.0/myorganization/applications/d75be2e1-0204-4f95-857d-51a37cf40be8') {
-        return Promise.resolve();
+        return;
       }
-      return Promise.reject();
+      throw 'Invalid request';
     });
   });
 
@@ -76,21 +83,18 @@ describe(commands.APP_REMOVE, () => {
     sinonUtil.restore([
       request.get,
       request.delete,
-      Cli.prompt
+      Cli.prompt,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.APP_REMOVE), true);
+    assert.strictEqual(command.name, commands.APP_REMOVE);
   });
 
   it('has a description', () => {
@@ -155,9 +159,7 @@ describe(commands.APP_REMOVE, () => {
 
   it('aborts removing the app when prompt not confirmed', async () => {
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
 
     await command.action(logger, {
       options: {
@@ -169,9 +171,7 @@ describe(commands.APP_REMOVE, () => {
 
   it('deletes app when prompt confirmed (debug)', async () => {
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, {
       options: {
@@ -214,11 +214,11 @@ describe(commands.APP_REMOVE, () => {
 
   it('fails to get app by id when app does not exists', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/myorganization/applications?$filter=`) > -1) {
-        return Promise.resolve({ value: [] });
+        return { value: [] };
       }
-      return Promise.reject("No Azure AD application registration with ID myapp found");
+      throw "No Azure AD application registration with ID myapp found";
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, appId: 'd75be2e1-0204-4f95-857d-51a37cf40be8', confirm: true } } as any), new CommandError("No Azure AD application registration with ID d75be2e1-0204-4f95-857d-51a37cf40be8 found"));
@@ -226,11 +226,11 @@ describe(commands.APP_REMOVE, () => {
 
   it('fails to get app by name when app does not exists', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/myorganization/applications?$filter=`) > -1) {
-        return Promise.resolve({ value: [] });
+        return { value: [] };
       }
-      return Promise.reject("No Azure AD application registration with name myapp found");
+      throw 'No Azure AD application registration with name myapp found';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, name: 'myapp', confirm: true } } as any), new CommandError("No Azure AD application registration with name myapp found"));
@@ -238,9 +238,9 @@ describe(commands.APP_REMOVE, () => {
 
   it('fails when multiple apps with same name exists', async () => {
     sinonUtil.restore(request.get);
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/myorganization/applications?$filter=`) > -1) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#applications",
           "value": [
             {
@@ -250,10 +250,10 @@ describe(commands.APP_REMOVE, () => {
               "id": "340a4aa3-1af6-43ac-87d8-189819003952"
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject("Multiple Azure AD application registration with name myapp found. Please choose one of the object IDs: d75be2e1-0204-4f95-857d-51a37cf40be8, 340a4aa3-1af6-43ac-87d8-189819003952");
+      throw "Multiple Azure AD application registration with name myapp found. Please choose one of the object IDs: d75be2e1-0204-4f95-857d-51a37cf40be8, 340a4aa3-1af6-43ac-87d8-189819003952";
     });
 
     await assert.rejects(command.action(logger, {

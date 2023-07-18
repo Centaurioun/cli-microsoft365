@@ -1,6 +1,6 @@
 import { Logger } from '../../../cli/Logger';
 import GlobalOptions from '../../../GlobalOptions';
-import request from '../../../request';
+import request, { CliRequestOptions } from '../../../request';
 import { formatting } from '../../../utils/formatting';
 import AzmgmtCommand from '../../base/AzmgmtCommand';
 import commands from '../commands';
@@ -56,7 +56,16 @@ class FlowGetCommand extends AzmgmtCommand {
   constructor() {
     super();
 
+    this.#initTelemetry();
     this.#initOptions();
+  }
+
+  #initTelemetry(): void {
+    this.telemetry.push((args: CommandArgs) => {
+      Object.assign(this.telemetryProperties, {
+        asAdmin: !!args.options.asAdmin
+      });
+    });
   }
 
   #initOptions(): void {
@@ -78,7 +87,7 @@ class FlowGetCommand extends AzmgmtCommand {
       logger.logToStderr(`Retrieving information about Microsoft Flow ${args.options.name}...`);
     }
 
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}providers/Microsoft.ProcessSimple/${args.options.asAdmin ? 'scopes/admin/' : ''}environments/${formatting.encodeQueryParameter(args.options.environmentName)}/flows/${formatting.encodeQueryParameter(args.options.name)}?api-version=2016-11-01`,
       headers: {
         accept: 'application/json'

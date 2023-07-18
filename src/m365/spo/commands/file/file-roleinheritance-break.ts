@@ -1,15 +1,15 @@
 import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
-import { AxiosRequestConfig } from 'axios';
 import Command from '../../../../Command';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { validation } from '../../../../utils/validation';
 import { formatting } from '../../../../utils/formatting';
 import SpoCommand from '../../../base/SpoCommand';
 import commands from '../../commands';
 import * as SpoFileGetCommand from './file-get';
 import { Options as SpoFileGetCommandOptions } from './file-get';
+import { urlUtil } from '../../../../utils/urlUtil';
 
 interface CommandArgs {
   options: Options;
@@ -94,13 +94,16 @@ class SpoFileRoleInheritanceBreakCommand extends SpoCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    const breakFileRoleInheritance: () => Promise<void> = async (): Promise<void> => {
+    const breakFileRoleInheritance = async (): Promise<void> => {
+      if (this.verbose) {
+        logger.logToStderr(`Breaking role inheritance for file ${args.options.fileId || args.options.fileUrl}`);
+      }
       try {
         const fileURL: string = await this.getFileURL(args);
 
         const keepExistingPermissions: boolean = !args.options.clearExistingPermissions;
 
-        const requestOptions: AxiosRequestConfig = {
+        const requestOptions: CliRequestOptions = {
           url: `${args.options.webUrl}/_api/web/GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileURL)}')/ListItemAllFields/breakroleinheritance(${keepExistingPermissions})`,
           headers: {
             accept: 'application/json;odata=nometadata'
@@ -134,7 +137,7 @@ class SpoFileRoleInheritanceBreakCommand extends SpoCommand {
 
   private async getFileURL(args: CommandArgs): Promise<string> {
     if (args.options.fileUrl) {
-      return args.options.fileUrl;
+      return urlUtil.getServerRelativePath(args.options.webUrl, args.options.fileUrl);
     }
 
     const options: SpoFileGetCommandOptions = {

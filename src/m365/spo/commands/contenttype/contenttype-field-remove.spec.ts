@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import { spo } from '../../../../utils/spo';
 import commands from '../../commands';
@@ -24,80 +25,73 @@ const LIST_TITLE = "TEST";
 const LIST_URL = "/shared documents";
 
 describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
   let promptOptions: any;
 
-  const getStubCalls = (opts: any) => {
+  const getStubCalls = async (opts: any) => {
     if ((opts.url as string).indexOf(`_api/site?$select=Id`) > -1) {
-      return Promise.resolve({
-        "Id": SITE_ID
-      });
+      return { "Id": SITE_ID };
     }
     if ((opts.url as string).indexOf(`_api/web?$select=Id`) > -1) {
-      return Promise.resolve({
-        "Id": WEB_ID
-      });
+      return { "Id": WEB_ID };
     }
     if ((opts.url as string).indexOf(`/_api/lists/GetByTitle('${LIST_TITLE}')?$select=Id`) > -1) {
-      return Promise.resolve({
-        "Id": LIST_ID
-      });
+      return { "Id": LIST_ID };
     }
     if (opts.url === 'https://contoso.sharepoint.com/_api/web/GetList(\'%2Fshared%20documents\')?$select=Id') {
-      return Promise.resolve({
-        "Id": LIST_ID
-      });
+      return { "Id": LIST_ID };
     }
 
-    return Promise.reject('Invalid request');
+    throw 'Invalid request';
   };
-  const postStubSuccCalls = (opts: any) => {
+  const postStubSuccCalls = async (opts: any) => {
     if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
       // Web CT
       if (opts.data.toLowerCase() === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="77" ObjectPathId="76" /><ObjectPath Id="79" ObjectPathId="78" /><Method Name="DeleteObject" Id="80" ObjectPathId="78" /><Method Name="Update" Id="81" ObjectPathId="24"><Parameters><Parameter Type="Boolean">false</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="76" ParentId="24" Name="FieldLinks" /><Method Id="78" ParentId="76" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="24" Name="6b3ec69e-00a7-0000-55a3-61f8d779d2b3|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:contenttype:${CONTENT_TYPE_ID}" /></ObjectPaths></Request>`.toLowerCase()) {
-        return Promise.resolve(`[
+        return `[
             {
               "SchemaVersion": "15.0.0.0",
               "LibraryVersion": "16.0.7911.1206",
               "ErrorInfo": null,
               "TraceCorrelationId": "73557d9e-007f-0000-22fb-89971360c85c"
             }
-          ]`);
+          ]`;
       }
       // Web CT with update child CTs
       else if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="77" ObjectPathId="76" /><ObjectPath Id="79" ObjectPathId="78" /><Method Name="DeleteObject" Id="80" ObjectPathId="78" /><Method Name="Update" Id="81" ObjectPathId="24"><Parameters><Parameter Type="Boolean">true</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="76" ParentId="24" Name="FieldLinks" /><Method Id="78" ParentId="76" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="24" Name="6b3ec69e-00a7-0000-55a3-61f8d779d2b3|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:contenttype:${CONTENT_TYPE_ID}" /></ObjectPaths></Request>`) {
-        return Promise.resolve(`[
+        return `[
             {
               "SchemaVersion": "15.0.0.0",
               "LibraryVersion": "16.0.7911.1206",
               "ErrorInfo": null,
               "TraceCorrelationId": "73557d9e-007f-0000-22fb-89971360c85c"
             }
-          ]`);
+          ]`;
       }
       // List CT
       else if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="18" ObjectPathId="17" /><ObjectPath Id="20" ObjectPathId="19" /><Method Name="DeleteObject" Id="21" ObjectPathId="19" /><Method Name="Update" Id="22" ObjectPathId="15"><Parameters><Parameter Type="Boolean">false</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="17" ParentId="15" Name="FieldLinks" /><Method Id="19" ParentId="17" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="15" Name="09eec89e-709b-0000-558c-c222dcaf9162|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:list:${LIST_ID}:contenttype:${LIST_CONTENT_TYPE_ID}" /></ObjectPaths></Request>`) {
-        return Promise.resolve(`[
+        return `[
             {
               "SchemaVersion": "15.0.0.0",
               "LibraryVersion": "16.0.7911.1206",
               "ErrorInfo": null,
               "TraceCorrelationId": "73557d9e-007f-0000-22fb-89971360c85c"
             }
-          ]`);
+          ]`;
       }
     }
 
-    return Promise.reject('Invalid request');
+    throw 'Invalid request';
   };
-  const postStubFailedCalls = (opts: any) => {
+  const postStubFailedCalls = async (opts: any) => {
     if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
       // WEB CT
       if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="77" ObjectPathId="76" /><ObjectPath Id="79" ObjectPathId="78" /><Method Name="DeleteObject" Id="80" ObjectPathId="78" /><Method Name="Update" Id="81" ObjectPathId="24"><Parameters><Parameter Type="Boolean">false</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="76" ParentId="24" Name="FieldLinks" /><Method Id="78" ParentId="76" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="24" Name="6b3ec69e-00a7-0000-55a3-61f8d779d2b3|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:contenttype:${CONTENT_TYPE_ID}" /></ObjectPaths></Request>`) {
-        return Promise.resolve(`[
+        return `[
           {
             "SchemaVersion": "15.0.0.0",
             "LibraryVersion": "16.0.7911.1206",
@@ -106,11 +100,11 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
             },
             "TraceCorrelationId": "e5547d9e-705d-0000-22fb-8faca5696ed8"
           }
-        ]`);
+        ]`;
       }
       // Web CT without update child CTs
       else if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="77" ObjectPathId="76" /><ObjectPath Id="79" ObjectPathId="78" /><Method Name="DeleteObject" Id="80" ObjectPathId="78" /><Method Name="Update" Id="81" ObjectPathId="24"><Parameters><Parameter Type="Boolean">true</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="76" ParentId="24" Name="FieldLinks" /><Method Id="78" ParentId="76" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="24" Name="6b3ec69e-00a7-0000-55a3-61f8d779d2b3|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:contenttype:${CONTENT_TYPE_ID}" /></ObjectPaths></Request>`) {
-        return Promise.resolve(`[
+        return `[
           {
             "SchemaVersion": "15.0.0.0",
             "LibraryVersion": "16.0.7911.1206",
@@ -119,11 +113,11 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
             },
             "TraceCorrelationId": "e5547d9e-705d-0000-22fb-8faca5696ed8"
           }
-        ]`);
+        ]`;
       }
       // LIST CT
       else if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName=".NET Library" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="18" ObjectPathId="17" /><ObjectPath Id="20" ObjectPathId="19" /><Method Name="DeleteObject" Id="21" ObjectPathId="19" /><Method Name="Update" Id="22" ObjectPathId="15"><Parameters><Parameter Type="Boolean">false</Parameter></Parameters></Method></Actions><ObjectPaths><Property Id="17" ParentId="15" Name="FieldLinks" /><Method Id="19" ParentId="17" Name="GetById"><Parameters><Parameter Type="Guid">{${FIELD_LINK_ID}}</Parameter></Parameters></Method><Identity Id="15" Name="09eec89e-709b-0000-558c-c222dcaf9162|740c6a0b-85e2-48a0-a494-e0f1759d4aa7:site:${SITE_ID}:web:${WEB_ID}:list:${LIST_ID}:contenttype:${LIST_CONTENT_TYPE_ID}" /></ObjectPaths></Request>`) {
-        return Promise.resolve(`[
+        return `[
           {
             "SchemaVersion": "15.0.0.0",
             "LibraryVersion": "16.0.7911.1206",
@@ -132,22 +126,25 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
             },
             "TraceCorrelationId": "e5547d9e-705d-0000-22fb-8faca5696ed8"
           }
-        ]`);
+        ]`;
       }
 
     }
-    return Promise.reject('Invalid request');
+    throw 'Invalid request';
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(spo, 'getRequestDigest').callsFake(() => Promise.resolve({
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
+    sinon.stub(spo, 'getRequestDigest').resolves({
       FormDigestValue: 'ABC',
       FormDigestTimeoutSeconds: 1800,
       FormDigestExpiresAt: new Date(),
       WebFullUrl: 'https://contoso.sharepoint.com'
-    }));
+    });
     auth.service.connected = true;
     auth.service.spoUrl = 'https://contoso.sharepoint.com';
     commandInfo = Cli.getCommandInfo(command);
@@ -177,29 +174,26 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     (command as any).listId = '';
     (command as any).fieldLinkId = '';
     promptOptions = undefined;
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
       request.get,
       request.post,
-      Cli.prompt
+      Cli.prompt,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      spo.getRequestDigest,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.spoUrl = undefined;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.CONTENTTYPE_FIELD_REMOVE), true);
+    assert.strictEqual(command.name, commands.CONTENTTYPE_FIELD_REMOVE);
   });
 
   it('has a description', () => {
@@ -256,9 +250,7 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -272,9 +264,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -308,9 +299,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -357,9 +347,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -374,9 +363,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -412,9 +400,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -431,9 +418,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -511,9 +497,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, listTitle: LIST_TITLE, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -530,9 +515,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     command.action(logger, {
       options: {
         webUrl: WEB_URL, listTitle: LIST_TITLE, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -582,9 +566,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, listTitle: LIST_TITLE, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -600,9 +583,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, listId: LIST_ID, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -618,9 +600,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, {
       options: {
         webUrl: WEB_URL, listUrl: LIST_URL, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -635,9 +616,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     const postCallbackStub = sinon.stub(request, 'post').callsFake(postStubSuccCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     command.action(logger, {
       options: {
         webUrl: WEB_URL, listTitle: LIST_TITLE, contentTypeId: LIST_CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,
@@ -675,9 +655,8 @@ describe(commands.CONTENTTYPE_FIELD_REMOVE, () => {
     sinon.stub(request, 'post').callsFake(postStubFailedCalls);
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await assert.rejects(command.action(logger, {
       options: {
         webUrl: WEB_URL, contentTypeId: CONTENT_TYPE_ID, fieldLinkId: FIELD_LINK_ID,

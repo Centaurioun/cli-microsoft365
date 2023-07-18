@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import { odata } from '../../../../utils/odata';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import * as TeamGetCommand from './team-get';
@@ -25,9 +26,10 @@ describe(commands.TEAM_APP_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -57,16 +59,12 @@ describe(commands.TEAM_APP_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TEAM_APP_LIST), true);
+    assert.strictEqual(command.name, commands.TEAM_APP_LIST);
   });
 
   it('has a description', () => {
@@ -125,7 +123,7 @@ describe(commands.TEAM_APP_LIST, () => {
       throw 'Invalid response';
     });
 
-    await command.action(logger, { options: { teamId: teamId, verbose: true, output: 'csv' } });
+    await command.action(logger, { options: { teamId: teamId, verbose: true, output: 'text' } });
     assert(loggerLogSpy.calledWith(friendlyResponse));
   });
 });

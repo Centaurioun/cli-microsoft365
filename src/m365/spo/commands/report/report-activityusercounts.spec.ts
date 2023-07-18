@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./report-activityusercounts');
@@ -15,9 +16,10 @@ describe(commands.REPORT_ACTIVITYUSERCOUNTS, () => {
   let logger: Logger;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -44,16 +46,12 @@ describe(commands.REPORT_ACTIVITYUSERCOUNTS, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.REPORT_ACTIVITYUSERCOUNTS), true);
+    assert.strictEqual(command.name, commands.REPORT_ACTIVITYUSERCOUNTS);
   });
 
   it('has a description', () => {
@@ -61,14 +59,12 @@ describe(commands.REPORT_ACTIVITYUSERCOUNTS, () => {
   });
 
   it('gets the report for the last week', async () => {
-    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
+    const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/reports/getSharePointActivityUserCounts(period='D7')`) {
-        return Promise.resolve(`
-          Report Refresh Date,Visited Page,Viewed Or Edited,Synced,Shared Internally,Shared Externally,Report Date,Report Period`
-        );
+        return `Report Refresh Date,Visited Page,Viewed Or Edited,Synced,Shared Internally,Shared Externally,Report Date,Report Period`;
       }
 
-      return Promise.reject('Invalid request');
+      return 'Invalid request';
     });
 
     await command.action(logger, { options: { period: 'D7' } });

@@ -1,10 +1,9 @@
 import { AadUserConversationMember, Chat, ConversationMember } from '@microsoft/microsoft-graph-types';
-import { AxiosRequestConfig } from 'axios';
 import * as os from 'os';
 import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { accessToken } from '../../../../utils/accessToken';
 import { validation } from '../../../../utils/validation';
 import GraphCommand from '../../../base/GraphCommand';
@@ -128,14 +127,14 @@ class TeamsChatMessageSendCommand extends GraphCommand {
       return `- ${c.id}${c.topic && ' - '}${c.topic} - ${c.createdDateTime && new Date(c.createdDateTime).toLocaleString()}`;
     }).join(os.EOL);
 
-    throw new Error(`Multiple chat conversations with this name found. Please disambiguate:${os.EOL}${disambiguationText}`);
+    throw `Multiple chat conversations with this name found. Please disambiguate:${os.EOL}${disambiguationText}`;
   }
 
   private async getChatIdByName(chatName: string): Promise<string> {
     const existingChats = await chatUtil.findExistingGroupChatsByName(chatName);
 
     if (!existingChats || existingChats.length === 0) {
-      throw new Error('No chat conversation was found with this name.');
+      throw 'No chat conversation was found with this name.';
     }
 
     if (existingChats.length === 1) {
@@ -147,7 +146,7 @@ class TeamsChatMessageSendCommand extends GraphCommand {
       return `- ${c.id} - ${c.createdDateTime && new Date(c.createdDateTime).toLocaleString()} - ${memberstring}`;
     }).join(os.EOL);
 
-    throw new Error(`Multiple chat conversations with this name found. Please disambiguate:${os.EOL}${disambiguationText}`);
+    throw `Multiple chat conversations with this name found. Please disambiguate:${os.EOL}${disambiguationText}`;
   }
 
   // This Microsoft Graph API request throws an intermittent 404 exception, saying that it cannot find the principal.
@@ -168,7 +167,7 @@ class TeamsChatMessageSendCommand extends GraphCommand {
         })
       };
 
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/chats`,
         headers: {
           accept: 'application/json;odata.metadata=none',
@@ -190,7 +189,7 @@ class TeamsChatMessageSendCommand extends GraphCommand {
   }
 
   private async sendChatMessage(chatId: string, args: CommandArgs): Promise<void> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/chats/${chatId}/messages`,
       headers: {
         accept: 'application/json;odata.metadata=none',
@@ -204,7 +203,7 @@ class TeamsChatMessageSendCommand extends GraphCommand {
       }
     };
 
-    await request.post(requestOptions);
+    return request.post(requestOptions);
   }
 }
 

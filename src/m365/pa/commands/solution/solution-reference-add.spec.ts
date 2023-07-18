@@ -8,22 +8,23 @@ import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import CdsProjectMutator from '../../cds-project-mutator';
 import commands from '../../commands';
 const command: Command = require('./solution-reference-add');
 
 describe(commands.SOLUTION_REFERENCE_ADD, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let trackEvent: any;
-  let telemetryCommandName: any;
 
   before(() => {
-    trackEvent = sinon.stub(telemetry, 'trackEvent').callsFake((commandName) => {
-      telemetryCommandName = commandName;
-    });
+    cli = Cli.getInstance();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -40,7 +41,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
         log.push(msg);
       }
     };
-    telemetryCommandName = null;
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
@@ -50,33 +51,21 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       fs.writeFileSync,
       path.relative,
       fs.readdirSync,
-      CdsProjectMutator.prototype.addProjectReference
+      CdsProjectMutator.prototype.addProjectReference,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SOLUTION_REFERENCE_ADD), true);
+    assert.strictEqual(command.name, commands.SOLUTION_REFERENCE_ADD);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('calls telemetry', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert(trackEvent.called);
-  });
-
-  it('logs correct telemetry event', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert.strictEqual(telemetryCommandName, commands.SOLUTION_REFERENCE_ADD);
   });
 
   it('supports specifying projectPath', () => {
@@ -91,7 +80,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
   });
 
   it('fails validation when no *.cdsproj exists in the current directory', async () => {
-    sinon.stub(fs, 'readdirSync').callsFake(() => []);
+    sinon.stub(fs, 'readdirSync').returns([]);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -105,15 +94,15 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
   });
 
   it('fails validation when the path option isn\'t specified', async () => {
-    sinon.stub(fs, 'readdirSync').callsFake(() => ['file1.cdsproj'] as any);
+    sinon.stub(fs, 'readdirSync').returns(['file1.cdsproj'] as any);
 
     const actual = await command.validate({ options: {} }, commandInfo);
     assert.notStrictEqual(actual, true);
   });
 
   it('fails validation when the specified path option doesn\'t exist', async () => {
-    sinon.stub(fs, 'readdirSync').callsFake(() => ['file1.cdsproj'] as any);
-    sinon.stub(fs, 'existsSync').callsFake(() => false);
+    sinon.stub(fs, 'readdirSync').returns(['file1.cdsproj'] as any);
+    sinon.stub(fs, 'existsSync').returns(false);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -126,7 +115,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return [];
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -139,7 +128,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['file1.pcfproj', 'file2.pcfproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -152,7 +141,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['file1.csproj', 'file2.csproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -165,7 +154,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['file1.pcfproj', 'file2.csproj', 'file3.csproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -178,7 +167,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['pcffile1.pcfproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.strictEqual(actual, true);
@@ -191,7 +180,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['csfile1.csproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.strictEqual(actual, true);
@@ -204,7 +193,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['file1.pcfproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -217,7 +206,7 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return ['file1.csproj'] as any;
     });
-    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    sinon.stub(fs, 'existsSync').returns(true);
 
     const actual = await command.validate({ options: { projectPath: 'path/to/project' } }, commandInfo);
     assert.notStrictEqual(actual, true);
@@ -238,12 +227,10 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
       }
       return [];
     });
-    const pathRelative = sinon.stub(path, 'relative').callsFake(() => {
-      return pathToPcfProject;
-    });
-    const fsReadFileSync = sinon.stub(fs, 'readFileSync').callsFake(() => '<abc></abc>');
-    const addProjectReferenceStub = sinon.stub(CdsProjectMutator.prototype, 'addProjectReference').callsFake(() => { });
-    const fsWriteFileSync = sinon.stub(fs, 'writeFileSync').callsFake(() => { });
+    const pathRelative = sinon.stub(path, 'relative').returns(pathToPcfProject);
+    const fsReadFileSync = sinon.stub(fs, 'readFileSync').returns('<abc></abc>');
+    const addProjectReferenceStub = sinon.stub(CdsProjectMutator.prototype, 'addProjectReference').returns();
+    const fsWriteFileSync = sinon.stub(fs, 'writeFileSync').returns();
 
     await command.action(logger, { options: { projectPath: pathToDirectory } });
     assert(pathRelative.calledWith(process.cwd(), pathToPcfProject));
@@ -251,6 +238,14 @@ describe(commands.SOLUTION_REFERENCE_ADD, () => {
     assert(addProjectReferenceStub.calledWith(pathToPcfProject));
     assert(fsWriteFileSync.calledWith(pathToCdsProject, sinon.match.any));
   });
+
+  it('throws error if path does not exist', async () => {
+    const pathToDirectory = '../path/to/projectDirectory';
+    sinon.stub(fs, 'readdirSync').throws(new Error('An error has occured'));
+
+    await assert.rejects(command.action(logger, { options: { projectPath: pathToDirectory } }), new Error('An error has occured'));
+  });
+
 
   it('supports verbose mode', () => {
     const options = command.options;

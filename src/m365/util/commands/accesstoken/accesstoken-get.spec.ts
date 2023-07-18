@@ -5,6 +5,7 @@ import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./accesstoken-get');
@@ -17,6 +18,7 @@ describe(commands.ACCESSTOKEN_GET, () => {
   before(() => {
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     auth.service.connected = true;
   });
@@ -46,11 +48,7 @@ describe(commands.ACCESSTOKEN_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      auth.restoreAuth
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
@@ -101,5 +99,17 @@ describe(commands.ACCESSTOKEN_GET, () => {
     };
 
     await assert.rejects(command.action(logger, { options: { resource: 'sharepoint' } } as any), new CommandError(`SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL`));
+  });
+
+  it('retrieves access token for graph.microsoft.com when graph specified as the resource', async () => {
+    const d: Date = new Date();
+    d.setMinutes(d.getMinutes() + 1);
+    auth.service.accessTokens['https://graph.microsoft.com'] = {
+      expiresOn: d.toString(),
+      accessToken: 'ABC'
+    };
+
+    await command.action(logger, { options: { resource: 'graph' } });
+    assert(loggerLogSpy.calledWith('ABC'));
   });
 });

@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./messagingsettings-list');
@@ -19,8 +20,10 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -49,16 +52,12 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.MESSAGINGSETTINGS_LIST), true);
+    assert.strictEqual(command.name, commands.MESSAGINGSETTINGS_LIST);
   });
 
   it('has a description', () => {
@@ -66,9 +65,9 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   });
 
   it('lists messaging settings for a Microsoft Team', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/2609af39-7775-4f94-a3dc-0dd67657e900?$select=messagingSettings`) {
-        return Promise.resolve({
+        return {
           "messagingSettings": {
             "allowUserEditMessages": true,
             "allowUserDeleteMessages": true,
@@ -76,10 +75,10 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
             "allowTeamMentions": true,
             "allowChannelMentions": true
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { teamId: "2609af39-7775-4f94-a3dc-0dd67657e900" } });
@@ -93,9 +92,9 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   });
 
   it('lists messaging settings for a Microsoft Team (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/2609af39-7775-4f94-a3dc-0dd67657e900?$select=messagingSettings`) {
-        return Promise.resolve({
+        return {
           "messagingSettings": {
             "allowUserEditMessages": true,
             "allowUserDeleteMessages": true,
@@ -103,10 +102,10 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
             "allowTeamMentions": true,
             "allowChannelMentions": true
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { teamId: "2609af39-7775-4f94-a3dc-0dd67657e900", debug: true } });
@@ -120,9 +119,19 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   });
 
   it('correctly handles error when listing messaging settings', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject('An error has occurred');
-    });
+    const error = {
+      "error": {
+        "code": "UnknownError",
+        "message": "An error has occurred",
+        "innerError": {
+          "date": "2022-02-14T13:27:37",
+          "request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c",
+          "client-request-id": "77e0ed26-8b57-48d6-a502-aca6211d6e7c"
+        }
+      }
+    };
+
+    sinon.stub(request, 'get').rejects(error);
 
     await assert.rejects(command.action(logger, { options: { teamId: "2609af39-7775-4f94-a3dc-0dd67657e900" } } as any), new CommandError('An error has occurred'));
   });
@@ -146,9 +155,9 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
   });
 
   it('lists all properties for output json', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/2609af39-7775-4f94-a3dc-0dd67657e900?$select=messagingSettings`) {
-        return Promise.resolve({
+        return {
           "messagingSettings": {
             "allowUserEditMessages": true,
             "allowUserDeleteMessages": true,
@@ -156,10 +165,10 @@ describe(commands.MESSAGINGSETTINGS_LIST, () => {
             "allowTeamMentions": true,
             "allowChannelMentions": true
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { teamId: "2609af39-7775-4f94-a3dc-0dd67657e900", output: 'json' } });

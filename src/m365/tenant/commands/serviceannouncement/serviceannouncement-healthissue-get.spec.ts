@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./serviceannouncement-healthissue-get');
@@ -60,9 +61,10 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_GET, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -90,16 +92,12 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_GET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_GET), true);
+    assert.strictEqual(command.name, commands.SERVICEANNOUNCEMENT_HEALTHISSUE_GET);
   });
 
   it('has a description', () => {
@@ -109,20 +107,20 @@ describe(commands.SERVICEANNOUNCEMENT_HEALTHISSUE_GET, () => {
   it('handles promise error while getting a specified service health issue for tenant', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues/') > -1) {
-        return Promise.reject('An error has occurred');
+        throw 'An error has occurred';
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { id: 'invalid' } } as any), new CommandError('An error has occurred'));
   });
 
   it('gets the specified service health issue for tenant', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/admin/serviceAnnouncement/issues/') > -1) {
-        return Promise.resolve(jsonOutput);
+        return jsonOutput;
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {

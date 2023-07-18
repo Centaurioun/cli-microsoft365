@@ -2,28 +2,29 @@ import * as assert from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
 import { Cli } from '../../../../cli/Cli';
 import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command from '../../../../Command';
+import { telemetry } from '../../../../telemetry';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 import TemplateInstantiator from '../../template-instantiator';
 const command: Command = require('./solution-init');
 
 describe(commands.SOLUTION_INIT, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let commandInfo: CommandInfo;
-  let trackEvent: any;
-  let telemetryCommandName: any;
 
   before(() => {
-    trackEvent = sinon.stub(telemetry, 'trackEvent').callsFake((commandName) => {
-      telemetryCommandName = commandName;
-    });
+    cli = Cli.getInstance();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -40,7 +41,7 @@ describe(commands.SOLUTION_INIT, () => {
         log.push(msg);
       }
     };
-    telemetryCommandName = null;
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
@@ -48,33 +49,21 @@ describe(commands.SOLUTION_INIT, () => {
       path.basename,
       fs.readdirSync,
       fs.existsSync,
-      TemplateInstantiator.instantiate
+      TemplateInstantiator.instantiate,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SOLUTION_INIT), true);
+    assert.strictEqual(command.name, commands.SOLUTION_INIT);
   });
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('calls telemetry', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert(trackEvent.called);
-  });
-
-  it('logs correct telemetry event', async () => {
-    await assert.rejects(command.action(logger, { options: {} }));
-    assert.strictEqual(telemetryCommandName, commands.SOLUTION_INIT);
   });
 
   it('supports specifying publisher name', () => {
@@ -188,8 +177,8 @@ describe(commands.SOLUTION_INIT, () => {
   });
 
   it('TemplateInstantiator.instantiate is called exactly twice in an empty directory', async () => {
-    sinon.stub(fs, 'existsSync').callsFake(() => false);
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    sinon.stub(fs, 'existsSync').returns(false);
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'prefix' } });
     assert(templateInstantiate.calledTwice);
@@ -197,8 +186,8 @@ describe(commands.SOLUTION_INIT, () => {
   });
 
   it('TemplateInstantiator.instantiate is called exactly twice in an empty directory (verbose)', async () => {
-    sinon.stub(fs, 'existsSync').callsFake(() => false);
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    sinon.stub(fs, 'existsSync').returns(false);
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'prefix', verbose: true } });
     assert(templateInstantiate.calledTwice);
@@ -206,8 +195,8 @@ describe(commands.SOLUTION_INIT, () => {
   });
 
   it('TemplateInstantiator.instantiate is called exactly twice in an empty directory, using the standard publisherPrefix \'new\'', async () => {
-    sinon.stub(fs, 'existsSync').callsFake(() => false);
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    sinon.stub(fs, 'existsSync').returns(false);
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'new' } });
     assert(templateInstantiate.calledTwice);
@@ -227,7 +216,7 @@ describe(commands.SOLUTION_INIT, () => {
         return originalExistsSync(pathToCheck);
       }
     });
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'prefix' } });
     assert(templateInstantiate.calledTwice);
@@ -247,11 +236,18 @@ describe(commands.SOLUTION_INIT, () => {
         return originalExistsSync(pathToCheck);
       }
     });
-    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').callsFake(() => { });
+    const templateInstantiate = sinon.stub(TemplateInstantiator, 'instantiate').returns();
 
     await command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'prefix' } });
     assert(templateInstantiate.calledOnce);
     assert(templateInstantiate.withArgs(logger, sinon.match.string, sinon.match.string, false, sinon.match.object, false).calledOnce);
+  });
+
+  it('throws error if path does not exist', async () => {
+    sinon.stub(fs, 'existsSync').throws(new Error('An error has occured'));
+    sinon.stub(TemplateInstantiator, 'instantiate').returns();
+
+    await assert.rejects(command.action(logger, { options: { publisherName: '_ExamplePublisher', publisherPrefix: 'prefix' } }), new Error('An error has occured'));
   });
 
   it('supports verbose mode', () => {

@@ -7,6 +7,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./siteclassification-disable');
@@ -17,8 +18,10 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   let promptOptions: any;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -51,17 +54,13 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.SITECLASSIFICATION_DISABLE), true);
+    assert.strictEqual(command.name, commands.SITECLASSIFICATION_DISABLE);
   });
 
   it('has a description', () => {
@@ -80,15 +79,12 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   });
 
   it('handles Microsoft 365 Tenant siteclassification is not enabled', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
-          value: [
-          ]
-        });
+        return { value: [] };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, confirm: true } } as any),
@@ -96,9 +92,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   });
 
   it('handles Microsoft 365 Tenant siteclassification missing DirectorySettingTemplate', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -160,10 +156,10 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, confirm: true } } as any),
@@ -171,9 +167,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   });
 
   it('handles Microsoft 365 Tenant siteclassification missing UnifiedGroupSetting ID', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id_doesnotexists": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -235,10 +231,10 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, confirm: true } } as any),
@@ -246,9 +242,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   });
 
   it('handles Microsoft 365 Tenant siteclassification empty UnifiedGroupSetting ID', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "",
@@ -310,10 +306,10 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, { options: { debug: true, confirm: true } } as any),
@@ -322,9 +318,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
 
   it('handles disabling site classification without prompting', async () => {
     let deleteRequestIssued = false;
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -386,24 +382,19 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings/d20c475c-6f96-449a-aee8-08146be187d3`) {
         deleteRequestIssued = true;
-
-        return Promise.resolve({
-          value: [
-          ]
-
-        });
+        return { value: [] };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { confirm: true } } as any);
@@ -412,9 +403,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
 
   it('handles disabling site classification without prompting (debug)', async () => {
     let deleteRequestIssued = false;
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -476,23 +467,19 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings/d20c475c-6f96-449a-aee8-08146be187d3`) {
         deleteRequestIssued = true;
-
-        return Promise.resolve({
-          value: [
-          ]
-        });
+        return { value: [] };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true, confirm: true } } as any);
@@ -502,9 +489,8 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   it('aborts removing the group when prompt not confirmed', async () => {
     const postSpy = sinon.spy(request, 'delete');
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
+
     await command.action(logger, { options: {} });
     assert(postSpy.notCalled);
   });
@@ -512,9 +498,9 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
   it('handles disabling site classification when prompt confirmed', async () => {
     let deleteRequestIssued = false;
 
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings`) {
-        return Promise.resolve({
+        return {
           value: [
             {
               "id": "d20c475c-6f96-449a-aee8-08146be187d3",
@@ -576,29 +562,24 @@ describe(commands.SITECLASSIFICATION_DISABLE, () => {
               ]
             }
           ]
-        });
+        };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
-    sinon.stub(request, 'delete').callsFake((opts) => {
+    sinon.stub(request, 'delete').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groupSettings/d20c475c-6f96-449a-aee8-08146be187d3`) {
         deleteRequestIssued = true;
-
-        return Promise.resolve({
-          value: [
-          ]
-        });
+        return { value: [] };
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: {} });
     assert(deleteRequestIssued);
   });

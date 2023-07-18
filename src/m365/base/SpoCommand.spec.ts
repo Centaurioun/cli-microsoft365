@@ -1,11 +1,12 @@
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { telemetry } from '../../telemetry';
 import auth from '../../Auth';
 import { Logger } from '../../cli/Logger';
 import { CommandError } from '../../Command';
 import request from '../../request';
+import { telemetry } from '../../telemetry';
 import { pid } from '../../utils/pid';
+import { session } from '../../utils/session';
 import { sinonUtil } from '../../utils/sinonUtil';
 import SpoCommand from './SpoCommand';
 
@@ -49,8 +50,9 @@ describe('SpoCommand', () => {
 
   before(() => {
     auth.service.connected = true;
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
   });
 
   beforeEach(() => {
@@ -80,16 +82,12 @@ describe('SpoCommand', () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('correctly reports an error while restoring auth info', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(auth, 'restoreAuth').callsFake(async () => { throw 'An error has occurred'; });
     const command = new MockCommand();
 
     const logger: Logger = {
@@ -102,7 +100,7 @@ describe('SpoCommand', () => {
   });
 
   it('doesn\'t execute command when error occurred while restoring auth info', async () => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.reject('An error has occurred'));
+    sinon.stub(auth, 'restoreAuth').callsFake(async () => { throw 'An error has occurred'; });
     const command = new MockCommand();
     const logger: Logger = {
       log: () => { },

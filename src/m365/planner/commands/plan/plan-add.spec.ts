@@ -7,14 +7,15 @@ import { CommandInfo } from '../../../../cli/CommandInfo';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./plan-add');
 
 describe(commands.PLAN_ADD, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
@@ -24,6 +25,7 @@ describe(commands.PLAN_ADD, () => {
   const validTitle = 'Plan name';
   const validOwnerGroupName = 'Group name';
   const validOwnerGroupId = '00000000-0000-0000-0000-000000000002';
+  const validRosterId = 'iryDKm9VLku2HIoC2G-TX5gABJw0';
   const user = 'user@contoso.com';
   const userId = '00000000-0000-0000-0000-000000000000';
   const user1 = 'user1@contoso.com';
@@ -42,6 +44,11 @@ describe(commands.PLAN_ADD, () => {
 
   const planResponse = {
     "id": validId,
+    "title": validTitle
+  };
+
+  const planRosterResponse = {
+    "id": validRosterId,
     "title": validTitle
   };
 
@@ -81,9 +88,11 @@ describe(commands.PLAN_ADD, () => {
   };
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     auth.service.accessTokens[(command as any).resource] = {
       accessToken: 'abc',
@@ -106,8 +115,8 @@ describe(commands.PLAN_ADD, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(false);
     (command as any).items = [];
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
@@ -115,22 +124,18 @@ describe(commands.PLAN_ADD, () => {
       request.get,
       request.post,
       request.patch,
-      accessToken.isAppOnlyAccessToken
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
     auth.service.accessTokens = {};
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.PLAN_ADD), true);
+    assert.strictEqual(command.name, commands.PLAN_ADD);
   });
 
   it('has a description', () => {
@@ -226,25 +231,13 @@ describe(commands.PLAN_ADD, () => {
     assert.strictEqual(actual, true);
   });
 
-  it('fails validation when using app only access token', async () => {
-    sinonUtil.restore(accessToken.isAppOnlyAccessToken);
-    sinon.stub(accessToken, 'isAppOnlyAccessToken').returns(true);
-
-    await assert.rejects(command.action(logger, {
-      options: {
-        title: validTitle,
-        ownerGroupId: validOwnerGroupId
-      }
-    }), new CommandError('This command does not support application permissions.'));
-  });
-
   it('correctly adds planner plan with given title with available ownerGroupId', async () => {
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
-        return Promise.resolve(planResponse);
+        return planResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -256,21 +249,64 @@ describe(commands.PLAN_ADD, () => {
     assert(loggerLogSpy.calledWith(planResponse));
   });
 
-  it('correctly adds planner plan with given title with available ownerGroupName', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf('/groups?$filter=displayName') > -1) {
-        return Promise.resolve(singleGroupResponse);
+  it('correctly adds planner plan with given title with available rosterId', async () => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
+        return planRosterResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    await command.action(logger, {
+      options: {
+        title: validTitle,
+        rosterId: validRosterId
+      }
+    });
+    assert(loggerLogSpy.calledWith(planRosterResponse));
+  });
+
+  it('correctly handles adding planner plan to a roster with an already linked plan', async () => {
+    const multipleRostersError = {
+      "error": {
+        "error": {
+          "message": "You do not have the required permissions to access this item, or the item may not exist."
+        }
+      }
+    };
+
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
-        return Promise.resolve(planResponse);
+        throw multipleRostersError;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
+    });
+
+    await assert.rejects(command.action(logger, {
+      options: {
+        title: validTitle,
+        rosterId: validRosterId
+      }
+    }), new CommandError(`You can only add 1 plan to a Roster`));
+  });
+
+  it('correctly adds planner plan with given title with available ownerGroupName', async () => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
+      if ((opts.url as string).indexOf('/groups?$filter=displayName') > -1) {
+        return singleGroupResponse;
+      }
+
+      throw `Invalid request ${opts.url}`;
+    });
+
+    sinon.stub(request, 'post').callsFake(async (opts) => {
+      if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
+        return planResponse;
+      }
+
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -284,28 +320,28 @@ describe(commands.PLAN_ADD, () => {
   });
 
   it('correctly adds planner plan with given title with ownerGroupId and shareWithUserIds', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsEtagResponse);
+        return planDetailsEtagResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
-        return Promise.resolve(planResponse);
+        return planResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsResponse);
+        return planDetailsResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -319,36 +355,36 @@ describe(commands.PLAN_ADD, () => {
   });
 
   it('correctly adds planner plan with given title with ownerGroupId and shareWithUserNames', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsEtagResponse);
+        return planDetailsEtagResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user)}'&$select=id,userPrincipalName`) {
-        return Promise.resolve(userResponse);
+        return userResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user1)}'&$select=id,userPrincipalName`) {
-        return Promise.resolve(user1Response);
+        return user1Response;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
-        return Promise.resolve(planResponse);
+        return planResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsResponse);
+        return planDetailsResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
     await command.action(logger, {
@@ -362,36 +398,36 @@ describe(commands.PLAN_ADD, () => {
   });
 
   it('fails when an invalid user is specified', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsEtagResponse);
+        return planDetailsEtagResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user)}'&$select=id,userPrincipalName`) {
-        return Promise.resolve(userResponse);
+        return userResponse;
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user1)}'&$select=id,userPrincipalName`) {
-        return Promise.resolve({ value: [] });
+        return { value: [] };
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans`) {
-        return Promise.resolve(planResponse);
+        return planResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/planner/plans/${validId}/details`) {
-        return Promise.resolve(planDetailsResponse);
+        return planDetailsResponse;
       }
 
-      return Promise.reject(`Invalid request ${opts.url}`);
+      throw `Invalid request ${opts.url}`;
     });
 
     await assert.rejects(command.action(logger, {
@@ -404,9 +440,7 @@ describe(commands.PLAN_ADD, () => {
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject("An error has occurred.");
-    });
+    sinon.stub(request, 'get').rejects(new Error("An error has occurred."));
 
     await assert.rejects(command.action(logger, { options: {} }), new CommandError("An error has occurred."));
   });

@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { formatting } from '../../../../utils/formatting';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
@@ -33,9 +34,10 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
   );
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -72,16 +74,12 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      auth.restoreAuth,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.EVENTRECEIVER_REMOVE), true);
+    assert.strictEqual(command.name, commands.EVENTRECEIVER_REMOVE);
   });
 
   it('has a description', () => {
@@ -175,10 +173,9 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
       throw 'Invalid request URL: ' + opts.url;
     });
 
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
 
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', scope: 'site', name: 'PnP Test Receiver', confirm: true } });
@@ -193,15 +190,14 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
 
       throw 'Invalid request URL: ' + opts.url;
     });
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', scope: 'site', name: 'PnP Test Receiver' } });
     assert(requestDeleteStub.called);
   });
@@ -214,15 +210,15 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
 
       throw 'Invalid request URL: ' + opts.url;
     });
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
+
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', name: 'PnP Test Receiver', listUrl: '/sites/portal/Lists/rerlist' } });
     assert(requestDeleteStub.called);
   });
@@ -235,15 +231,15 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
 
       throw 'Invalid request URL: ' + opts.url;
     });
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
+
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', name: 'PnP Test Receiver', listId: '8fccab0d-78e5-4037-a6a7-0168f9359cd4' } });
     assert(requestDeleteStub.called);
   });
@@ -256,15 +252,15 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
 
       throw 'Invalid request URL: ' + opts.url;
     });
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
+
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', scope: 'site', id: '625b1f4c-2869-457f-8b41-bed72059bb2b' } });
     assert(requestDeleteStub.called);
   });
@@ -277,15 +273,15 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
 
       throw 'Invalid request URL: ' + opts.url;
     });
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
+
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
+
     await command.action(logger, { options: { webUrl: 'https://contoso.sharepoint.com/sites/portal', listTitle: 'Documents', name: 'PnP Test Receiver' } });
     assert(requestDeleteStub.called);
   });
@@ -293,13 +289,12 @@ describe(commands.EVENTRECEIVER_REMOVE, () => {
   it('correctly handles API OData error', async () => {
     const errorMessage = 'Something went wrong';
 
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(async (): Promise<any> => {
-      return ({
-        stdout: eventReceiverResponse
-      });
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
+      stdout: eventReceiverResponse,
+      stderr: ''
     });
 
-    sinon.stub(request, 'delete').callsFake(async () => { throw { error: { error: { message: errorMessage } } }; });
+    sinon.stub(request, 'delete').rejects({ error: { error: { message: errorMessage } } });
 
     await assert.rejects(command.action(logger, {
       options: {

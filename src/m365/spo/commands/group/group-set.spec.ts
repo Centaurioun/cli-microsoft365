@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./group-set');
@@ -32,9 +33,10 @@ describe(commands.GROUP_SET, () => {
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -64,11 +66,7 @@ describe(commands.GROUP_SET, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -78,11 +76,6 @@ describe(commands.GROUP_SET, () => {
 
   it('has a description', () => {
     assert.notStrictEqual(command.description, null);
-  });
-
-  it('defines correct option sets', () => {
-    const optionSets = command.optionSets;
-    assert.deepStrictEqual(optionSets, [{ options: ['id', 'name'] }]);
   });
 
   it('fails validation when group id is not a number', async () => {
@@ -129,122 +122,138 @@ describe(commands.GROUP_SET, () => {
   });
 
   it('successfully updates group settings by id', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetById(${validId})`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
       options: {
         webUrl: validWebUrl,
         id: validId,
-        allowRequestToJoinLeave: true
+        allowRequestToJoinLeave: true,
+        verbose: true
       }
     });
   });
 
   it('successfully updates group settings by name', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetByName('${validName}')`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
       options: {
         webUrl: validWebUrl,
         name: validName,
-        allowRequestToJoinLeave: true
+        allowRequestToJoinLeave: true,
+        verbose: true
       }
     });
   });
 
   it('successfully updates group owner by ownerEmail, retrieves group by id', async () => {
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(() => Promise.resolve({
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
       stdout: JSON.stringify(userInfoResponse),
       stderr: ''
-    }));
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    });
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetById(${validId})`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/ensureUser('${userInfoResponse.userPrincipalName}')?$select=Id`) {
-        return Promise.resolve(ensureUserResponse);
+        return ensureUserResponse;
       }
 
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetById(${validId})/SetUserAsOwner(${ensureUserResponse.Id})`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
       options: {
         webUrl: validWebUrl,
         id: validId,
-        ownerEmail: validOwnerEmail
+        ownerEmail: validOwnerEmail,
+        verbose: true
       }
     });
   });
 
   it('successfully updates group owner by ownerUserName, retrieves group by name', async () => {
-    sinon.stub(Cli, 'executeCommandWithOutput').callsFake(() => Promise.resolve({
+    sinon.stub(Cli, 'executeCommandWithOutput').resolves({
       stdout: JSON.stringify(userInfoResponse),
       stderr: ''
-    }));
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    });
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetByName('${validName}')`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
-    sinon.stub(request, 'post').callsFake((opts) => {
+    sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/ensureUser('${userInfoResponse.userPrincipalName}')?$select=Id`) {
-        return Promise.resolve(ensureUserResponse);
+        return ensureUserResponse;
       }
 
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetByName('${validName}')/SetUserAsOwner(${ensureUserResponse.Id})`) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, {
       options: {
         webUrl: validWebUrl,
         name: validName,
-        ownerUserName: validOwnerUserName
+        ownerUserName: validOwnerUserName,
+        verbose: true
       }
     });
   });
 
   it('correctly handles random API error', async () => {
-    sinon.stub(request, 'patch').callsFake((opts) => {
+    const error = {
+      error: {
+        'odata.error': {
+          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+          message: {
+            value: 'An error has occurred'
+          }
+        }
+      }
+    };
+
+    sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${validWebUrl}/_api/web/sitegroups/GetByName('${validName}')`) {
-        return Promise.reject('An error has occurred');
+        throw error;
       }
 
-      return Promise.reject('Invalid Request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
       options: {
         webUrl: validWebUrl,
         name: validName,
-        autoAcceptRequestToJoinLeave: true
+        autoAcceptRequestToJoinLeave: true,
+        verbose: true
       }
-    }), new CommandError('An error has occurred'));
+    }), new CommandError(error.error['odata.error'].message.value));
   });
 });

@@ -1,11 +1,9 @@
 import { PlannerTaskDetails } from '@microsoft/microsoft-graph-types';
-import { AxiosRequestConfig } from 'axios';
 import { v4 } from 'uuid';
-import auth from '../../../../Auth';
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { accessToken } from '../../../../utils/accessToken';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
 import GraphCommand from '../../../base/GraphCommand';
 import commands from '../../commands';
@@ -57,11 +55,6 @@ class PlannerTaskChecklistItemAddCommand extends GraphCommand {
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    if (accessToken.isAppOnlyAccessToken(auth.service.accessTokens[this.resource].accessToken)) {
-      this.handleError('This command does not support application permissions.');
-      return;
-    }
-
     try {
       const etag = await this.getTaskDetailsEtag(args.options.taskId);
       const body: PlannerTaskDetails = {
@@ -75,7 +68,7 @@ class PlannerTaskChecklistItemAddCommand extends GraphCommand {
         }
       };
 
-      const requestOptions: AxiosRequestConfig = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/planner/tasks/${formatting.encodeQueryParameter(args.options.taskId)}/details`,
         headers: {
           accept: 'application/json;odata.metadata=none',
@@ -87,7 +80,7 @@ class PlannerTaskChecklistItemAddCommand extends GraphCommand {
       };
 
       const result = await request.patch<PlannerTaskDetails>(requestOptions);
-      if (args.options.output === 'json') {
+      if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(result.checklist);
       }
       else {
@@ -101,8 +94,8 @@ class PlannerTaskChecklistItemAddCommand extends GraphCommand {
     }
   }
 
-  private getTaskDetailsEtag(taskId: string): Promise<string> {
-    const requestOptions: AxiosRequestConfig = {
+  private async getTaskDetailsEtag(taskId: string): Promise<string> {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/tasks/${formatting.encodeQueryParameter(taskId)}/details`,
       headers: {
         accept: 'application/json;odata.metadata=minimal'
@@ -110,10 +103,8 @@ class PlannerTaskChecklistItemAddCommand extends GraphCommand {
       responseType: 'json'
     };
 
-    return request
-      .get(requestOptions)
-      .then((task: any) => task['@odata.etag'],
-        () => Promise.reject('Planner task was not found.'));
+    const task = await request.get<any>(requestOptions);
+    return task['@odata.etag'];
   }
 }
 

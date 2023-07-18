@@ -8,6 +8,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./user-list');
@@ -22,6 +23,7 @@ describe(commands.USER_LIST, () => {
     sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -50,11 +52,7 @@ describe(commands.USER_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
@@ -75,8 +73,8 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users.json?page=1') {
         return Promise.resolve(
           [
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" }]
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" }]
         );
       }
       return Promise.reject('Invalid request');
@@ -90,8 +88,8 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users.json?page=1') {
         return Promise.resolve(
           [
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" }
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" }
           ]
         );
       }
@@ -105,8 +103,8 @@ describe(commands.USER_LIST, () => {
     sinon.stub(request, 'get').callsFake((opts) => {
       if (opts.url === 'https://www.yammer.com/api/v1/users.json?page=1&sort_by=messages') {
         return Promise.resolve([
-          { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-          { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" }
+          { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+          { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" }
         ]);
       }
       return Promise.reject('Invalid request');
@@ -122,8 +120,8 @@ describe(commands.USER_LIST, () => {
       if (i++ === 0) {
         return Promise.resolve({
           users: [
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" }],
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" }],
           more_available: true
         });
       }
@@ -147,56 +145,56 @@ describe(commands.USER_LIST, () => {
       if (i++ === 0) {
         return Promise.resolve(
           [
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" }]
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" }]
         );
       }
       else {
@@ -216,8 +214,8 @@ describe(commands.USER_LIST, () => {
       if (i++ === 0) {
         return Promise.resolve({
           users: [
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" }],
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" }],
           more_available: true
         });
       }
@@ -237,8 +235,8 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users.json?page=1&reverse=true') {
         return Promise.resolve(
           [
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
             { "type": "user", "id": 1496550643, "network_id": 801445, "state": "active", "full_name": "Daniela Lamber" }]
         );
       }
@@ -253,8 +251,8 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users/in_group/5785177.json?page=1&reverse=true') {
         return Promise.resolve({
           users: [
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" },
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" },
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
             { "type": "user", "id": 1496550643, "network_id": 801445, "state": "active", "full_name": "Daniela Lamber" }],
           has_more: true
         });
@@ -271,7 +269,7 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users/in_group/5785177.json?page=1') {
         return Promise.resolve({
           users: [
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" }, { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" }],
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" }, { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" }],
           has_more: false
         });
       }
@@ -286,8 +284,8 @@ describe(commands.USER_LIST, () => {
       if (opts.url === 'https://www.yammer.com/api/v1/users.json?page=1&letter=P') {
         return Promise.resolve(
           [
-            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "Patrick Lamber" },
-            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Sergio Cappelletti" }]
+            { "type": "user", "id": 1496550646, "network_id": 801445, "state": "active", "full_name": "John Doe" },
+            { "type": "user", "id": 1496550647, "network_id": 801445, "state": "active", "full_name": "Adam Doe" }]
         );
       }
       return Promise.reject('Invalid request');

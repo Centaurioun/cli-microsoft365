@@ -1,4 +1,4 @@
-import auth, { Auth } from '../../../../Auth';
+import auth from '../../../../Auth';
 import { Cli } from '../../../../cli/Cli';
 import Command from '../../../../Command';
 import { Logger } from '../../../../cli/Logger';
@@ -6,10 +6,11 @@ import GlobalOptions from '../../../../GlobalOptions';
 import GraphCommand from "../../../base/GraphCommand";
 import commands from '../../commands';
 import { odata } from '../../../../utils/odata';
-import { Meeting } from '../Meeting';
 import { validation } from '../../../../utils/validation';
 import * as AadUserGetCommand from '../../../aad/commands/user/user-get';
 import { Options as AadUserGetCommandOptions } from '../../../aad/commands/user/user-get';
+import { accessToken } from '../../../../utils/accessToken';
+import { Event } from '@microsoft/microsoft-graph-types';
 
 interface CommandArgs {
   options: Options;
@@ -102,13 +103,13 @@ class TeamsMeetingListCommand extends GraphCommand {
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     try {
-      const isAppOnlyAuth: boolean | undefined = Auth.isAppOnlyAuth(auth.service.accessTokens[this.resource].accessToken);
+      const isAppOnlyAccessToken: boolean | undefined = accessToken.isAppOnlyAccessToken(auth.service.accessTokens[this.resource].accessToken);
       if (this.verbose) {
-        logger.logToStderr(`Retrieving meetings for ${isAppOnlyAuth ? 'specific user' : 'currently logged in user'}`);
+        logger.logToStderr(`Retrieving meetings for ${isAppOnlyAccessToken ? 'specific user' : 'currently logged in user'}`);
       }
 
       let requestUrl = `${this.resource}/v1.0/`;
-      if (isAppOnlyAuth) {
+      if (isAppOnlyAccessToken) {
         if (!args.options.userId && !args.options.userName && !args.options.email) {
           throw `The option 'userId', 'userName' or 'email' is required when retrieving meetings using app only permissions`;
         }
@@ -143,9 +144,9 @@ class TeamsMeetingListCommand extends GraphCommand {
         requestUrl += ' and isOrganizer eq true';
       }
 
-      const res = await odata.getAllItems<Meeting>(requestUrl);
+      const res = await odata.getAllItems<Event>(requestUrl);
       const resFiltered = res.filter(y => y.isOnlineMeeting);
-      if (!args.options.output || args.options.output === 'json') {
+      if (!args.options.output || !Cli.shouldTrimOutput(args.options.output)) {
         logger.log(resFiltered);
       }
       else {
@@ -153,8 +154,8 @@ class TeamsMeetingListCommand extends GraphCommand {
         logger.log(resFiltered.map(i => {
           return {
             subject: i.subject,
-            start: i.start.dateTime,
-            end: i.end.dateTime
+            start: i.start!.dateTime,
+            end: i.end!.dateTime
           };
         }));
       }

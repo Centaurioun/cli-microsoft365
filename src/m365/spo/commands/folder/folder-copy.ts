@@ -1,7 +1,7 @@
 import * as url from 'url';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { spo } from '../../../../utils/spo';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
@@ -20,8 +20,6 @@ interface Options extends GlobalOptions {
 }
 
 class SpoFolderCopyCommand extends SpoCommand {
-  private dots?: string;
-
   public get name(): string {
     return commands.FOLDER_COPY;
   }
@@ -32,12 +30,12 @@ class SpoFolderCopyCommand extends SpoCommand {
 
   constructor() {
     super();
-  
+
     this.#initTelemetry();
     this.#initOptions();
     this.#initValidators();
   }
-  
+
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
@@ -45,7 +43,7 @@ class SpoFolderCopyCommand extends SpoCommand {
       });
     });
   }
-  
+
   #initOptions(): void {
     this.options.unshift(
       {
@@ -62,7 +60,7 @@ class SpoFolderCopyCommand extends SpoCommand {
       }
     );
   }
-  
+
   #initValidators(): void {
     this.validators.push(
       async (args: CommandArgs) => validation.isValidSharePointUrl(args.options.webUrl)
@@ -70,7 +68,7 @@ class SpoFolderCopyCommand extends SpoCommand {
   }
 
   protected getExcludedOptionsWithUrls(): string[] | undefined {
-    return ['targetUrl'];
+    return ['targetUrl', 'sourceUrl'];
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
@@ -78,11 +76,11 @@ class SpoFolderCopyCommand extends SpoCommand {
     const parsedUrl: url.UrlWithStringQuery = url.parse(webUrl);
     const tenantUrl: string = `${parsedUrl.protocol}//${parsedUrl.hostname}`;
 
-    const sourceAbsoluteUrl: string = urlUtil.urlCombine(webUrl, args.options.sourceUrl);
+    const serverRelativePath = urlUtil.getServerRelativePath(webUrl, args.options.sourceUrl);
+    const sourceAbsoluteUrl: string = urlUtil.urlCombine(tenantUrl, serverRelativePath);
     const allowSchemaMismatch: boolean = args.options.allowSchemaMismatch || false;
-    const requestUrl: string = urlUtil.urlCombine(webUrl, '/_api/site/CreateCopyJobs');
-    const requestOptions: any = {
-      url: requestUrl,
+    const requestOptions: CliRequestOptions = {
+      url: urlUtil.urlCombine(webUrl, '/_api/site/CreateCopyJobs'),
       headers: {
         'accept': 'application/json;odata=nometadata'
       },
@@ -99,12 +97,10 @@ class SpoFolderCopyCommand extends SpoCommand {
 
     try {
       const jobInfo = await request.post<any>(requestOptions);
-      this.dots = '';
-
       const copyJobInfo: any = jobInfo.value[0];
       const progressPollInterval: number = 30 * 60; //used previously implemented interval. The API does not provide guidance on what value should be used.
 
-      
+
       await new Promise<void>((resolve: () => void, reject: (error: any) => void): void => {
         setTimeout(() => {
           spo.waitUntilCopyJobFinished({
@@ -114,7 +110,6 @@ class SpoFolderCopyCommand extends SpoCommand {
             resolve,
             reject,
             logger,
-            dots: this.dots,
             debug: this.debug,
             verbose: this.verbose
           });

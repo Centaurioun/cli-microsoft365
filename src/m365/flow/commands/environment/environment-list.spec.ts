@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./environment-list');
@@ -16,8 +17,10 @@ describe(commands.ENVIRONMENT_LIST, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -44,16 +47,12 @@ describe(commands.ENVIRONMENT_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.ENVIRONMENT_LIST), true);
+    assert.strictEqual(command.name, commands.ENVIRONMENT_LIST);
   });
 
   it('has a description', () => {
@@ -65,12 +64,12 @@ describe(commands.ENVIRONMENT_LIST, () => {
   });
 
   it('retrieves Microsoft Flow environments (debug)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.ProcessSimple/environments?api-version=2016-11-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             value: [
               {
                 "name": "Default-d87a7535-dd31-4437-bfe1-95340acd55c5",
@@ -127,11 +126,11 @@ describe(commands.ENVIRONMENT_LIST, () => {
                 }
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { debug: true } });
@@ -196,12 +195,12 @@ describe(commands.ENVIRONMENT_LIST, () => {
   });
 
   it('retrieves Microsoft Flow environments', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.ProcessSimple/environments?api-version=2016-11-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
+          return {
             value: [
               {
                 "name": "Default-d87a7535-dd31-4437-bfe1-95340acd55c5",
@@ -258,11 +257,11 @@ describe(commands.ENVIRONMENT_LIST, () => {
                 }
               }
             ]
-          });
+          };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: {} });
@@ -327,18 +326,16 @@ describe(commands.ENVIRONMENT_LIST, () => {
   });
 
   it('correctly handles no environments', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.ProcessSimple/environments?api-version=2016-11-01`) > -1) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return Promise.resolve({
-            value: []
-          });
+          return { value: [] };
         }
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: {} });
@@ -346,17 +343,15 @@ describe(commands.ENVIRONMENT_LIST, () => {
   });
 
   it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').callsFake(() => {
-      return Promise.reject({
-        error: {
-          'odata.error': {
-            code: '-1, InvalidOperationException',
-            message: {
-              value: `Resource '' does not exist or one of its queried reference-property objects are not present`
-            }
+    sinon.stub(request, 'get').rejects({
+      error: {
+        'odata.error': {
+          code: '-1, InvalidOperationException',
+          message: {
+            value: `Resource '' does not exist or one of its queried reference-property objects are not present`
           }
         }
-      });
+      }
     });
 
     await assert.rejects(command.action(logger, { options: {} } as any),

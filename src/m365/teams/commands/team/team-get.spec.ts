@@ -8,20 +8,24 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./team-get');
 
 describe(commands.TEAM_GET, () => {
+  let cli: Cli;
   let log: string[];
   let logger: Logger;
   let loggerLogSpy: sinon.SinonSpy;
   let commandInfo: CommandInfo;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    cli = Cli.getInstance();
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
     commandInfo = Cli.getCommandInfo(command);
   });
@@ -40,25 +44,23 @@ describe(commands.TEAM_GET, () => {
       }
     };
     loggerLogSpy = sinon.spy(logger, 'log');
+    sinon.stub(cli, 'getSettingWithDefaultValue').callsFake(((settingName, defaultValue) => defaultValue));
   });
 
   afterEach(() => {
     sinonUtil.restore([
-      request.get
+      request.get,
+      cli.getSettingWithDefaultValue
     ]);
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.TEAM_GET), true);
+    assert.strictEqual(command.name, commands.TEAM_GET);
   });
 
   it('has a description', () => {
@@ -94,7 +96,7 @@ describe(commands.TEAM_GET, () => {
   });
 
   it('fails to get team information due to wrong team id', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/1caf7dcd-7e83-4c3a-94f7-932a1299c843`) {
         return Promise.reject({
           "error": {
@@ -111,7 +113,7 @@ describe(commands.TEAM_GET, () => {
         });
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -122,9 +124,9 @@ describe(commands.TEAM_GET, () => {
   });
 
   it('fails when team name does not exist', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq 'Finance'`) {
-        return Promise.resolve({
+        return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#teams",
           "@odata.count": 1,
           "value": [
@@ -133,10 +135,9 @@ describe(commands.TEAM_GET, () => {
               "resourceProvisioningOptions": []
             }
           ]
-        }
-        );
+        };
       }
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await assert.rejects(command.action(logger, {
@@ -148,10 +149,10 @@ describe(commands.TEAM_GET, () => {
   });
 
   it('retrieves information about the specified Microsoft Team', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/1caf7dcd-7e83-4c3a-94f7-932a1299c844`) {
 
-        return Promise.resolve({
+        return {
           "id": "1caf7dcd-7e83-4c3a-94f7-932a1299c844",
           "createdDateTime": "2017-11-29T03:27:05Z",
           "displayName": "Finance",
@@ -190,10 +191,10 @@ describe(commands.TEAM_GET, () => {
             "allowStickersAndMemes": true,
             "allowCustomMemes": true
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { id: '1caf7dcd-7e83-4c3a-94f7-932a1299c844' } });
@@ -240,22 +241,22 @@ describe(commands.TEAM_GET, () => {
   });
 
   it('retrieves information about the specified Microsoft Teams team by name', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
 
       if (opts.url === `https://graph.microsoft.com/v1.0/groups?$filter=displayName eq 'Finance'`) {
-        return Promise.resolve({
+        return {
           "value": [
             {
               "id": "1caf7dcd-7e83-4c3a-94f7-932a1299c844",
               "resourceProvisioningOptions": ["Team"]
             }
           ]
-        });
+        };
       }
 
       if (opts.url === `https://graph.microsoft.com/v1.0/teams/1caf7dcd-7e83-4c3a-94f7-932a1299c844`) {
 
-        return Promise.resolve({
+        return {
           "id": "1caf7dcd-7e83-4c3a-94f7-932a1299c844",
           "createdDateTime": "2017-11-29T03:27:05Z",
           "displayName": "Finance",
@@ -294,10 +295,10 @@ describe(commands.TEAM_GET, () => {
             "allowStickersAndMemes": true,
             "allowCustomMemes": true
           }
-        });
+        };
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { name: 'Finance' } });

@@ -1,7 +1,7 @@
-import { AxiosRequestConfig } from 'axios';
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { odata } from '../../../../utils/odata';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
@@ -90,7 +90,7 @@ class SpoGroupListCommand extends SpoCommand {
   }
 
   private async getAssociatedGroups(baseUrl: string, options: Options, logger: Logger): Promise<void> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: baseUrl + '?$expand=AssociatedOwnerGroup,AssociatedMemberGroup,AssociatedVisitorGroup&$select=AssociatedOwnerGroup,AssociatedMemberGroup,AssociatedVisitorGroup',
       headers: {
         'accept': 'application/json;odata=nometadata'
@@ -100,7 +100,7 @@ class SpoGroupListCommand extends SpoCommand {
 
     const groupProperties = await request.get<AssociatedGroupPropertiesCollection>(requestOptions);
     logger.log(groupProperties);
-    if (!options.output || options.output === 'json') {
+    if (!options.output || !Cli.shouldTrimOutput(options.output)) {
       logger.log(groupProperties);
     }
     else {

@@ -1,7 +1,9 @@
+import { Cli } from '../../../../cli/Cli';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { formatting } from '../../../../utils/formatting';
+import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
 import commands from '../../commands';
@@ -46,7 +48,7 @@ interface FileSharingInformation {
   SharedWith: string;
 }
 
-class SpoFileSharinginfoGetCommand extends SpoCommand {
+class SpoFileSharingInfoGetCommand extends SpoCommand {
   public get name(): string {
     return commands.FILE_SHARINGINFO_GET;
   }
@@ -116,7 +118,7 @@ class SpoFileSharinginfoGetCommand extends SpoCommand {
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     if (this.verbose) {
-      logger.logToStderr(`Retrieving sharing information report for the file...`);
+      logger.logToStderr(`Retrieving sharing information report for the file ${args.options.fileId || args.options.fileUrl}`);
     }
 
     try {
@@ -125,7 +127,7 @@ class SpoFileSharinginfoGetCommand extends SpoCommand {
         logger.logToStderr(`Retrieving sharing information report for the file with item Id  ${fileInformation.fileItemId}`);
       }
 
-      const requestOptions: any = {
+      const requestOptions: CliRequestOptions = {
         url: `${args.options.webUrl}/_api/web/lists/getbytitle('${formatting.encodeQueryParameter(fileInformation.libraryName)}')/items(${fileInformation.fileItemId})/GetSharingInformation?$select=permissionsInformation&$Expand=permissionsInformation`,
         headers: {
           'accept': 'application/json;odata=nometadata'
@@ -137,7 +139,7 @@ class SpoFileSharinginfoGetCommand extends SpoCommand {
       // typically, we don't do this, but in this case, we need to due to
       // the complexity of the retrieved object and the fact that we can't
       // use the generic way of simplifying the output
-      if (args.options.output === 'json') {
+      if (!Cli.shouldTrimOutput(args.options.output)) {
         logger.log(res);
       }
       else {
@@ -169,17 +171,18 @@ class SpoFileSharinginfoGetCommand extends SpoCommand {
     }
   }
 
-  private getNeededFileInformation(args: CommandArgs): Promise<{ fileItemId: number; libraryName: string; }> {
+  private async getNeededFileInformation(args: CommandArgs): Promise<{ fileItemId: number; libraryName: string; }> {
     let requestUrl: string = '';
 
     if (args.options.fileId) {
-      requestUrl = `${args.options.webUrl}/_api/web/GetFileById('${escape(args.options.fileId as string)}')/?$select=ListItemAllFields/Id,ListItemAllFields/ParentList/Title&$expand=ListItemAllFields/ParentList`;
+      requestUrl = `${args.options.webUrl}/_api/web/GetFileById('${args.options.fileId}')/?$select=ListItemAllFields/Id,ListItemAllFields/ParentList/Title&$expand=ListItemAllFields/ParentList`;
     }
     else {
-      requestUrl = `${args.options.webUrl}/_api/web/GetFileByServerRelativePath(decodedUrl='${formatting.encodeQueryParameter(args.options.fileUrl as string)}')?$select=ListItemAllFields/Id,ListItemAllFields/ParentList/Title&$expand=ListItemAllFields/ParentList`;
+      const serverRelPath = urlUtil.getServerRelativePath(args.options.webUrl, args.options.fileUrl!);
+      requestUrl = `${args.options.webUrl}/_api/web/GetFileByServerRelativePath(decodedUrl='${formatting.encodeQueryParameter(serverRelPath)}')?$select=ListItemAllFields/Id,ListItemAllFields/ParentList/Title&$expand=ListItemAllFields/ParentList`;
     }
 
-    const requestOptions: any = {
+    const requestOptions: CliRequestOptions = {
       url: requestUrl,
       headers: {
         'accept': 'application/json;odata=nometadata'
@@ -187,12 +190,12 @@ class SpoFileSharinginfoGetCommand extends SpoCommand {
       responseType: 'json'
     };
 
-    return request.get<{ ListItemAllFields: { Id: string; ParentList: { Title: string }; } }>(requestOptions)
-      .then((res: { ListItemAllFields: { Id: string; ParentList: { Title: string }; } }): Promise<{ fileItemId: number; libraryName: string; }> => Promise.resolve({
-        fileItemId: parseInt(res.ListItemAllFields.Id),
-        libraryName: res.ListItemAllFields.ParentList.Title
-      }));
+    const res = await request.get<{ ListItemAllFields: { Id: string; ParentList: { Title: string }; } }>(requestOptions);
+    return {
+      fileItemId: parseInt(res.ListItemAllFields.Id),
+      libraryName: res.ListItemAllFields.ParentList.Title
+    };
   }
 }
 
-module.exports = new SpoFileSharinginfoGetCommand();
+module.exports = new SpoFileSharingInfoGetCommand();

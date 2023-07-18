@@ -25,6 +25,7 @@ interface CommandArgs {
 export interface Options extends GlobalOptions {
   classification?: string;
   disableFlows?: boolean;
+  socialBarOnSitePagesDisabled?: boolean;
   isPublic?: boolean;
   owners?: string;
   shareByEmailEnabled?: boolean;
@@ -50,7 +51,6 @@ class SpoSiteSetCommand extends SpoCommand {
   private spoAdminUrl?: string;
   private context?: FormDigestInfo;
   private tenantId?: string;
-  private dots?: string;
 
   public get name(): string {
     return commands.SITE_SET;
@@ -74,6 +74,7 @@ class SpoSiteSetCommand extends SpoCommand {
       Object.assign(this.telemetryProperties, {
         classification: typeof args.options.classification === 'string',
         disableFlows: args.options.disableFlows,
+        socialBarOnSitePagesDisabled: args.options.socialBarOnSitePagesDisabled,
         isPublic: args.options.isPublic,
         owners: typeof args.options.owners !== 'undefined',
         shareByEmailEnabled: args.options.shareByEmailEnabled,
@@ -107,6 +108,10 @@ class SpoSiteSetCommand extends SpoCommand {
       },
       {
         option: '--disableFlows [disableFlows]',
+        autocomplete: ['true', 'false']
+      },
+      {
+        option: '--socialBarOnSitePagesDisabled [socialBarOnSitePagesDisabled]',
         autocomplete: ['true', 'false']
       },
       {
@@ -176,6 +181,7 @@ class SpoSiteSetCommand extends SpoCommand {
 
         if (typeof args.options.classification === 'undefined' &&
           typeof args.options.disableFlows === 'undefined' &&
+          typeof args.options.socialBarOnSitePagesDisabled === 'undefined' &&
           typeof args.options.title === 'undefined' &&
           typeof args.options.description === 'undefined' &&
           typeof args.options.isPublic === 'undefined' &&
@@ -253,12 +259,11 @@ class SpoSiteSetCommand extends SpoCommand {
 
   #initTypes(): void {
     this.types.string.push('classification');
-    this.types.boolean.push('isPublic', 'disableFlows', 'shareByEmailEnabled', 'allowSelfServiceUpgrade', 'noScriptSite');
+    this.types.boolean.push('isPublic', 'disableFlows', 'socialBarOnSitePagesDisabled', 'shareByEmailEnabled', 'allowSelfServiceUpgrade', 'noScriptSite');
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     try {
-      this.dots = '';
       this.tenantId = await spo.getTenantId(logger, this.debug);
       this.spoAdminUrl = await spo.getSpoAdminUrl(logger, this.debug);
       this.context = await spo.ensureFormDigest(this.spoAdminUrl, logger, this.context, this.debug);
@@ -354,7 +359,6 @@ class SpoSiteSetCommand extends SpoCommand {
             reject,
             logger,
             currentContext: this.context as FormDigestInfo,
-            dots: this.dots,
             debug: this.debug,
             verbose: this.verbose
           });
@@ -571,7 +575,7 @@ class SpoSiteSetCommand extends SpoCommand {
 
   private updateSiteProperties(logger: Logger, args: CommandArgs): Promise<string> {
     const isGroupConnectedSite = this.isGroupConnectedSite();
-    const sharedProperties: string[] = ['classification', 'disableFlows', 'shareByEmailEnabled', 'sharingCapability', 'noScriptSite'];
+    const sharedProperties: string[] = ['classification', 'disableFlows', 'socialBarOnSitePagesDisabled', 'shareByEmailEnabled', 'sharingCapability', 'noScriptSite'];
     const siteProperties: string[] = ['title', 'resourceQuota', 'resourceQuotaWarningLevel', 'storageQuota', 'storageQuotaWarningLevel', 'allowSelfServiceUpgrade'];
     let properties: string[] = sharedProperties;
 
@@ -630,6 +634,9 @@ class SpoSiteSetCommand extends SpoCommand {
         }
         if (typeof args.options.disableFlows !== 'undefined') {
           payload.push(`<SetProperty Id="${propertyId++}" ObjectPathId="5" Name="DisableFlows"><Parameter Type="Boolean">${args.options.disableFlows}</Parameter></SetProperty>`);
+        }
+        if (typeof args.options.socialBarOnSitePagesDisabled !== 'undefined') {
+          payload.push(`<SetProperty Id="${propertyId++}" ObjectPathId="5" Name="SocialBarOnSitePagesDisabled"><Parameter Type="Boolean">${args.options.socialBarOnSitePagesDisabled}</Parameter></SetProperty>`);
         }
         if (typeof args.options.shareByEmailEnabled !== 'undefined') {
           payload.push(`<SetProperty Id="${propertyId++}" ObjectPathId="5" Name="ShareByEmailEnabled"><Parameter Type="Boolean">${args.options.shareByEmailEnabled}</Parameter></SetProperty>`);

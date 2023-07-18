@@ -7,6 +7,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./oauth2grant-remove');
@@ -19,9 +20,10 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
   let promptOptions: any;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -55,16 +57,12 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.OAUTH2GRANT_REMOVE), true);
+    assert.strictEqual(command.name, commands.OAUTH2GRANT_REMOVE);
   });
 
   it('has a description', () => {
@@ -72,18 +70,16 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
   });
 
   it('removes OAuth2 permission grant when prompt confirmed (debug)', async () => {
-    const deleteRequestStub = sinon.stub(request, 'delete').callsFake((opts) => {
+    const deleteRequestStub = sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants/YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, { options: { debug: true, grantId: 'YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek' } });
     assert(loggerLogToStderrSpy.called);
@@ -91,18 +87,16 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
   });
 
   it('removes OAuth2 permission grant when prompt confirmed', async () => {
-    const deleteRequestStub = sinon.stub(request, 'delete').callsFake((opts) => {
+    const deleteRequestStub = sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants/YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: true });
 
     await command.action(logger, { options: { grantId: 'YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek' } });
     assert(loggerLogSpy.notCalled);
@@ -110,12 +104,12 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
   });
 
   it('removes OAuth2 permission grant when confirm specified', async () => {
-    const deleteRequestStub = sinon.stub(request, 'delete').callsFake((opts) => {
+    const deleteRequestStub = sinon.stub(request, 'delete').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants/YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek`) > -1) {
-        return Promise.resolve();
+        return;
       }
 
-      return Promise.reject('Invalid request');
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { grantId: 'YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek', confirm: true } });
@@ -161,9 +155,7 @@ describe(commands.OAUTH2GRANT_REMOVE, () => {
     const deleteSpy = sinon.spy(request, 'delete');
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
+    sinon.stub(Cli, 'prompt').resolves({ continue: false });
 
     await command.action(logger, { options: { debug: true, grantId: 'YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek' } });
     assert(deleteSpy.notCalled);

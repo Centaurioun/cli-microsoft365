@@ -1,10 +1,9 @@
 import { PlannerPlan, PlannerPlanDetails, User } from '@microsoft/microsoft-graph-types';
-import auth from '../../../../Auth';
 import { Logger } from '../../../../cli/Logger';
+import { CommandError } from '../../../../Command';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { aadGroup } from '../../../../utils/aadGroup';
-import { accessToken } from '../../../../utils/accessToken';
 import { formatting } from '../../../../utils/formatting';
 import { validation } from '../../../../utils/validation';
 import GraphCommand from '../../../base/GraphCommand';
@@ -18,6 +17,7 @@ interface Options extends GlobalOptions {
   title: string;
   ownerGroupId?: string;
   ownerGroupName?: string;
+  rosterId?: string;
   shareWithUserIds?: string;
   shareWithUserNames?: string;
 }
@@ -67,6 +67,9 @@ class PlannerPlanAddCommand extends GraphCommand {
         option: "--ownerGroupName [ownerGroupName]"
       },
       {
+        option: "--rosterId [rosterId]"
+      },
+      {
         option: '--shareWithUserIds [shareWithUserIds]'
       },
       {
@@ -96,27 +99,31 @@ class PlannerPlanAddCommand extends GraphCommand {
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['ownerGroupId', 'ownerGroupName'] });
+    this.optionSets.push({ options: ['ownerGroupId', 'ownerGroupName', 'rosterId'] });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    if (accessToken.isAppOnlyAccessToken(auth.service.accessTokens[this.resource].accessToken)) {
-      this.handleError('This command does not support application permissions.');
-      return;
-    }
-
     try {
-      const groupId = await this.getGroupId(args);
-      const requestOptions: any = {
+      const data: any = {
+        title: args.options.title
+      };
+      if (args.options.rosterId) {
+        data.container = {
+          "url": `https://graph.microsoft.com/v1.0/planner/rosters/${args.options.rosterId}`
+        };
+      }
+      else {
+        const groupId = await this.getGroupId(args);
+        data.owner = groupId;
+      }
+
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/planner/plans`,
         headers: {
           'accept': 'application/json;odata.metadata=none'
         },
         responseType: 'json',
-        data: {
-          owner: groupId,
-          title: args.options.title
-        }
+        data: data
       };
 
       const newPlan = await request.post<any>(requestOptions);
@@ -124,44 +131,43 @@ class PlannerPlanAddCommand extends GraphCommand {
       logger.log(result);
     }
     catch (err: any) {
+      if (err.error && err.error.error.message === "You do not have the required permissions to access this item, or the item may not exist.") {
+        throw new CommandError("You can only add 1 plan to a Roster");
+      }
       this.handleRejectedODataJsonPromise(err);
     }
   }
 
-  private updatePlanDetails(options: Options, newPlan: PlannerPlan): Promise<PlannerPlan & PlannerPlanDetails> {
+  private async updatePlanDetails(options: Options, newPlan: PlannerPlan): Promise<PlannerPlan & PlannerPlanDetails> {
     const planId = newPlan.id as string;
 
     if (!options.shareWithUserIds && !options.shareWithUserNames) {
-      return Promise.resolve(newPlan);
+      return newPlan;
     }
 
-    return Promise
-      .all([this.generateSharedWith(options), this.getPlanDetailsEtag(planId)])
-      .then(resArray => {
-        const sharedWith = resArray[0];
-        const etag = resArray[1];
-        const requestOptionsPlanDetails: any = {
-          url: `${this.resource}/v1.0/planner/plans/${planId}/details`,
-          headers: {
-            'accept': 'application/json;odata.metadata=none',
-            'If-Match': etag,
-            'Prefer': 'return=representation'
-          },
-          responseType: 'json',
-          data: {
-            sharedWith: sharedWith
-          }
-        };
+    const resArray = await Promise.all([this.generateSharedWith(options), this.getPlanDetailsEtag(planId)]);
+    const sharedWith = resArray[0];
+    const etag = resArray[1];
 
-        return request.patch(requestOptionsPlanDetails);
-      })
-      .then(planDetails => {
-        return { ...newPlan, ...planDetails as PlannerPlanDetails };
-      });
+    const requestOptionsPlanDetails: CliRequestOptions = {
+      url: `${this.resource}/v1.0/planner/plans/${planId}/details`,
+      headers: {
+        'accept': 'application/json;odata.metadata=none',
+        'If-Match': etag,
+        'Prefer': 'return=representation'
+      },
+      responseType: 'json',
+      data: {
+        sharedWith: sharedWith
+      }
+    };
+
+    const planDetails = await request.patch(requestOptionsPlanDetails);
+    return { ...newPlan, ...planDetails as PlannerPlanDetails };
   }
 
-  private getPlanDetailsEtag(planId: string): Promise<string> {
-    const requestOptions: any = {
+  private async getPlanDetailsEtag(planId: string): Promise<string> {
+    const requestOptions: CliRequestOptions = {
       url: `${this.resource}/v1.0/planner/plans/${planId}/details`,
       headers: {
         accept: 'application/json'
@@ -169,26 +175,23 @@ class PlannerPlanAddCommand extends GraphCommand {
       responseType: 'json'
     };
 
-    return request
-      .get(requestOptions)
-      .then((response: any) => response['@odata.etag']);
+    const response = await request.get<any>(requestOptions);
+    return response['@odata.etag'];
   }
 
-  private generateSharedWith(options: Options): Promise<{ [userId: string]: boolean }> {
+  private async generateSharedWith(options: Options): Promise<{ [userId: string]: boolean }> {
     const sharedWith: { [userId: string]: boolean } = {};
 
-    return this
-      .getUserIds(options)
-      .then((userIds) => {
-        userIds.map(x => sharedWith[x] = true);
+    const userIds = await this.getUserIds(options);
 
-        return Promise.resolve(sharedWith);
-      });
+    userIds.map(x => sharedWith[x] = true);
+
+    return sharedWith;
   }
 
-  private getUserIds(options: Options): Promise<string[]> {
+  private async getUserIds(options: Options): Promise<string[]> {
     if (options.shareWithUserIds) {
-      return Promise.resolve(options.shareWithUserIds.split(','));
+      return options.shareWithUserIds.split(',');
     }
 
     // Hitting this section means assignedToUserNames won't be undefined
@@ -196,7 +199,7 @@ class PlannerPlanAddCommand extends GraphCommand {
     const userArr: string[] = userNames.split(',').map(o => o.trim());
 
     const promises: Promise<{ value: User[] }>[] = userArr.map(user => {
-      const requestOptions: any = {
+      const requestOptions: CliRequestOptions = {
         url: `${this.resource}/v1.0/users?$filter=userPrincipalName eq '${formatting.encodeQueryParameter(user)}'&$select=id,userPrincipalName`,
         headers: {
           'content-type': 'application/json'
@@ -207,31 +210,28 @@ class PlannerPlanAddCommand extends GraphCommand {
       return request.get(requestOptions);
     });
 
-    return Promise
-      .all(promises)
-      .then((usersRes: { value: User[] }[]): Promise<string[]> => {
-        const userUpns = usersRes.map(res => res.value[0]?.userPrincipalName as string);
-        const userIds = usersRes.map(res => res.value[0]?.id as string);
+    const usersRes = await Promise.all(promises);
 
-        // Find the members where no graph response was found
-        const invalidUsers = userArr.filter(user => !userUpns.some((upn) => upn?.toLowerCase() === user.toLowerCase()));
+    const userUpns = usersRes.map(res => res.value[0]?.userPrincipalName as string);
+    const userIds = usersRes.map(res => res.value[0]?.id as string);
 
-        if (invalidUsers && invalidUsers.length > 0) {
-          return Promise.reject(`Cannot proceed with planner plan creation. The following users provided are invalid : ${invalidUsers.join(',')}`);
-        }
+    // Find the members where no graph response was found
+    const invalidUsers = userArr.filter(user => !userUpns.some((upn) => upn?.toLowerCase() === user.toLowerCase()));
 
-        return Promise.resolve(userIds);
-      });
-  }
-
-  private getGroupId(args: CommandArgs): Promise<string> {
-    if (args.options.ownerGroupId) {
-      return Promise.resolve(args.options.ownerGroupId);
+    if (invalidUsers && invalidUsers.length > 0) {
+      throw `Cannot proceed with planner plan creation. The following users provided are invalid : ${invalidUsers.join(',')}`;
     }
 
-    return aadGroup
-      .getGroupByDisplayName(args.options.ownerGroupName!)
-      .then(group => group.id!);
+    return userIds;
+  }
+
+  private async getGroupId(args: CommandArgs): Promise<string> {
+    if (args.options.ownerGroupId) {
+      return args.options.ownerGroupId;
+    }
+
+    const group = await aadGroup.getGroupByDisplayName(args.options.ownerGroupName!);
+    return group.id!;
   }
 }
 

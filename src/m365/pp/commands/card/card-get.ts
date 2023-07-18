@@ -3,9 +3,9 @@ import GlobalOptions from '../../../../GlobalOptions';
 import { powerPlatform } from '../../../../utils/powerPlatform';
 import PowerPlatformCommand from '../../../base/PowerPlatformCommand';
 import commands from '../../commands';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { validation } from '../../../../utils/validation';
-import { AxiosRequestConfig } from 'axios';
+import { Cli } from '../../../../cli/Cli';
 
 interface CommandArgs {
   options: Options;
@@ -103,7 +103,7 @@ class PpCardGetCommand extends PowerPlatformCommand {
   }
 
   private async getCard(dynamicsApiUrl: string, options: Options): Promise<any> {
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       headers: {
         accept: 'application/json;odata.metadata=none'
       },
@@ -124,7 +124,12 @@ class PpCardGetCommand extends PowerPlatformCommand {
     }
 
     if (result.value.length > 1) {
-      throw `Multiple cards with name '${options.name}' found: ${result.value.map(x => x.cardid).join(',')}`;
+      const resultAsKeyValuePair: any = {};
+      result.value.forEach((obj) => {
+        resultAsKeyValuePair[obj.cardid] = obj;
+      });
+
+      return Cli.handleMultipleResultsFound(`Multiple cards with name '${options.name}' found. Choose the correct ID:`, `Multiple cards with name '${options.name}' found.`, resultAsKeyValuePair);
     }
 
     return result.value[0];

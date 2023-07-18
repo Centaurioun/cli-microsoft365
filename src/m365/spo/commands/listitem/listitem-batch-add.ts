@@ -1,14 +1,15 @@
-import { AxiosRequestConfig } from 'axios';
 import * as fs from 'fs';
+import * as os from 'os';
 import { Logger } from '../../../../cli/Logger';
 import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
+import request, { CliRequestOptions } from '../../../../request';
 import { v4 } from 'uuid';
 import { formatting } from '../../../../utils/formatting';
 import { urlUtil } from '../../../../utils/urlUtil';
 import { validation } from '../../../../utils/validation';
 import SpoCommand from '../../../base/SpoCommand';
 import commands from '../../commands';
+import { ListItemFieldValueResult } from './ListItemFieldValueResult';
 
 interface CommandArgs {
   options: Options;
@@ -25,6 +26,10 @@ interface Options extends GlobalOptions {
 interface FormValues {
   FieldName: string;
   FieldValue: string;
+}
+
+interface BatchResult extends ListItemFieldValueResult {
+  csvLineNumber: number
 }
 
 class SpoListItemBatchAddCommand extends SpoCommand {
@@ -140,7 +145,9 @@ class SpoListItemBatchAddCommand extends SpoCommand {
         if (this.verbose) {
           logger.logToStderr(`Writing away batch of items, currently at: ${index + 1}/${rows.length}.`);
         }
+
         await this.postBatchData(itemsToAdd, options.webUrl, requestUrl);
+
         itemsToAdd = [];
       }
     }
@@ -148,6 +155,7 @@ class SpoListItemBatchAddCommand extends SpoCommand {
       if (this.verbose) {
         logger.logToStderr(`Writing away ${itemsToAdd.length} items.`);
       }
+
       await this.postBatchData(itemsToAdd, options.webUrl, requestUrl);
     }
   }
@@ -155,7 +163,7 @@ class SpoListItemBatchAddCommand extends SpoCommand {
   private async postBatchData(itemsToAdd: FormValues[][], webUrl: string, requestUrl: string): Promise<void> {
     const batchId = v4();
     const requestBody = this.parseBatchRequestBody(itemsToAdd, batchId, requestUrl);
-    const requestOptions: AxiosRequestConfig = {
+    const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_api/$batch`,
       headers: {
         'Content-Type': `multipart/mixed; boundary=batch_${batchId}`,
@@ -163,7 +171,12 @@ class SpoListItemBatchAddCommand extends SpoCommand {
       },
       data: requestBody.join('')
     };
-    await request.post(requestOptions);
+    const response: any = await request.post(requestOptions);
+    const parsedResponse = this.parseBatchResponseBody(response);
+
+    if (parsedResponse.some(r => r.HasException)) {
+      throw `Creating some items failed with the following errors: ${os.EOL}${parsedResponse.filter(f => f.HasException).map(f => { return `- Line ${f.csvLineNumber}: ${f.FieldName} - ${f.ErrorMessage}`; }).join(os.EOL)}`;
+    }
   }
 
   private parseBatchRequestBody(items: FormValues[][], batchId: string, requestUrl: string): string[] {
@@ -192,6 +205,24 @@ class SpoListItemBatchAddCommand extends SpoCommand {
     batchBody.push(`--batch_${batchId}--\n`);
 
     return batchBody;
+  }
+
+  private parseBatchResponseBody(response: string): BatchResult[] {
+    const batchResults: BatchResult[] = [];
+
+    response.split('\r\n')
+      .filter((line: string) => line.startsWith('{'))
+      .forEach((line: string, index: number) => {
+        const parsedResponse: { value: ListItemFieldValueResult[] } = JSON.parse(line);
+        parsedResponse.value.forEach((fieldValueResult: ListItemFieldValueResult) => {
+          batchResults.push({
+            csvLineNumber: (index + 2),
+            ...fieldValueResult
+          } as BatchResult);
+        });
+      });
+
+    return batchResults;
   }
 
   private getSingleItemRequestBody(row: any): FormValues[] {

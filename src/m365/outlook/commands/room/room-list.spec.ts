@@ -6,6 +6,7 @@ import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import request from '../../../../request';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./room-list');
@@ -119,9 +120,10 @@ describe(commands.ROOM_LIST, () => {
     ]
   };
   before(() => {
-    sinon.stub(auth, 'restoreAuth').callsFake(() => Promise.resolve());
-    sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
-    sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(auth, 'restoreAuth').resolves();
+    sinon.stub(telemetry, 'trackEvent').returns();
+    sinon.stub(pid, 'getProcessName').returns('');
+    sinon.stub(session, 'getId').returns('');
     auth.service.connected = true;
   });
 
@@ -149,16 +151,12 @@ describe(commands.ROOM_LIST, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      auth.restoreAuth,
-      telemetry.trackEvent,
-      pid.getProcessName
-    ]);
+    sinon.restore();
     auth.service.connected = false;
   });
 
   it('has correct name', () => {
-    assert.strictEqual(command.name.startsWith(commands.ROOM_LIST), true);
+    assert.strictEqual(command.name, commands.ROOM_LIST);
   });
 
   it('has a description', () => {
@@ -170,13 +168,12 @@ describe(commands.ROOM_LIST, () => {
   });
 
   it('lists all available rooms in the tenant (verbose)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/places/microsoft.graph.room`) {
-        return Promise.resolve(
-          jsonOutput
-        );
+        return jsonOutput;
       }
-      return Promise.reject('Invalid request');
+
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { verbose: true } });
@@ -186,13 +183,12 @@ describe(commands.ROOM_LIST, () => {
   });
 
   it('lists all available rooms filter by roomlistEmail in the tenant (verbose)', async () => {
-    sinon.stub(request, 'get').callsFake((opts) => {
+    sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://graph.microsoft.com/v1.0/places/bldg2@contoso.com/microsoft.graph.roomlist/rooms`) {
-        return Promise.resolve(
-          jsonOutputFilter
-        );
+        return jsonOutputFilter;
       }
-      return Promise.reject('Invalid request');
+
+      throw 'Invalid request';
     });
 
     await command.action(logger, { options: { verbose: true, roomlistEmail: "bldg2@contoso.com" } });
@@ -203,7 +199,7 @@ describe(commands.ROOM_LIST, () => {
 
   it('handles random API error', async () => {
     const errorMessage = 'Something went wrong';
-    sinon.stub(request, 'get').callsFake(async () => { throw errorMessage; });
+    sinon.stub(request, 'get').rejects({ error: { error: { message: errorMessage } } });
 
     await assert.rejects(command.action(logger, { options: { confirm: true } }), new CommandError(errorMessage));
   });

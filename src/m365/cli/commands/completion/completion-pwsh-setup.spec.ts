@@ -8,6 +8,7 @@ import { autocomplete } from '../../../../autocomplete';
 import { Logger } from '../../../../cli/Logger';
 import Command, { CommandError } from '../../../../Command';
 import { pid } from '../../../../utils/pid';
+import { session } from '../../../../utils/session';
 import { sinonUtil } from '../../../../utils/sinonUtil';
 import commands from '../../commands';
 const command: Command = require('./completion-pwsh-setup');
@@ -21,6 +22,7 @@ describe(commands.COMPLETION_PWSH_SETUP, () => {
   before(() => {
     sinon.stub(telemetry, 'trackEvent').callsFake(() => { });
     sinon.stub(pid, 'getProcessName').callsFake(() => '');
+    sinon.stub(session, 'getId').callsFake(() => '');
     sinon.stub(autocomplete, 'generateShCompletion').callsFake(() => { });
   });
 
@@ -50,11 +52,7 @@ describe(commands.COMPLETION_PWSH_SETUP, () => {
   });
 
   after(() => {
-    sinonUtil.restore([
-      telemetry.trackEvent,
-      pid.getProcessName,
-      autocomplete.generateShCompletion
-    ]);
+    sinon.restore();
   });
 
   it('has correct name', () => {

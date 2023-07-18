@@ -4,21 +4,23 @@ import * as fs from 'fs';
 import type { Inquirer } from 'inquirer';
 import type * as JMESPath from 'jmespath';
 import * as minimist from 'minimist';
+import * as ora from 'ora';
 import * as os from 'os';
 import * as path from 'path';
-import { Logger } from './Logger';
 import Command, { CommandArgs, CommandError, CommandTypes } from '../Command';
 import config from '../config';
 import GlobalOptions from '../GlobalOptions';
+import { M365RcJson } from '../m365/base/M365RcJson';
 import request from '../request';
 import { settingsNames } from '../settingsNames';
+import { telemetry } from '../telemetry';
 import { formatting } from '../utils/formatting';
 import { fsUtil } from '../utils/fsUtil';
 import { md } from '../utils/md';
+import { validation } from '../utils/validation';
 import { CommandInfo } from './CommandInfo';
 import { CommandOptionInfo } from './CommandOptionInfo';
-import { validation } from '../utils/validation';
-import { telemetry } from '../telemetry';
+import { Logger } from './Logger';
 const packageJSON = require('../../package.json');
 
 export interface CommandOutput {
@@ -41,6 +43,7 @@ export class Cli {
   private static instance: Cli;
   private static defaultHelpMode = 'full';
   public static helpModes: string[] = ['options', 'examples', 'remarks', 'response', 'full'];
+  public spinner = ora('Running command...');
 
   private _config: Configstore | undefined;
   public get config(): Configstore {
@@ -134,7 +137,9 @@ export class Cli {
       showHelp ||
       parsedArgs.h ||
       parsedArgs.help) {
-      this.printHelp(this.getHelpMode(parsedArgs));
+      if (parsedArgs.output !== 'none') {
+        this.printHelp(this.getHelpMode(parsedArgs));
+      }
       return Promise.resolve();
     }
 
@@ -150,6 +155,8 @@ export class Cli {
 
     try {
       // process options before passing them on to validation stage
+      const contextCommandOptions = this.loadOptionsFromContext(this.commandToExecute.options, optionsWithoutShorts.options.debug);
+      optionsWithoutShorts.options = { ...contextCommandOptions, ...optionsWithoutShorts.options };
       await this.commandToExecute.command.processOptions(optionsWithoutShorts.options);
     }
     catch (e: any) {
@@ -174,11 +181,21 @@ export class Cli {
   public static async executeCommand(command: Command, args: { options: minimist.ParsedArgs }): Promise<void> {
     const logger: Logger = {
       log: (message: any): void => {
-        const output: any = Cli.formatOutput(command, message, args.options);
-        Cli.log(output);
+        if (args.options.output !== 'none') {
+          const output: any = Cli.formatOutput(command, message, args.options);
+          Cli.log(output);
+        }
       },
-      logRaw: (message: any): void => Cli.log(message),
-      logToStderr: (message: any): void => Cli.error(message)
+      logRaw: (message: any): void => {
+        if (args.options.output !== 'none') {
+          Cli.log(message);
+        }
+      },
+      logToStderr: (message: any): void => {
+        if (args.options.output !== 'none') {
+          Cli.error(message);
+        }
+      }
     };
 
     if (args.options.debug) {
@@ -190,6 +207,13 @@ export class Cli {
     const cli = Cli.getInstance();
     const parentCommandName: string | undefined = cli.currentCommandName;
     cli.currentCommandName = command.getCommandName(cli.currentCommandName);
+    const showSpinner = cli.getSettingWithDefaultValue<boolean>(settingsNames.showSpinner, true) && args.options.output !== 'none';
+
+    // don't show spinner if running tests
+    /* c8 ignore next 3 */
+    if (showSpinner && typeof global.it === 'undefined') {
+      cli.spinner.start();
+    }
 
     try {
       await command.action(logger, args as any);
@@ -202,6 +226,11 @@ export class Cli {
     finally {
       // restore the original command name
       cli.currentCommandName = parentCommandName;
+
+      /* c8 ignore next 3 */
+      if (cli.spinner.isSpinning) {
+        cli.spinner.stop();
+      }
     }
   }
 
@@ -234,7 +263,7 @@ export class Cli {
       }
     };
 
-    if (args.options.debug) {
+    if (args.options.debug && args.options.output !== 'none') {
       const message = `Executing command ${command.name} with options ${JSON.stringify(args)}`;
       if (listener && listener.stderr) {
         listener.stderr(message);
@@ -333,6 +362,51 @@ export class Cli {
     }
 
     this.loadCommandFromFile(commandFilePath);
+  }
+
+  private loadOptionsFromContext(commandOptions: CommandOptionInfo[], debug: boolean | undefined): any {
+    const filePath: string = '.m365rc.json';
+    let m365rc: M365RcJson = {};
+
+    if (!fs.existsSync(filePath)) {
+      return;
+    }
+
+    if (debug!) {
+      Cli.error('found .m365rc.json file');
+    }
+
+    try {
+      const fileContents: string = fs.readFileSync(filePath, 'utf8');
+      if (fileContents) {
+        m365rc = JSON.parse(fileContents);
+      }
+    }
+    catch (e) {
+      this.closeWithError(`Error parsing ${filePath}`, { options: {} });
+    }
+
+    if (!m365rc.context) {
+      return;
+    }
+
+    if (debug!) {
+      Cli.error('found context in .m365rc.json file');
+    }
+
+    const context = m365rc.context;
+
+    const foundOptions: any = {};
+    commandOptions.forEach(option => {
+      if (context[option.name]) {
+        foundOptions[option.name] = context[option.name];
+        if (debug!) {
+          Cli.error(`returning ${option.name} option from context`);
+        }
+      }
+    });
+
+    return foundOptions;
   }
 
   /**
@@ -542,7 +616,7 @@ export class Cli {
     // data so that returned objects contain only default properties specified
     // on the current command. If there is no current command or the
     // command doesn't specify default properties, return original data
-    if (options.output === 'text' || options.output === 'csv') {
+    if (this.shouldTrimOutput(options.output)) {
       const cli: Cli = Cli.getInstance();
       const currentCommand: CommandInfo | undefined = cli.commandToExecute;
 
@@ -568,7 +642,7 @@ export class Cli {
 
     switch (options.output) {
       case 'csv':
-        return command.getCsvOutput(logStatement);
+        return command.getCsvOutput(logStatement, options);
       case 'md':
         return command.getMdOutput(logStatement, command, options);
       default:
@@ -618,14 +692,14 @@ export class Cli {
     const pathChunks: string[] = [this.commandsFolder, '..', '..', 'docs', 'docs', 'cmd'];
 
     if (commandNameWords.length === 1) {
-      pathChunks.push(`${commandNameWords[0]}.md`);
+      pathChunks.push(`${commandNameWords[0]}.mdx`);
     }
     else {
       if (commandNameWords.length === 2) {
-        pathChunks.push(commandNameWords[0], `${commandNameWords.join('-')}.md`);
+        pathChunks.push(commandNameWords[0], `${commandNameWords.join('-')}.mdx`);
       }
       else {
-        pathChunks.push(commandNameWords[0], commandNameWords[1], commandNameWords.slice(1).join('-') + '.md');
+        pathChunks.push(commandNameWords[0], commandNameWords[1], commandNameWords.slice(1).join('-') + '.mdx');
       }
     }
 
@@ -806,8 +880,13 @@ export class Cli {
   }
 
   private closeWithError(error: any, args: CommandArgs, showHelpIfEnabled: boolean = false): void {
-    const chalk: typeof Chalk = require('chalk');
     let exitCode: number = 1;
+
+    if (args.options.output === 'none') {
+      return process.exit(exitCode);
+    }
+
+    const chalk: typeof Chalk = require('chalk');
 
     let errorMessage: string = error instanceof CommandError ? error.message : error;
     if ((!args.options.output || args.options.output === 'json') &&
@@ -839,6 +918,13 @@ export class Cli {
   }
 
   public static log(message?: any, ...optionalParams: any[]): void {
+    const cli = Cli.getInstance();
+
+    /* c8 ignore next 3 */
+    if (cli.spinner.isSpinning) {
+      cli.spinner.stop();
+    }
+
     if (message) {
       console.log(message, ...optionalParams);
     }
@@ -848,7 +934,14 @@ export class Cli {
   }
 
   private static error(message?: any, ...optionalParams: any[]): void {
-    const errorOutput: string = Cli.getInstance().getSettingWithDefaultValue(settingsNames.errorOutput, 'stderr');
+    const cli = Cli.getInstance();
+
+    /* c8 ignore next 3 */
+    if (cli.spinner.isSpinning) {
+      cli.spinner.stop();
+    }
+
+    const errorOutput: string = cli.getSettingWithDefaultValue(settingsNames.errorOutput, 'stderr');
     if (errorOutput === 'stdout') {
       console.log(message, ...optionalParams);
     }
@@ -857,9 +950,42 @@ export class Cli {
     }
   }
 
-  public static async prompt<T>(options: any): Promise<T> {
+  public static async prompt<T>(options: any, answers?: any): Promise<T> {
     const inquirer: Inquirer = require('inquirer');
-    return await inquirer.prompt(options) as T;
+    const cli = Cli.getInstance();
+    const spinnerSpinning = cli.spinner.isSpinning;
+
+    /* c8 ignore next 3 */
+    if (spinnerSpinning) {
+      cli.spinner.stop();
+    }
+
+    const response = await inquirer.prompt(options, answers) as T;
+
+    // Restart the spinner if it was running before the prompt
+    /* c8 ignore next 3 */
+    if (spinnerSpinning) {
+      cli.spinner.start();
+    }
+
+    return response;
+  }
+
+  public static async handleMultipleResultsFound(promptMessage: string, errorMessage: string, values: { [key: string]: object }): Promise<object | CommandError> {
+    const prompt: boolean = Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.prompt, false);
+    if (!prompt) {
+      throw errorMessage;
+    }
+
+    const response = await Cli.prompt<{ select: string }>({
+      type: 'list',
+      name: 'select',
+      default: 0,
+      message: promptMessage,
+      choices: Object.keys(values)
+    });
+
+    return values[response.select];
   }
 
   private static removeShortOptions(args: { options: minimist.ParsedArgs }): { options: minimist.ParsedArgs } {
@@ -888,5 +1014,9 @@ export class Cli {
         args.options[option] = fs.readFileSync(filePath, 'utf-8');
       }
     });
+  }
+
+  public static shouldTrimOutput(output: string | undefined): boolean {
+    return output === 'text';
   }
 }
