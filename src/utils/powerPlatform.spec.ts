@@ -26,7 +26,7 @@ describe('utils/powerPlatform', () => {
     const envResponse: any = { "properties": { "linkedEnvironmentMetadata": { "instanceApiUrl": "https://contoso-dev.api.crm4.dynamics.com" } } };
 
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl`)) {
+      if ((opts.url === "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl")) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
@@ -45,7 +45,7 @@ describe('utils/powerPlatform', () => {
     const envResponse: any = { "properties": { "linkedEnvironmentMetadata": { "instanceApiUrl": "https://contoso-dev.api.crm4.dynamics.com" } } };
 
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl`)) {
+      if ((opts.url === "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl")) {
         if (opts.headers &&
           opts.headers.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
@@ -62,7 +62,7 @@ describe('utils/powerPlatform', () => {
 
   it('handles no environment found', async () => {
     sinon.stub(request, 'get').callsFake(async opts => {
-      if ((opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl`)) {
+      if ((opts.url === "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl")) {
         throw Error('Random Error');
       }
 
@@ -74,7 +74,7 @@ describe('utils/powerPlatform', () => {
       assert.fail('No error message thrown.');
     }
     catch (ex) {
-      assert.deepStrictEqual(ex, Error(`The environment 'someRandomGuid' could not be retrieved. See the inner exception for more details: Random Error`));
+      assert.deepStrictEqual(ex, Error("The environment 'someRandomGuid' could not be retrieved. See the inner exception for more details: Random Error"));
     }
   });
 });

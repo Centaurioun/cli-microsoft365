@@ -300,7 +300,7 @@ describe('validation/validation', () => {
   });
 
   it('isValidTheme returns false when theme passed is not valid json', () => {
-    const theme = `{ not valid }`;
+    const theme = "{ not valid }";
     const actual = validation.isValidTheme(theme);
     const expected = false;
     assert.strictEqual(actual, expected);

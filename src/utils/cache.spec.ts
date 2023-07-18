@@ -20,7 +20,7 @@ describe('utils/cache', () => {
   });
 
   describe('getValue', () => {
-    it(`returns undefined when the specified value doesn't exist in cache`, () => {
+    it("returns undefined when the specified value doesn't exist in cache", () => {
       sinon.stub(fs, 'existsSync').returns(false);
       assert.strictEqual(cache.getValue('key'), undefined);
     });
@@ -55,7 +55,7 @@ describe('utils/cache', () => {
       assert(clearExpiredSpy.called);
     });
 
-    it(`doesn't fail when creating the cache folder fails`, () => {
+    it("doesn't fail when creating the cache folder fails", () => {
       sinon.stub(fs, 'mkdirSync').throws();
       const writeFilesSpy = sinon.spy(fs, 'writeFile');
       cache.setValue('key', 'value');
@@ -63,7 +63,7 @@ describe('utils/cache', () => {
       assert(writeFilesSpy.notCalled);
     });
 
-    it(`doesn't fail when writing value to cache file fails`, (done) => {
+    it("doesn't fail when writing value to cache file fails", (done) => {
       sinon.stub(fs, 'mkdirSync').callsFake(() => undefined);
       sinon
         .stub(fs, 'writeFile')
@@ -79,7 +79,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`writes value to cache in a cache file`, (done) => {
+    it("writes value to cache in a cache file", (done) => {
       sinon.stub(fs, 'mkdirSync').callsFake(() => undefined);
       sinon.stub(fs, 'writeFile').callsFake(() => {
         done();
@@ -94,7 +94,7 @@ describe('utils/cache', () => {
   });
 
   describe('clearExpired', () => {
-    it(`doesn't fail when reading the cache folder fails`, (done) => {
+    it("doesn't fail when reading the cache folder fails", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, 'error');
       try {
         cache.clearExpired(() => {
@@ -106,7 +106,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`doesn't fail when the cache folder is empty`, (done) => {
+    it("doesn't fail when the cache folder is empty", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, []);
       try {
         cache.clearExpired(() => {
@@ -118,7 +118,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`skips directories while clearing expired entries (dir + file)`, (done) => {
+    it("skips directories while clearing expired entries (dir + file)", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['directory', 'file']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -147,7 +147,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`skips directories while clearing expired entries (dir only)`, (done) => {
+    it("skips directories while clearing expired entries (dir only)", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['directory']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -174,7 +174,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`doesn't fail while reading file information fails`, (done) => {
+    it("doesn't fail while reading file information fails", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['file1', 'file2']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -203,7 +203,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`doesn't fail while removing expired cache entry fails`, (done) => {
+    it("doesn't fail while removing expired cache entry fails", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['file']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -229,7 +229,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`doesn't remove cache entries that have been accessed in the last 24 hours`, (done) => {
+    it("doesn't remove cache entries that have been accessed in the last 24 hours", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['file1', 'file2']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -258,7 +258,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`doesn't remove cache entries that have been accessed in the last 24 hours (last file recently accessed)`, (done) => {
+    it("doesn't remove cache entries that have been accessed in the last 24 hours (last file recently accessed)", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['file1', 'file2']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
@@ -287,7 +287,7 @@ describe('utils/cache', () => {
       }
     });
 
-    it(`removes cache entries that haven't been accessed in the last 24 hours`, (done) => {
+    it("removes cache entries that haven't been accessed in the last 24 hours", (done) => {
       sinon.stub(fs, 'readdir').callsArgWith(1, undefined, ['file1', 'file2']);
       const twoDaysAgo = new Date();
       twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);

@@ -57,7 +57,7 @@ class UtilAccessTokenGetCommand extends Command {
           resource = auth.service.spoUrl;
         }
         else {
-          throw `SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL`;
+          throw "SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL";
         }
       }
       else if (resource.toLowerCase() === 'graph') {

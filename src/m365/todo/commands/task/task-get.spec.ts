@@ -114,7 +114,7 @@ describe(commands.TASK_GET, () => {
 
   it('fails to get To Do Task list when the specified task list does not exist', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/me/todo/lists?$filter=displayName eq '`) > -1) {
+      if ((opts.url as string).indexOf("/me/todo/lists?$filter=displayName eq '") > -1) {
         return ({ value: [] });
       }
       throw 'The specified task list does not exist';
@@ -183,7 +183,7 @@ describe(commands.TASK_GET, () => {
 
   it('lists a To Do task using listName', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks%20List'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks%20List'") {
         return ({
           "value": [
             {

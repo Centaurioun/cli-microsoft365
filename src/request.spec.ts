@@ -122,7 +122,7 @@ describe('Request', () => {
       });
   });
 
-  it(`doesn't set access token on anonymous requests`, (done) => {
+  it("doesn't set access token on anonymous requests", (done) => {
     sinon.stub(https, 'request').callsFake((options: any) => {
       _options = options;
       return new ClientRequest('', () => { });
@@ -148,7 +148,7 @@ describe('Request', () => {
       });
   });
 
-  it(`removes the anonymous header on anonymous requests`, (done) => {
+  it("removes the anonymous header on anonymous requests", (done) => {
     sinon.stub(https, 'request').callsFake((options: any) => {
       _options = options;
       return new ClientRequest('', () => { });
@@ -175,7 +175,7 @@ describe('Request', () => {
   });
 
 
-  it(`removes the resource header on distinguished resource requests`, (done) => {
+  it("removes the resource header on distinguished resource requests", (done) => {
     sinon.stub(https, 'request').callsFake((options: any) => {
       _options = options;
       return new ClientRequest('', () => { });
@@ -742,7 +742,7 @@ describe('Request', () => {
       });
   });
 
-  it(`updates the URL for the China cloud`, async () => {
+  it("updates the URL for the China cloud", async () => {
     let url;
     auth.service.cloudType = CloudType.China;
     sinon.stub(_request as any, 'req').callsFake(options => {
@@ -755,7 +755,7 @@ describe('Request', () => {
     assert.strictEqual(url, 'https://microsoftgraph.chinacloudapi.cn/v1.0/me');
   });
 
-  it(`updates the URL for the USGov cloud`, async () => {
+  it("updates the URL for the USGov cloud", async () => {
     let url;
     auth.service.cloudType = CloudType.USGov;
     sinon.stub(_request as any, 'req').callsFake(options => {
@@ -768,7 +768,7 @@ describe('Request', () => {
     assert.strictEqual(url, 'https://graph.microsoft.com/v1.0/me');
   });
 
-  it(`updates the URL for the USGovDoD cloud`, async () => {
+  it("updates the URL for the USGovDoD cloud", async () => {
     let url;
     auth.service.cloudType = CloudType.USGovDoD;
     sinon.stub(_request as any, 'req').callsFake(options => {
@@ -781,7 +781,7 @@ describe('Request', () => {
     assert.strictEqual(url, 'https://dod-graph.microsoft.us/v1.0/me');
   });
 
-  it(`updates the URL for the USGovHigh cloud`, async () => {
+  it("updates the URL for the USGovHigh cloud", async () => {
     let url;
     auth.service.cloudType = CloudType.USGovHigh;
     sinon.stub(_request as any, 'req').callsFake(options => {

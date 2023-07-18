@@ -73,7 +73,7 @@ describe(commands.TASK_REMOVE, () => {
 
   it('removes a To Do task by task id and task list name', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'") {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('eded3a2a-8f01-40aa-998a-e4f02ec693ba')/todo/lists",
           "value": [
@@ -93,7 +93,7 @@ describe(commands.TASK_REMOVE, () => {
     });
 
     sinon.stub(request, 'delete').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=") {
         return Promise.resolve();
       }
 
@@ -111,7 +111,7 @@ describe(commands.TASK_REMOVE, () => {
 
   it('removes a To Do task by task id and task list name when confirm option is passed', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'") {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('eded3a2a-8f01-40aa-998a-e4f02ec693ba')/todo/lists",
           "value": [
@@ -130,7 +130,7 @@ describe(commands.TASK_REMOVE, () => {
       return Promise.reject('Invalid request');
     });
     sinon.stub(request, 'delete').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=") {
         return Promise.resolve();
       }
 
@@ -149,7 +149,7 @@ describe(commands.TASK_REMOVE, () => {
 
   it('removes a To Do task by task id and task list id', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=") {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('eded3a2a-8f01-40aa-998a-e4f02ec693ba')/todo/lists/$entity",
           "@odata.etag": "W/\"tPAryi+qT0uvQKa/pHXU5AAAQchLxw==\"",
@@ -164,7 +164,7 @@ describe(commands.TASK_REMOVE, () => {
       return Promise.reject('Invalid request');
     });
     sinon.stub(request, 'delete').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=") {
         return Promise.resolve();
       }
 
@@ -182,7 +182,7 @@ describe(commands.TASK_REMOVE, () => {
 
   it('handles error correctly', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return Promise.resolve({
           "error": {
             "code": "invalidRequest",
@@ -215,7 +215,7 @@ describe(commands.TASK_REMOVE, () => {
 
   it('prompts before removing the To Do task when confirm option not passed', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'Tasks'") {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('eded3a2a-8f01-40aa-998a-e4f02ec693ba')/todo/lists",
           "value": [
@@ -234,7 +234,7 @@ describe(commands.TASK_REMOVE, () => {
       return Promise.reject('Invalid request');
     });
     sinon.stub(request, 'delete').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/BBMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhBBB=/tasks/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIhAAA=") {
         return Promise.resolve();
       }
 

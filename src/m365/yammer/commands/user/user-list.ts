@@ -85,15 +85,15 @@ class YammerUserListCommand extends YammerCommand {
         }
 
         if (args.options.sortBy && args.options.sortBy !== 'messages' && args.options.sortBy !== 'followers') {
-          return `sortBy accepts only the values "messages" or "followers"`;
+          return 'sortBy accepts only the values "messages" or "followers"';
         }
 
         if (args.options.letter && !/^(?!\d)[a-zA-Z]+$/i.test(args.options.letter)) {
-          return `Value of 'letter' is invalid. Only characters within the ranges [A - Z], [a - z] are allowed.`;
+          return "Value of 'letter' is invalid. Only characters within the ranges [A - Z], [a - z] are allowed.";
         }
 
         if (args.options.letter && args.options.letter.length !== 1) {
-          return `Only one char as value of 'letter' accepted.`;
+          return "Only one char as value of 'letter' accepted.";
         }
 
         return true;
@@ -115,7 +115,7 @@ class YammerUserListCommand extends YammerCommand {
 
       endPoint += `?page=${page}`;
       if (args.options.reverse !== undefined) {
-        endPoint += `&reverse=true`;
+        endPoint += "&reverse=true";
       }
       if (args.options.sortBy !== undefined) {
         endPoint += `&sort_by=${args.options.sortBy}`;

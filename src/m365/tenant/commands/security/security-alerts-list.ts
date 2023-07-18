@@ -89,7 +89,7 @@ class TenantSecurityAlertsListCommand extends GraphCommand {
     const alertList: Alert[] | undefined = response.value;
 
     if (!alertList) {
-      throw `Error fetching security alerts`;
+      throw "Error fetching security alerts";
     }
 
     return alertList;

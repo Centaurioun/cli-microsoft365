@@ -15,7 +15,7 @@ describe('Telemetry', () => {
     ]);
   });
 
-  it(`doesn't log an event when disableTelemetry is set`, async () => {
+  it("doesn't log an event when disableTelemetry is set", async () => {
     sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
       if (settingName === settingsNames.disableTelemetry) {
         return true;
@@ -45,7 +45,7 @@ describe('Telemetry', () => {
     assert(trackEventStub.called);
   });
 
-  it(`doesn't log an exception when disableTelemetry is set`, async () => {
+  it("doesn't log an exception when disableTelemetry is set", async () => {
     sinon.stub(Cli.getInstance(), 'getSettingWithDefaultValue').callsFake((settingName, defaultValue) => {
       if (settingName === settingsNames.disableTelemetry) {
         return true;

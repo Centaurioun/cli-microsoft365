@@ -60,7 +60,7 @@ describe(commands.REPORT_GROUPSACTIVITYDETAIL, () => {
 
   it('gets the report for the last week', async () => {
     const requestStub: sinon.SinonStub = sinon.stub(request, 'get').callsFake((opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/reports/getYammerGroupsActivityDetail(period='D7')`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/reports/getYammerGroupsActivityDetail(period='D7')") {
         return Promise.resolve(`
         Report Refresh Date,Group Display Name,Is Deleted,Owner Principal Name,Last Activity Date,Group Type,Microsoft 365 Connected,Member Count,Posted Count,Read Count,Liked Count,Report Period
         `);

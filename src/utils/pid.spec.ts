@@ -69,7 +69,7 @@ describe('utils/pid', () => {
     assert.strictEqual(pid.getProcessName(123), 'pwsh');
   });
 
-  it(`returns undefined on Linux if the process is not found`, () => {
+  it("returns undefined on Linux if the process is not found", () => {
     sinon.stub(os, 'platform').callsFake(() => 'linux');
     sinon.stub(fs, 'existsSync').callsFake(() => false);
 

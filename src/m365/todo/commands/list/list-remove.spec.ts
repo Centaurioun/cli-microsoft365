@@ -74,7 +74,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('removes a To Do task list by name', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -93,7 +93,7 @@ describe(commands.LIST_REMOVE, () => {
       throw 'Invalid request';
     });
     sinon.stub(request, 'delete').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=") {
         return;
       }
 
@@ -110,7 +110,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('removes a To Do task list by name when confirm option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -129,7 +129,7 @@ describe(commands.LIST_REMOVE, () => {
       throw 'Invalid request';
     });
     sinon.stub(request, 'delete').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=") {
         return;
       }
 
@@ -147,7 +147,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('removes a To Do task list by id', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -166,7 +166,7 @@ describe(commands.LIST_REMOVE, () => {
       throw 'Invalid request';
     });
     sinon.stub(request, 'delete').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=") {
         return;
       }
 
@@ -183,7 +183,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('handles error correctly when a list is not found for a specific name', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": []
@@ -200,7 +200,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('handles error correctly', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -225,7 +225,7 @@ describe(commands.LIST_REMOVE, () => {
 
   it('prompts before removing the list when confirm option not passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists?$filter=displayName eq 'FooList'") {
         return {
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#lists",
           "value": [
@@ -244,7 +244,7 @@ describe(commands.LIST_REMOVE, () => {
       throw 'Invalid request';
     });
     sinon.stub(request, 'delete').callsFake(async (opts) => {
-      if (opts.url === `https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=`) {
+      if (opts.url === "https://graph.microsoft.com/v1.0/me/todo/lists/AAMkAGI3NDhlZmQzLWQxYjAtNGJjNy04NmYwLWQ0M2IzZTNlMDUwNAAuAAAAAACQ1l2jfH6VSZraktP8Z7auAQCbV93BagWITZhL3J6BMqhjAAD9pHIiAAA=") {
         return;
       }
 

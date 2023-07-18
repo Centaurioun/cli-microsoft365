@@ -92,7 +92,7 @@ describe(commands.TASK_LIST, () => {
 
   it('fails to get ToDo Task list when the specified task list does not exist', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/me/todo/lists?$filter=displayName eq '`) > -1) {
+      if ((opts.url as string).indexOf("/me/todo/lists?$filter=displayName eq '") > -1) {
         return Promise.resolve({ value: [] });
       }
       return Promise.reject('The specified task list does not exist');
@@ -121,7 +121,7 @@ describe(commands.TASK_LIST, () => {
 
   it('lists To Do tasks using listId in JSON output mode', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/tasks`) > -1) {
+      if ((opts.url as string).indexOf("/tasks") > -1) {
         return Promise.resolve({
           value: [
             {
@@ -197,7 +197,7 @@ describe(commands.TASK_LIST, () => {
 
   it('lists To Do tasks using listName', async () => {
     sinon.stub(request, 'get').callsFake((opts) => {
-      if ((opts.url as string).indexOf(`/me/todo/lists?$filter=displayName eq '`) > -1) {
+      if ((opts.url as string).indexOf("/me/todo/lists?$filter=displayName eq '") > -1) {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('e1251b10-1ba4-49e3-b35a-933e3f21772b')/todo/lists",
           "value": [
@@ -213,7 +213,7 @@ describe(commands.TASK_LIST, () => {
         });
       }
 
-      if ((opts.url as string).indexOf(`/tasks`) > -1) {
+      if ((opts.url as string).indexOf("/tasks") > -1) {
         return Promise.resolve({
           "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#users('e1251b10-1ba4-49e3-b35a-933e3f21772b')/todo/lists('AQMkAGYzNjMxYTU4LTJjZjYtNDlhMi1iMzQ2LWVmMTU3YmUzOGM5MAAuAAADMN-7V4K8g0q_adetip1DygEAxMBBaLl1lk_dAn8KkjfXKQABF-BAgwAAAA%3D%3D')/tasks",
           "value": [

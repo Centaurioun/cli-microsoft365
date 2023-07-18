@@ -138,7 +138,7 @@ class TodoTaskAddCommand extends GraphCommand {
         }
 
         if (args.options.completedDateTime && args.options.status?.toLowerCase() !== 'completed') {
-          return `The completedDateTime option can only be used when the status option is set to completed`;
+          return "The completedDateTime option can only be used when the status option is set to completed";
         }
 
         return true;
@@ -217,7 +217,7 @@ class TodoTaskAddCommand extends GraphCommand {
     const taskList: { id: string } | undefined = response.value[0];
 
     if (!taskList) {
-      throw `The specified task list does not exist`;
+      throw "The specified task list does not exist";
     }
 
     return taskList.id;

@@ -70,7 +70,7 @@ class TenantServiceAnnouncementHealthListCommand extends GraphCommand {
     const serviceHealthList: ServiceHealth[] | undefined = response.value;
 
     if (!serviceHealthList) {
-      throw `Error fetching service health`;
+      throw "Error fetching service health";
     }
 
     return serviceHealthList;
