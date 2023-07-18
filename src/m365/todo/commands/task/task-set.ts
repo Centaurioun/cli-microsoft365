@@ -1,10 +1,10 @@
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import request, { CliRequestOptions } from '../../../../request';
-import { formatting } from '../../../../utils/formatting';
-import { validation } from '../../../../utils/validation';
-import GraphCommand from '../../../base/GraphCommand';
-import commands from '../../commands';
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import request, { CliRequestOptions } from "../../../../request";
+import { formatting } from "../../../../utils/formatting";
+import { validation } from "../../../../utils/validation";
+import GraphCommand from "../../../base/GraphCommand";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -32,7 +32,7 @@ class TodoTaskSetCommand extends GraphCommand {
   }
 
   public get description(): string {
-    return 'Update a task in a Microsoft To Do task list';
+    return "Update a task in a Microsoft To Do task list";
   }
 
   constructor() {
@@ -47,18 +47,19 @@ class TodoTaskSetCommand extends GraphCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        listId: typeof args.options.listId !== 'undefined',
-        listName: typeof args.options.listName !== 'undefined',
-        status: typeof args.options.status !== 'undefined',
-        title: typeof args.options.title !== 'undefined',
-        bodyContent: typeof args.options.bodyContent !== 'undefined',
+        listId: typeof args.options.listId !== "undefined",
+        listName: typeof args.options.listName !== "undefined",
+        status: typeof args.options.status !== "undefined",
+        title: typeof args.options.title !== "undefined",
+        bodyContent: typeof args.options.bodyContent !== "undefined",
         bodyContentType: args.options.bodyContentType,
-        dueDateTime: typeof args.options.dueDateTime !== 'undefined',
+        dueDateTime: typeof args.options.dueDateTime !== "undefined",
         importance: args.options.importance,
-        reminderDateTime: typeof args.options.reminderDateTime !== 'undefined',
-        categories: typeof args.options.categories !== 'undefined',
-        completedDateTime: typeof args.options.completedDateTime !== 'undefined',
-        startDateTime: typeof args.options.startDateTime !== 'undefined'
+        reminderDateTime: typeof args.options.reminderDateTime !== "undefined",
+        categories: typeof args.options.categories !== "undefined",
+        completedDateTime:
+          typeof args.options.completedDateTime !== "undefined",
+        startDateTime: typeof args.options.startDateTime !== "undefined",
       });
     });
   }
@@ -66,93 +67,120 @@ class TodoTaskSetCommand extends GraphCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-i, --id <id>'
+        option: "-i, --id <id>",
       },
       {
-        option: '-t, --title [title]'
+        option: "-t, --title [title]",
       },
       {
-        option: '-s, --status [status]',
-        autocomplete: ['notStarted', 'inProgress', 'completed', 'waitingOnOthers', 'deferred']
+        option: "-s, --status [status]",
+        autocomplete: [
+          "notStarted",
+          "inProgress",
+          "completed",
+          "waitingOnOthers",
+          "deferred",
+        ],
       },
       {
-        option: '--listName [listName]'
+        option: "--listName [listName]",
       },
       {
-        option: '--listId [listId]'
+        option: "--listId [listId]",
       },
       {
-        option: '--bodyContent [bodyContent]'
+        option: "--bodyContent [bodyContent]",
       },
       {
-        option: '--bodyContentType [bodyContentType]',
-        autocomplete: ['text', 'html']
+        option: "--bodyContentType [bodyContentType]",
+        autocomplete: ["text", "html"],
       },
       {
-        option: '--dueDateTime [dueDateTime]'
+        option: "--dueDateTime [dueDateTime]",
       },
       {
-        option: '--importance [importance]',
-        autocomplete: ['low', 'normal', 'high']
+        option: "--importance [importance]",
+        autocomplete: ["low", "normal", "high"],
       },
       {
-        option: '--reminderDateTime [reminderDateTime]'
+        option: "--reminderDateTime [reminderDateTime]",
       },
       {
-        option: '--categories [categories]'
+        option: "--categories [categories]",
       },
       {
-        option: '--completedDateTime [completedDateTime]'
+        option: "--completedDateTime [completedDateTime]",
       },
       {
-        option: '--startDateTime [startDateTime]'
-      }
+        option: "--startDateTime [startDateTime]",
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (args.options.status &&
-          args.options.status !== 'notStarted' &&
-          args.options.status !== 'inProgress' &&
-          args.options.status !== 'completed' &&
-          args.options.status !== 'waitingOnOthers' &&
-          args.options.status !== 'deferred') {
-          return `${args.options.status} is not a valid value. Allowed values are notStarted|inProgress|completed|waitingOnOthers|deferred`;
-        }
-
-        if (args.options.bodyContentType && ['text', 'html'].indexOf(args.options.bodyContentType.toLowerCase()) === -1) {
-          return `'${args.options.bodyContentType}' is not a valid value for the bodyContentType option. Allowed values are text|html`;
-        }
-
-        if (args.options.importance && ['low', 'normal', 'high'].indexOf(args.options.importance.toLowerCase()) === -1) {
-          return `'${args.options.importance}' is not a valid value for the importance option. Allowed values are low|normal|high`;
-        }
-
-        if (args.options.dueDateTime && !validation.isValidISODateTime(args.options.dueDateTime)) {
-          return `'${args.options.dueDateTime}' is not a valid ISO date string`;
-        }
-
-        if (args.options.reminderDateTime && !validation.isValidISODateTime(args.options.reminderDateTime)) {
-          return `'${args.options.reminderDateTime}' is not a valid ISO date string`;
-        }
-
-        if (args.options.completedDateTime && !validation.isValidISODateTime(args.options.completedDateTime)) {
-          return `'${args.options.completedDateTime}' is not a valid datetime.`;
-        }
-
-        if (args.options.startDateTime && !validation.isValidISODateTime(args.options.startDateTime)) {
-          return `'${args.options.startDateTime}' is not a valid datetime.`;
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      if (
+        args.options.status &&
+        args.options.status !== "notStarted" &&
+        args.options.status !== "inProgress" &&
+        args.options.status !== "completed" &&
+        args.options.status !== "waitingOnOthers" &&
+        args.options.status !== "deferred"
+      ) {
+        return `${args.options.status} is not a valid value. Allowed values are notStarted|inProgress|completed|waitingOnOthers|deferred`;
       }
-    );
+
+      if (
+        args.options.bodyContentType &&
+        ["text", "html"].indexOf(args.options.bodyContentType.toLowerCase()) ===
+          -1
+      ) {
+        return `'${args.options.bodyContentType}' is not a valid value for the bodyContentType option. Allowed values are text|html`;
+      }
+
+      if (
+        args.options.importance &&
+        ["low", "normal", "high"].indexOf(
+          args.options.importance.toLowerCase(),
+        ) === -1
+      ) {
+        return `'${args.options.importance}' is not a valid value for the importance option. Allowed values are low|normal|high`;
+      }
+
+      if (
+        args.options.dueDateTime &&
+        !validation.isValidISODateTime(args.options.dueDateTime)
+      ) {
+        return `'${args.options.dueDateTime}' is not a valid ISO date string`;
+      }
+
+      if (
+        args.options.reminderDateTime &&
+        !validation.isValidISODateTime(args.options.reminderDateTime)
+      ) {
+        return `'${args.options.reminderDateTime}' is not a valid ISO date string`;
+      }
+
+      if (
+        args.options.completedDateTime &&
+        !validation.isValidISODateTime(args.options.completedDateTime)
+      ) {
+        return `'${args.options.completedDateTime}' is not a valid datetime.`;
+      }
+
+      if (
+        args.options.startDateTime &&
+        !validation.isValidISODateTime(args.options.startDateTime)
+      ) {
+        return `'${args.options.startDateTime}' is not a valid datetime.`;
+      }
+
+      return true;
+    });
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['listId', 'listName'] });
+    this.optionSets.push({ options: ["listId", "listName"] });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
@@ -162,19 +190,20 @@ class TodoTaskSetCommand extends GraphCommand {
     try {
       const listId: string = await this.getTodoListId(args);
       const requestOptions: CliRequestOptions = {
-        url: `${endpoint}/me/todo/lists/${listId}/tasks/${formatting.encodeQueryParameter(args.options.id)}`,
+        url: `${endpoint}/me/todo/lists/${listId}/tasks/${formatting.encodeQueryParameter(
+          args.options.id,
+        )}`,
         headers: {
-          accept: 'application/json;odata.metadata=none',
-          'Content-Type': 'application/json'
+          accept: "application/json;odata.metadata=none",
+          "Content-Type": "application/json",
         },
         data: data,
-        responseType: 'json'
+        responseType: "json",
       };
 
       const res = await request.patch<any>(requestOptions);
       logger.log(res);
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }
@@ -185,15 +214,20 @@ class TodoTaskSetCommand extends GraphCommand {
     }
 
     const requestOptions: any = {
-      url: `${this.resource}/v1.0/me/todo/lists?$filter=displayName eq '${escape(args.options.listName as string)}'`,
+      url: `${
+        this.resource
+      }/v1.0/me/todo/lists?$filter=displayName eq '${escape(
+        args.options.listName as string,
+      )}'`,
       headers: {
-        accept: 'application/json;odata.metadata=none'
+        accept: "application/json;odata.metadata=none",
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
-    return request.get<{ value: [{ id: string }] }>(requestOptions)
-      .then(response => {
+    return request
+      .get<{ value: [{ id: string }] }>(requestOptions)
+      .then((response) => {
         const taskList: { id: string } | undefined = response.value[0];
 
         if (!taskList) {
@@ -204,10 +238,13 @@ class TodoTaskSetCommand extends GraphCommand {
       });
   }
 
-  private getDateTimeTimeZone(dateTime: string): { dateTime: string, timeZone: string } {
+  private getDateTimeTimeZone(dateTime: string): {
+    dateTime: string;
+    timeZone: string;
+  } {
     return {
       dateTime: dateTime,
-      timeZone: 'Etc/GMT'
+      timeZone: "Etc/GMT",
     };
   }
 
@@ -229,7 +266,7 @@ class TodoTaskSetCommand extends GraphCommand {
     if (options.bodyContentType || options.bodyContent) {
       requestBody.body = {
         content: options.bodyContent,
-        contentType: options.bodyContentType?.toLowerCase() || 'text'
+        contentType: options.bodyContentType?.toLowerCase() || "text",
       };
     }
 
@@ -238,19 +275,25 @@ class TodoTaskSetCommand extends GraphCommand {
     }
 
     if (options.reminderDateTime) {
-      requestBody.reminderDateTime = this.getDateTimeTimeZone(options.reminderDateTime);
+      requestBody.reminderDateTime = this.getDateTimeTimeZone(
+        options.reminderDateTime,
+      );
     }
 
     if (options.categories) {
-      requestBody.categories = options.categories.split(',');
+      requestBody.categories = options.categories.split(",");
     }
 
     if (options.completedDateTime) {
-      requestBody.completedDateTime = this.getDateTimeTimeZone(options.completedDateTime);
+      requestBody.completedDateTime = this.getDateTimeTimeZone(
+        options.completedDateTime,
+      );
     }
 
     if (options.startDateTime) {
-      requestBody.startDateTime = this.getDateTimeTimeZone(options.startDateTime);
+      requestBody.startDateTime = this.getDateTimeTimeZone(
+        options.startDateTime,
+      );
     }
 
     return requestBody;

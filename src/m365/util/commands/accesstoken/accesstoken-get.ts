@@ -1,8 +1,8 @@
-import auth, { Auth } from '../../../../Auth';
-import { Logger } from '../../../../cli/Logger';
-import Command from '../../../../Command';
-import GlobalOptions from '../../../../GlobalOptions';
-import commands from '../../commands';
+import auth, { Auth } from "../../../../Auth";
+import { Logger } from "../../../../cli/Logger";
+import Command from "../../../../Command";
+import GlobalOptions from "../../../../GlobalOptions";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -19,7 +19,7 @@ class UtilAccessTokenGetCommand extends Command {
   }
 
   public get description(): string {
-    return 'Gets access token for the specified resource';
+    return "Gets access token for the specified resource";
   }
 
   constructor() {
@@ -32,7 +32,7 @@ class UtilAccessTokenGetCommand extends Command {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        new: args.options.new
+        new: args.options.new,
       });
     });
   }
@@ -40,11 +40,11 @@ class UtilAccessTokenGetCommand extends Command {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-r, --resource <resource>'
+        option: "-r, --resource <resource>",
       },
       {
-        option: '--new'
-      }
+        option: "--new",
+      },
     );
   }
 
@@ -52,22 +52,27 @@ class UtilAccessTokenGetCommand extends Command {
     let resource: string = args.options.resource;
 
     try {
-      if (resource.toLowerCase() === 'sharepoint') {
+      if (resource.toLowerCase() === "sharepoint") {
         if (auth.service.spoUrl) {
           resource = auth.service.spoUrl;
-        }
-        else {
+        } else {
           throw "SharePoint URL undefined. Use the 'm365 spo set --url https://contoso.sharepoint.com' command to set the URL";
         }
-      }
-      else if (resource.toLowerCase() === 'graph') {
-        resource = Auth.getEndpointForResource('https://graph.microsoft.com', auth.service.cloudType);
+      } else if (resource.toLowerCase() === "graph") {
+        resource = Auth.getEndpointForResource(
+          "https://graph.microsoft.com",
+          auth.service.cloudType,
+        );
       }
 
-      const accessToken: string = await auth.ensureAccessToken(resource, logger, this.debug, args.options.new);
+      const accessToken: string = await auth.ensureAccessToken(
+        resource,
+        logger,
+        this.debug,
+        args.options.new,
+      );
       logger.log(accessToken);
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }

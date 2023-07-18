@@ -1,75 +1,81 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
 const copyCommands = {
   bash: {
-    copyCommand: 'cp',
-    copyDestinationParam: ' '
+    copyCommand: "cp",
+    copyDestinationParam: " ",
   },
   powershell: {
-    copyCommand: 'Copy-Item',
-    copyDestinationParam: ' -Destination '
+    copyCommand: "Copy-Item",
+    copyDestinationParam: " -Destination ",
   },
   cmd: {
-    copyCommand: 'copy',
-    copyDestinationParam: ' '
-  }
+    copyCommand: "copy",
+    copyDestinationParam: " ",
+  },
 };
 
 const createDirectoryCommands = {
   bash: {
-    createDirectoryCommand: 'mkdir',
+    createDirectoryCommand: "mkdir",
     createDirectoryPathParam: ' "',
-    createDirectoryNameParam: '/',
-    createDirectoryItemTypeParam: '"'
+    createDirectoryNameParam: "/",
+    createDirectoryItemTypeParam: '"',
   },
   powershell: {
-    createDirectoryCommand: 'New-Item',
+    createDirectoryCommand: "New-Item",
     createDirectoryPathParam: ' -Path "',
     createDirectoryNameParam: '" -Name "',
-    createDirectoryItemTypeParam: '" -ItemType "directory"'
+    createDirectoryItemTypeParam: '" -ItemType "directory"',
   },
   cmd: {
-    createDirectoryCommand: 'mkdir',
+    createDirectoryCommand: "mkdir",
     createDirectoryPathParam: ' "',
-    createDirectoryNameParam: '\\',
-    createDirectoryItemTypeParam: '"'
-  }
+    createDirectoryNameParam: "\\",
+    createDirectoryItemTypeParam: '"',
+  },
 };
 
 const addFileCommands = {
   bash: {
-    addFileCommand: 'cat > [FILEPATH] << EOF [FILECONTENT]EOF'
+    addFileCommand: "cat > [FILEPATH] << EOF [FILECONTENT]EOF",
   },
   powershell: {
-    addFileCommand: "@'[FILECONTENT]'@ | Out-File -FilePath [FILEPATH]"
+    addFileCommand: "@'[FILECONTENT]'@ | Out-File -FilePath [FILEPATH]",
   },
   cmd: {
-    addFileCommand: "echo [FILECONTENT] > [FILEPATH]"
-  }
+    addFileCommand: "echo [FILECONTENT] > [FILEPATH]",
+  },
 };
 
 const removeFileCommands = {
   bash: {
-    removeFileCommand: 'rm'
+    removeFileCommand: "rm",
   },
   powershell: {
-    removeFileCommand: 'Remove-Item'
+    removeFileCommand: "Remove-Item",
   },
   cmd: {
-    removeFileCommand: 'del'
-  }
+    removeFileCommand: "del",
+  },
 };
 
 export const fsUtil = {
   readdirR(dir: string): string | string[] {
     return fs.statSync(dir).isDirectory()
-      ? Array.prototype.concat(...fs.readdirSync(dir).map(f => fsUtil.readdirR(path.join(dir, f))))
+      ? Array.prototype.concat(
+          ...fs.readdirSync(dir).map((f) => fsUtil.readdirR(path.join(dir, f))),
+        )
       : dir;
   },
 
   // from: https://stackoverflow.com/a/22185855
-  copyRecursiveSync(src: string, dest: string, replaceTokens?: (s: string) => string): void {
+  copyRecursiveSync(
+    src: string,
+    dest: string,
+    replaceTokens?: (s: string) => string,
+  ): void {
     const exists: boolean = fs.existsSync(src);
     const stats: false | fs.Stats = exists && fs.statSync(src);
     const isDirectory: boolean = exists && (stats as fs.Stats).isDirectory();
@@ -83,11 +89,13 @@ export const fsUtil = {
         fs.mkdirSync(dest);
       }
       fs.readdirSync(src).forEach(function (childItemName) {
-        fsUtil.copyRecursiveSync(path.join(src, childItemName),
-          path.join(dest, childItemName), replaceTokens);
+        fsUtil.copyRecursiveSync(
+          path.join(src, childItemName),
+          path.join(dest, childItemName),
+          replaceTokens,
+        );
       });
-    }
-    else {
+    } else {
       fs.copyFileSync(src, dest);
     }
   },
@@ -110,5 +118,5 @@ export const fsUtil = {
 
   getRemoveCommand(command: string, shell: string): string {
     return (removeFileCommands as any)[shell][command];
-  }
+  },
 };
