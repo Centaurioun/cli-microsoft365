@@ -38,7 +38,7 @@ export default class HelloWorldFormCustomizer
     super.onDispose();
   }
 
-  //@ts-ignore
+  //@ts-expect-error
   private _onSave = (): void => {
     // TODO: Add your custom save logic here.
 
@@ -46,7 +46,7 @@ export default class HelloWorldFormCustomizer
     this.formSaved();
   }
 
-  //@ts-ignore
+  //@ts-expect-error
   private _onClose = (): void => {
     // TODO: Add your custom close logic here.
 
