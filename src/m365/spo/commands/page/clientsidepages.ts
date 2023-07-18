@@ -1111,7 +1111,7 @@ export interface ClientSideWebpartData {
   dynamicDataValues?: any;
 }
 
-export module ClientSideWebpartPropertyTypes {
+export namespace ClientSideWebpartPropertyTypes {
 
   /**
    * Propereties for Embed (component id: 490d7c76-1824-45b2-9de3-676421c997fa)
