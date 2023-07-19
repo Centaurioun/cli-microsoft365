@@ -35,7 +35,6 @@ describe("utils/powerPlatform", () => {
         "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl"
       ) {
         if (
-          
           opts.headers?.accept &&
           (opts.headers.accept as string).indexOf("application/json") === 0
         ) {
@@ -68,7 +67,6 @@ describe("utils/powerPlatform", () => {
         "https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/someRandomGuid?api-version=2020-10-01&$select=properties.linkedEnvironmentMetadata.instanceApiUrl"
       ) {
         if (
-          
           opts.headers?.accept &&
           (opts.headers.accept as string).indexOf("application/json") === 0
         ) {

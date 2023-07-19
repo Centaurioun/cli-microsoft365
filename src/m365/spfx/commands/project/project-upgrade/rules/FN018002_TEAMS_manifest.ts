@@ -1,8 +1,8 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Manifest, Project } from '../../project-model';
-import { Finding, Occurrence } from '../../report-model';
-import { Rule } from '../../Rule';
+import * as fs from "fs";
+import * as path from "path";
+import { Manifest, Project } from "../../project-model";
+import { Finding, Occurrence } from "../../report-model";
+import { Rule } from "../../Rule";
 
 export class FN018002_TEAMS_manifest extends Rule {
   constructor() {
@@ -10,15 +10,15 @@ export class FN018002_TEAMS_manifest extends Rule {
   }
 
   get id(): string {
-    return 'FN018002';
+    return "FN018002";
   }
 
   get title(): string {
-    return 'Web part Microsoft Teams tab manifest';
+    return "Web part Microsoft Teams tab manifest";
   }
 
   get description(): string {
-    return 'Create Microsoft Teams tab manifest for the web part';
+    return "Create Microsoft Teams tab manifest for the web part";
   }
 
   get resolution(): string {
@@ -74,51 +74,59 @@ export class FN018002_TEAMS_manifest extends Rule {
   }
 
   get resolutionType(): string {
-    return 'cmd';
+    return "cmd";
   }
 
   get file(): string {
-    return '';
+    return "";
   }
 
   get severity(): string {
-    return 'Optional';
+    return "Optional";
   }
 
   visit(project: Project, findings: Finding[]): void {
-    if (!project.manifests ||
-      project.manifests.length < 1) {
+    if (!project.manifests || project.manifests.length < 1) {
       return;
     }
 
-    const webPartManifests: Manifest[] = project.manifests.filter(m => m.componentType === 'WebPart');
+    const webPartManifests: Manifest[] = project.manifests.filter(
+      (m) => m.componentType === "WebPart",
+    );
     if (webPartManifests.length < 1) {
       return;
     }
 
     const occurrences: Occurrence[] = [];
-    webPartManifests.forEach(manifest => {
-      const webPartFolderName: string = path.basename(path.dirname(manifest.path));
+    webPartManifests.forEach((manifest) => {
+      const webPartFolderName: string = path.basename(
+        path.dirname(manifest.path),
+      );
       const teamsFolderName: string = `teams`;
       const teamsFolderPath: string = path.join(project.path, teamsFolderName);
-      const teamsManifestPath: string = path.join(teamsFolderPath, `manifest_${webPartFolderName}.json`);
+      const teamsManifestPath: string = path.join(
+        teamsFolderPath,
+        `manifest_${webPartFolderName}.json`,
+      );
       if (fs.existsSync(teamsManifestPath)) {
         return;
       }
 
-      let webPartTitle: string = 'undefined';
-      let webPartDescription: string = 'undefined';
-      if (manifest.preconfiguredEntries &&
-        manifest.preconfiguredEntries.length > 0) {
+      let webPartTitle: string = "undefined";
+      let webPartDescription: string = "undefined";
+      if (
+        manifest.preconfiguredEntries &&
+        manifest.preconfiguredEntries.length > 0
+      ) {
         const entry = manifest.preconfiguredEntries[0];
-        if ( entry.title?.default) {
+        if (entry.title?.default) {
           webPartTitle = entry.title.default;
         }
-        if ( entry.description?.default) {
+        if (entry.description?.default) {
           webPartDescription = entry.description.default;
         }
       }
-      const webPartId: string = manifest.id || 'undefined';
+      const webPartId: string = manifest.id || "undefined";
 
       const resolution: string = this.resolution
         .replace(/__filePath__/g, teamsManifestPath)
@@ -129,7 +137,7 @@ export class FN018002_TEAMS_manifest extends Rule {
 
       occurrences.push({
         file: path.relative(project.path, teamsManifestPath),
-        resolution: resolution
+        resolution: resolution,
       });
     });
 

@@ -1,12 +1,17 @@
-import { Logger } from '../../../../cli/Logger';
-import config from '../../../../config';
-import GlobalOptions from '../../../../GlobalOptions';
-import request from '../../../../request';
-import { formatting } from '../../../../utils/formatting';
-import { ClientSvcResponse, ClientSvcResponseContents, ContextInfo, spo } from '../../../../utils/spo';
-import { validation } from '../../../../utils/validation';
-import SpoCommand from '../../../base/SpoCommand';
-import commands from '../../commands';
+import { Logger } from "../../../../cli/Logger";
+import config from "../../../../config";
+import GlobalOptions from "../../../../GlobalOptions";
+import request from "../../../../request";
+import { formatting } from "../../../../utils/formatting";
+import {
+  ClientSvcResponse,
+  ClientSvcResponseContents,
+  ContextInfo,
+  spo,
+} from "../../../../utils/spo";
+import { validation } from "../../../../utils/validation";
+import SpoCommand from "../../../base/SpoCommand";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -24,7 +29,7 @@ class SpoThemeSetCommand extends SpoCommand {
   }
 
   public get description(): string {
-    return 'Add or update a theme';
+    return "Add or update a theme";
   }
 
   constructor() {
@@ -38,7 +43,7 @@ class SpoThemeSetCommand extends SpoCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        inverted: (!(!args.options.isInverted)).toString()
+        inverted: (!!args.options.isInverted).toString(),
       });
     });
   }
@@ -46,27 +51,25 @@ class SpoThemeSetCommand extends SpoCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-n, --name <name>'
+        option: "-n, --name <name>",
       },
       {
-        option: '-t, --theme <theme>'
+        option: "-t, --theme <theme>",
       },
       {
-        option: '--isInverted'
-      }
+        option: "--isInverted",
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (!validation.isValidTheme(args.options.theme)) {
-          return 'The specified theme is not valid';
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      if (!validation.isValidTheme(args.options.theme)) {
+        return "The specified theme is not valid";
       }
-    );
+
+      return true;
+    });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
@@ -76,8 +79,8 @@ class SpoThemeSetCommand extends SpoCommand {
       const palette: any = JSON.parse(args.options.theme);
 
       if (this.debug) {
-        logger.logToStderr('');
-        logger.logToStderr('Palette');
+        logger.logToStderr("");
+        logger.logToStderr("Palette");
         logger.logToStderr(JSON.stringify(palette));
       }
 
@@ -86,21 +89,30 @@ class SpoThemeSetCommand extends SpoCommand {
       const requestOptions: any = {
         url: `${spoAdminUrl}/_vti_bin/client.svc/ProcessQuery`,
         headers: {
-          'X-RequestDigest': res.FormDigestValue
+          "X-RequestDigest": res.FormDigestValue,
         },
-        data: `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="10" ObjectPathId="9" /><Method Name="UpdateTenantTheme" Id="11" ObjectPathId="9"><Parameters><Parameter Type="String">${formatting.escapeXml(args.options.name)}</Parameter><Parameter Type="String">{"isInverted":${isInverted},"name":"${formatting.escapeXml(args.options.name)}","palette":${JSON.stringify(palette)}}</Parameter></Parameters></Method></Actions><ObjectPaths><Constructor Id="9" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}"/></ObjectPaths></Request>`
+        data: `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${
+          config.applicationName
+        }" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="10" ObjectPathId="9" /><Method Name="UpdateTenantTheme" Id="11" ObjectPathId="9"><Parameters><Parameter Type="String">${formatting.escapeXml(
+          args.options.name,
+        )}</Parameter><Parameter Type="String">{"isInverted":${isInverted},"name":"${formatting.escapeXml(
+          args.options.name,
+        )}","palette":${JSON.stringify(
+          palette,
+        )}}</Parameter></Parameters></Method></Actions><ObjectPaths><Constructor Id="9" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}"/></ObjectPaths></Request>`,
       };
 
       const processQuery: string = await request.post(requestOptions);
       const json: ClientSvcResponse = JSON.parse(processQuery);
-      const contents: ClientSvcResponseContents = json.find(x => { return x['ErrorInfo']; });
+      const contents: ClientSvcResponseContents = json.find((x) => {
+        return x["ErrorInfo"];
+      });
 
-      if ( contents?.ErrorInfo) {
-        throw contents.ErrorInfo.ErrorMessage || 'ClientSvc unknown error';
+      if (contents?.ErrorInfo) {
+        throw contents.ErrorInfo.ErrorMessage || "ClientSvc unknown error";
       }
       return Promise.resolve();
-    } 
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedPromise(err);
     }
   }

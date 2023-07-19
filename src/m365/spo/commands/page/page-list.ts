@@ -1,9 +1,9 @@
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import { odata } from '../../../../utils/odata';
-import { validation } from '../../../../utils/validation';
-import SpoCommand from '../../../base/SpoCommand';
-import commands from '../../commands';
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import { odata } from "../../../../utils/odata";
+import { validation } from "../../../../utils/validation";
+import SpoCommand from "../../../base/SpoCommand";
+import commands from "../../commands";
 
 interface CommandArgs {
   options: Options;
@@ -19,11 +19,11 @@ class SpoPageListCommand extends SpoCommand {
   }
 
   public get description(): string {
-    return 'Lists all modern pages in the given site';
+    return "Lists all modern pages in the given site";
   }
 
   public defaultProperties(): string[] | undefined {
-    return ['Name', 'Title'];
+    return ["Name", "Title"];
   }
 
   constructor() {
@@ -34,16 +34,14 @@ class SpoPageListCommand extends SpoCommand {
   }
 
   #initOptions(): void {
-    this.options.unshift(
-      {
-        option: '-u, --webUrl <webUrl>'
-      }
-    );
+    this.options.unshift({
+      option: "-u, --webUrl <webUrl>",
+    });
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => validation.isValidSharePointUrl(args.options.webUrl)
+    this.validators.push(async (args: CommandArgs) =>
+      validation.isValidSharePointUrl(args.options.webUrl),
     );
   }
 
@@ -55,21 +53,31 @@ class SpoPageListCommand extends SpoCommand {
 
       let pages: any[] = [];
 
-      const pagesList = await odata.getAllItems<any>(`${args.options.webUrl}/_api/sitepages/pages?$orderby=Title`);
+      const pagesList = await odata.getAllItems<any>(
+        `${args.options.webUrl}/_api/sitepages/pages?$orderby=Title`,
+      );
 
       if (pagesList && pagesList.length > 0) {
         pages = pagesList;
       }
 
-      const res = await odata.getAllItems<any>(`${args.options.webUrl}/_api/web/lists/SitePages/rootfolder/files?$expand=ListItemAllFields/ClientSideApplicationId&$orderby=Name`);
+      const res = await odata.getAllItems<any>(
+        `${args.options.webUrl}/_api/web/lists/SitePages/rootfolder/files?$expand=ListItemAllFields/ClientSideApplicationId&$orderby=Name`,
+      );
       if (res && res.length > 0) {
-        const clientSidePages: any[] = res.filter(p => p.ListItemAllFields.ClientSideApplicationId === 'b6917cb1-93a0-4b97-a84d-7cf49975d4ec');
-        pages = pages.map(p => {
-          const clientSidePage = clientSidePages.find(cp =>  cp?.ListItemAllFields && cp.ListItemAllFields.Id === p.Id);
+        const clientSidePages: any[] = res.filter(
+          (p) =>
+            p.ListItemAllFields.ClientSideApplicationId ===
+            "b6917cb1-93a0-4b97-a84d-7cf49975d4ec",
+        );
+        pages = pages.map((p) => {
+          const clientSidePage = clientSidePages.find(
+            (cp) => cp?.ListItemAllFields && cp.ListItemAllFields.Id === p.Id,
+          );
           if (clientSidePage) {
             return {
               ...clientSidePage,
-              ...p
+              ...p,
             };
           }
 
@@ -78,8 +86,7 @@ class SpoPageListCommand extends SpoCommand {
 
         logger.log(pages);
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }

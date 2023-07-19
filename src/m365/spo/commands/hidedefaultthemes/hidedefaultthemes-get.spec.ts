@@ -1,15 +1,15 @@
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
-import auth from '../../../../Auth';
-import { Logger } from '../../../../cli/Logger';
-import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
-import { pid } from '../../../../utils/pid';
-import { session } from '../../../../utils/session';
-import { sinonUtil } from '../../../../utils/sinonUtil';
-import commands from '../../commands';
-const command: Command = require('./hidedefaultthemes-get');
+import * as assert from "assert";
+import * as sinon from "sinon";
+import { telemetry } from "../../../../telemetry";
+import auth from "../../../../Auth";
+import { Logger } from "../../../../cli/Logger";
+import Command, { CommandError } from "../../../../Command";
+import request from "../../../../request";
+import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
+import { sinonUtil } from "../../../../utils/sinonUtil";
+import commands from "../../commands";
+const command: Command = require("./hidedefaultthemes-get");
 
 describe(commands.HIDEDEFAULTTHEMES_GET, () => {
   let log: string[];
@@ -17,12 +17,12 @@ describe(commands.HIDEDEFAULTTHEMES_GET, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
     auth.service.connected = true;
-    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+    auth.service.spoUrl = "https://contoso.sharepoint.com";
   });
 
   beforeEach(() => {
@@ -36,16 +36,13 @@ describe(commands.HIDEDEFAULTTHEMES_GET, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
-    loggerLogSpy = sinon.spy(logger, 'log');
+    loggerLogSpy = sinon.spy(logger, "log");
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.get,
-      request.post
-    ]);
+    sinonUtil.restore([request.get, request.post]);
   });
 
   after(() => {
@@ -54,80 +51,100 @@ describe(commands.HIDEDEFAULTTHEMES_GET, () => {
     auth.service.spoUrl = undefined;
   });
 
-  it('has correct name', () => {
+  it("has correct name", () => {
     assert.strictEqual(command.name, commands.HIDEDEFAULTTHEMES_GET);
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('uses correct API url', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('/_api/thememanager/GetHideDefaultThemes') > -1) {
-        return 'Correct Url';
+  it("uses correct API url", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          "/_api/thememanager/GetHideDefaultThemes",
+        ) > -1
+      ) {
+        return "Correct Url";
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
+    });
+
+    await command.action(logger, {
+      options: {},
+    });
+  });
+
+  it("uses correct API url (debug)", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          "/_api/thememanager/GetHideDefaultThemes",
+        ) > -1
+      ) {
+        return "Correct Url";
+      }
+      throw "Invalid request";
     });
 
     await command.action(logger, {
       options: {
-      }
+        debug: true,
+      },
     });
   });
 
-  it('uses correct API url (debug)', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('/_api/thememanager/GetHideDefaultThemes') > -1) {
-        return 'Correct Url';
-      }
-      throw 'Invalid request';
-    });
-
-    await command.action(logger, {
-      options: {
-        debug: true
-      }
-    });
-  });
-
-  it('gets the current value of the HideDefaultThemes setting', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('/_api/thememanager/GetHideDefaultThemes') > -1) {
+  it("gets the current value of the HideDefaultThemes setting", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          "/_api/thememanager/GetHideDefaultThemes",
+        ) > -1
+      ) {
         if (
           opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
           return { value: true };
         }
       }
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     await command.action(logger, { options: { debug: true, verbose: true } });
-    assert(loggerLogSpy.calledWith(true), 'Invalid request');
+    assert(loggerLogSpy.calledWith(true), "Invalid request");
   });
 
-  it('gets the current value of the HideDefaultThemes setting - handle error', async () => {
+  it("gets the current value of the HideDefaultThemes setting - handle error", async () => {
     const error = {
       error: {
-        'odata.error': {
-          code: '-1, Microsoft.SharePoint.Client.InvalidOperationException',
+        "odata.error": {
+          code: "-1, Microsoft.SharePoint.Client.InvalidOperationException",
           message: {
-            value: 'An error has occurred'
-          }
-        }
-      }
+            value: "An error has occurred",
+          },
+        },
+      },
     };
 
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('/_api/thememanager/GetHideDefaultThemes') > -1) {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          "/_api/thememanager/GetHideDefaultThemes",
+        ) > -1
+      ) {
         throw error;
       }
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
-    await assert.rejects(command.action(logger, { options: { debug: true, verbose: true } } as any),
-      new CommandError(error.error['odata.error'].message.value));
+    await assert.rejects(
+      command.action(logger, {
+        options: { debug: true, verbose: true },
+      } as any),
+      new CommandError(error.error["odata.error"].message.value),
+    );
   });
 });

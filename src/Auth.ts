@@ -1,17 +1,17 @@
 import { AzureCloudInstance, DeviceCodeResponse } from "@azure/msal-common";
-import type * as Msal from '@azure/msal-node';
-import type * as clipboard from 'clipboardy';
-import type * as NodeForge from 'node-forge';
-import { FileTokenStorage } from './auth/FileTokenStorage';
-import { msalCachePlugin } from './auth/msalCachePlugin';
-import { TokenStorage } from './auth/TokenStorage';
-import type { AuthServer } from './AuthServer';
-import { Cli } from './cli/Cli';
-import { Logger } from './cli/Logger';
-import { CommandError } from './Command';
-import config from './config';
-import request from './request';
-import { settingsNames } from './settingsNames';
+import type * as Msal from "@azure/msal-node";
+import type * as clipboard from "clipboardy";
+import type * as NodeForge from "node-forge";
+import { FileTokenStorage } from "./auth/FileTokenStorage";
+import { msalCachePlugin } from "./auth/msalCachePlugin";
+import { TokenStorage } from "./auth/TokenStorage";
+import type { AuthServer } from "./AuthServer";
+import { Cli } from "./cli/Cli";
+import { Logger } from "./cli/Logger";
+import { CommandError } from "./Command";
+import config from "./config";
+import request from "./request";
+import { settingsNames } from "./settingsNames";
 import { browserUtil } from "./utils/browserUtil";
 
 export interface Hash<TValue> {
@@ -38,7 +38,7 @@ export enum CloudType {
   USGov,
   USGovHigh,
   USGovDoD,
-  China
+  China,
 }
 
 export class Service {
@@ -88,13 +88,13 @@ export enum AuthType {
   Certificate,
   Identity,
   Browser,
-  Secret
+  Secret,
 }
 
 export enum CertificateType {
   Unknown,
   Base64,
-  Binary
+  Binary,
 }
 
 export class Auth {
@@ -110,7 +110,10 @@ export class Auth {
   }
 
   public get defaultResource(): string {
-    return Auth.getEndpointForResource('https://graph.microsoft.com', this._service.cloudType);
+    return Auth.getEndpointForResource(
+      "https://graph.microsoft.com",
+      this._service.cloudType,
+    );
   }
 
   constructor() {
@@ -123,28 +126,28 @@ export class Auth {
   // we're mocking auth and calling its constructor
   public static initialize(): void {
     this.cloudEndpoints[CloudType.USGov] = {
-      'https://graph.microsoft.com': 'https://graph.microsoft.com',
-      'https://graph.windows.net': 'https://graph.windows.net',
-      'https://management.azure.com/': 'https://management.usgovcloudapi.net/',
-      'https://login.microsoftonline.com': 'https://login.microsoftonline.com'
+      "https://graph.microsoft.com": "https://graph.microsoft.com",
+      "https://graph.windows.net": "https://graph.windows.net",
+      "https://management.azure.com/": "https://management.usgovcloudapi.net/",
+      "https://login.microsoftonline.com": "https://login.microsoftonline.com",
     };
     this.cloudEndpoints[CloudType.USGovHigh] = {
-      'https://graph.microsoft.com': 'https://graph.microsoft.us',
-      'https://graph.windows.net': 'https://graph.windows.net',
-      'https://management.azure.com/': 'https://management.usgovcloudapi.net/',
-      'https://login.microsoftonline.com': 'https://login.microsoftonline.us'
+      "https://graph.microsoft.com": "https://graph.microsoft.us",
+      "https://graph.windows.net": "https://graph.windows.net",
+      "https://management.azure.com/": "https://management.usgovcloudapi.net/",
+      "https://login.microsoftonline.com": "https://login.microsoftonline.us",
     };
     this.cloudEndpoints[CloudType.USGovDoD] = {
-      'https://graph.microsoft.com': 'https://dod-graph.microsoft.us',
-      'https://graph.windows.net': 'https://graph.windows.net',
-      'https://management.azure.com/': 'https://management.usgovcloudapi.net/',
-      'https://login.microsoftonline.com': 'https://login.microsoftonline.us'
+      "https://graph.microsoft.com": "https://dod-graph.microsoft.us",
+      "https://graph.windows.net": "https://graph.windows.net",
+      "https://management.azure.com/": "https://management.usgovcloudapi.net/",
+      "https://login.microsoftonline.com": "https://login.microsoftonline.us",
     };
     this.cloudEndpoints[CloudType.China] = {
-      'https://graph.microsoft.com': 'https://microsoftgraph.chinacloudapi.cn',
-      'https://graph.windows.net': 'https://graph.chinacloudapi.cn',
-      'https://management.azure.com/': 'https://management.chinacloudapi.cn',
-      'https://login.microsoftonline.com': 'https://login.chinacloudapi.cn'
+      "https://graph.microsoft.com": "https://microsoftgraph.chinacloudapi.cn",
+      "https://graph.windows.net": "https://graph.chinacloudapi.cn",
+      "https://management.azure.com/": "https://management.chinacloudapi.cn",
+      "https://login.microsoftonline.com": "https://login.chinacloudapi.cn",
     };
   }
 
@@ -157,38 +160,53 @@ export class Auth {
     try {
       const service: Service = await this.getServiceConnectionInfo<Service>();
       this._service = Object.assign(this._service, service);
-    }
-    catch {
-    }
+    } catch {}
   }
 
-  public async ensureAccessToken(resource: string, logger: Logger, debug: boolean = false, fetchNew: boolean = false): Promise<string> {
+  public async ensureAccessToken(
+    resource: string,
+    logger: Logger,
+    debug: boolean = false,
+    fetchNew: boolean = false,
+  ): Promise<string> {
     const now: Date = new Date();
-    const accessToken: AccessToken | undefined = this.service.accessTokens[resource];
-    const expiresOn: Date =  accessToken?.expiresOn ?
-      // if expiresOn is serialized from the service file, it's set as a string
-      // if it's coming from MSAL, it's a Date
-      typeof accessToken.expiresOn === 'string' ? new Date(accessToken.expiresOn) : accessToken.expiresOn
+    const accessToken: AccessToken | undefined =
+      this.service.accessTokens[resource];
+    const expiresOn: Date = accessToken?.expiresOn
+      ? // if expiresOn is serialized from the service file, it's set as a string
+        // if it's coming from MSAL, it's a Date
+        typeof accessToken.expiresOn === "string"
+        ? new Date(accessToken.expiresOn)
+        : accessToken.expiresOn
       : new Date(0);
 
     if (!fetchNew && accessToken && expiresOn > now) {
       if (debug) {
-        logger.logToStderr(`Existing access token ${accessToken.accessToken} still valid. Returning...`);
+        logger.logToStderr(
+          `Existing access token ${accessToken.accessToken} still valid. Returning...`,
+        );
       }
       return accessToken.accessToken;
-    }
-    else {
+    } else {
       if (debug) {
         if (!accessToken) {
           logger.logToStderr(`No token found for resource ${resource}`);
-        }
-        else {
-          logger.logToStderr(`Access token expired. Token: ${accessToken.accessToken}, ExpiresAt: ${accessToken.expiresOn}`);
+        } else {
+          logger.logToStderr(
+            `Access token expired. Token: ${accessToken.accessToken}, ExpiresAt: ${accessToken.expiresOn}`,
+          );
         }
       }
     }
 
-    let getTokenPromise: ((resource: string, logger: Logger, debug: boolean, fetchNew: boolean) => Promise<AccessToken | null>) | undefined;
+    let getTokenPromise:
+      | ((
+          resource: string,
+          logger: Logger,
+          debug: boolean,
+          fetchNew: boolean,
+        ) => Promise<AccessToken | null>)
+      | undefined;
 
     // when using cert, you can't retrieve token silently, because there is
     // no account. Also cert auth instantiates clientApplication itself
@@ -197,7 +215,9 @@ export class Auth {
     if (this.service.authType !== AuthType.Certificate) {
       this.clientApplication = this.getClientApplication(logger, debug);
       if (this.clientApplication) {
-        const accounts = await this.clientApplication.getTokenCache().getAllAccounts();
+        const accounts = await this.clientApplication
+          .getTokenCache()
+          .getAllAccounts();
         if (accounts.length > 0) {
           getTokenPromise = this.ensureAccessTokenSilent.bind(this);
         }
@@ -233,24 +253,22 @@ export class Auth {
         logger.logToStderr(`getTokenPromise authentication result is null`);
       }
       throw `Failed to retrieve an access token. Please try again`;
-    }
-    else {
+    } else {
       if (debug) {
-        logger.logToStderr('Response');
+        logger.logToStderr("Response");
         logger.logToStderr(response);
-        logger.logToStderr('');
+        logger.logToStderr("");
       }
     }
 
     this.service.accessTokens[resource] = {
       expiresOn: response.expiresOn,
-      accessToken: response.accessToken
+      accessToken: response.accessToken,
     };
     this.service.connected = true;
     try {
       await this.storeConnectionInfo();
-    }
-    catch (ex: any) {
+    } catch (ex: any) {
       // error could happen due to an issue with persisting the access
       // token which shouldn't fail the overall token retrieval process
       if (debug) {
@@ -260,29 +278,52 @@ export class Auth {
     return response.accessToken;
   }
 
-  private getClientApplication(logger: Logger, debug: boolean): Msal.ClientApplication | undefined {
+  private getClientApplication(
+    logger: Logger,
+    debug: boolean,
+  ): Msal.ClientApplication | undefined {
     switch (this.service.authType) {
       case AuthType.DeviceCode:
       case AuthType.Password:
       case AuthType.Browser:
         return this.getPublicClient(logger, debug);
       case AuthType.Certificate:
-        return this.getConfidentialClient(logger, debug, this.service.thumbprint as string, this.service.password, undefined);
+        return this.getConfidentialClient(
+          logger,
+          debug,
+          this.service.thumbprint as string,
+          this.service.password,
+          undefined,
+        );
       case AuthType.Identity:
         // msal-node doesn't support managed identity so we need to do it manually
         return undefined;
       case AuthType.Secret:
-        return this.getConfidentialClient(logger, debug, undefined, undefined, this.service.secret);
+        return this.getConfidentialClient(
+          logger,
+          debug,
+          undefined,
+          undefined,
+          this.service.secret,
+        );
     }
   }
 
-  private getAuthClientConfiguration(logger: Logger, debug: boolean, certificateThumbprint?: string, certificatePrivateKey?: string, clientSecret?: string): Msal.Configuration {
-    const msal: typeof Msal = require('@azure/msal-node');
+  private getAuthClientConfiguration(
+    logger: Logger,
+    debug: boolean,
+    certificateThumbprint?: string,
+    certificatePrivateKey?: string,
+    clientSecret?: string,
+  ): Msal.Configuration {
+    const msal: typeof Msal = require("@azure/msal-node");
     const { LogLevel } = msal;
-    const cert = !certificateThumbprint ? undefined : {
-      thumbprint: certificateThumbprint,
-      privateKey: certificatePrivateKey as string
-    };
+    const cert = !certificateThumbprint
+      ? undefined
+      : {
+          thumbprint: certificateThumbprint,
+          privateKey: certificatePrivateKey as string,
+        };
 
     let azureCloudInstance: AzureCloudInstance = 0;
     switch (this.service.cloudType) {
@@ -301,11 +342,14 @@ export class Auth {
 
     const config = {
       clientId: this.service.appId,
-      authority: `${Auth.getEndpointForResource('https://login.microsoftonline.com', this.service.cloudType)}/${this.service.tenant}`,
+      authority: `${Auth.getEndpointForResource(
+        "https://login.microsoftonline.com",
+        this.service.cloudType,
+      )}/${this.service.tenant}`,
       azureCloudOptions: {
         azureCloudInstance,
-        tenant: this.service.tenant
-      }
+        tenant: this.service.tenant,
+      },
     };
 
     const authConfig = cert
@@ -315,7 +359,7 @@ export class Auth {
     return {
       auth: authConfig,
       cache: {
-        cachePlugin: msalCachePlugin
+        cachePlugin: msalCachePlugin,
       },
       system: {
         loggerOptions: {
@@ -327,180 +371,289 @@ export class Auth {
             }
           },
           piiLoggingEnabled: false,
-          logLevel: debug ? LogLevel.Verbose : LogLevel.Error
-        }
-      }
+          logLevel: debug ? LogLevel.Verbose : LogLevel.Error,
+        },
+      },
     };
   }
 
-  private getPublicClient(logger: Logger, debug: boolean): Msal.PublicClientApplication {
-    const msal: typeof Msal = require('@azure/msal-node');
+  private getPublicClient(
+    logger: Logger,
+    debug: boolean,
+  ): Msal.PublicClientApplication {
+    const msal: typeof Msal = require("@azure/msal-node");
     const { PublicClientApplication } = msal;
 
-    if (this.service.authType === AuthType.Password &&
-      this.service.tenant === 'common') {
+    if (
+      this.service.authType === AuthType.Password &&
+      this.service.tenant === "common"
+    ) {
       // common is not supported for the password flow and must be changed to
       // organizations
-      this.service.tenant = 'organizations';
+      this.service.tenant = "organizations";
     }
 
-    return new PublicClientApplication(this.getAuthClientConfiguration(logger, debug));
+    return new PublicClientApplication(
+      this.getAuthClientConfiguration(logger, debug),
+    );
   }
 
-  private getConfidentialClient(logger: Logger, debug: boolean, certificateThumbprint?: string, certificatePrivateKey?: string, clientSecret?: string): Msal.ConfidentialClientApplication {
-    const msal: typeof Msal = require('@azure/msal-node');
+  private getConfidentialClient(
+    logger: Logger,
+    debug: boolean,
+    certificateThumbprint?: string,
+    certificatePrivateKey?: string,
+    clientSecret?: string,
+  ): Msal.ConfidentialClientApplication {
+    const msal: typeof Msal = require("@azure/msal-node");
     const { ConfidentialClientApplication } = msal;
 
-    return new ConfidentialClientApplication(this.getAuthClientConfiguration(logger, debug, certificateThumbprint, certificatePrivateKey, clientSecret));
+    return new ConfidentialClientApplication(
+      this.getAuthClientConfiguration(
+        logger,
+        debug,
+        certificateThumbprint,
+        certificatePrivateKey,
+        clientSecret,
+      ),
+    );
   }
 
-  private retrieveAuthCodeWithBrowser(resource: string, logger: Logger, debug: boolean): Promise<InteractiveAuthorizationCodeResponse> {
-    return new Promise<InteractiveAuthorizationCodeResponse>((resolve: (error: InteractiveAuthorizationCodeResponse) => void, reject: (error: InteractiveAuthorizationErrorResponse) => void): void => {
-      // _authServer is never set before hitting this line, but this check
-      // is implemented so that we can support lazy loading
-      // but also stub it for testing
-      /* c8 ignore next 3 */
-      if (!this._authServer) {
-        this._authServer = require('./AuthServer').default;
-      }
+  private retrieveAuthCodeWithBrowser(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<InteractiveAuthorizationCodeResponse> {
+    return new Promise<InteractiveAuthorizationCodeResponse>(
+      (
+        resolve: (error: InteractiveAuthorizationCodeResponse) => void,
+        reject: (error: InteractiveAuthorizationErrorResponse) => void,
+      ): void => {
+        // _authServer is never set before hitting this line, but this check
+        // is implemented so that we can support lazy loading
+        // but also stub it for testing
+        /* c8 ignore next 3 */
+        if (!this._authServer) {
+          this._authServer = require("./AuthServer").default;
+        }
 
-      (this._authServer as AuthServer).initializeServer(this.service, resource, resolve, reject, logger, debug);
-    });
+        (this._authServer as AuthServer).initializeServer(
+          this.service,
+          resource,
+          resolve,
+          reject,
+          logger,
+          debug,
+        );
+      },
+    );
   }
 
-  private async ensureAccessTokenWithBrowser(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
+  private async ensureAccessTokenWithBrowser(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
     if (debug) {
-      logger.logToStderr(`Retrieving new access token using interactive browser session...`);
+      logger.logToStderr(
+        `Retrieving new access token using interactive browser session...`,
+      );
     }
 
-    const response = await this.retrieveAuthCodeWithBrowser(resource, logger, debug);
+    const response = await this.retrieveAuthCodeWithBrowser(
+      resource,
+      logger,
+      debug,
+    );
     if (debug) {
       logger.logToStderr(`The service returned the code '${response.code}'`);
     }
 
-    return (this.clientApplication as Msal.PublicClientApplication).acquireTokenByCode({
+    return (
+      this.clientApplication as Msal.PublicClientApplication
+    ).acquireTokenByCode({
       code: response.code,
       redirectUri: response.redirectUri,
-      scopes: [`${resource}/.default`]
+      scopes: [`${resource}/.default`],
     });
   }
 
-  private async ensureAccessTokenSilent(resource: string, logger: Logger, debug: boolean, fetchNew: boolean): Promise<AccessToken | null> {
+  private async ensureAccessTokenSilent(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+    fetchNew: boolean,
+  ): Promise<AccessToken | null> {
     if (debug) {
       logger.logToStderr(`Retrieving new access token silently`);
     }
 
     const accounts = await (this.clientApplication as Msal.ClientApplication)
-      .getTokenCache().getAllAccounts();
-    return (this.clientApplication as Msal.ClientApplication).acquireTokenSilent({
+      .getTokenCache()
+      .getAllAccounts();
+    return (
+      this.clientApplication as Msal.ClientApplication
+    ).acquireTokenSilent({
       account: accounts[0],
       scopes: [`${resource}/.default`],
-      forceRefresh: fetchNew
+      forceRefresh: fetchNew,
     });
   }
 
-  private async ensureAccessTokenWithDeviceCode(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
+  private async ensureAccessTokenWithDeviceCode(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
     if (debug) {
-      logger.logToStderr(`Starting Auth.ensureAccessTokenWithDeviceCode. resource: ${resource}, debug: ${debug}`);
+      logger.logToStderr(
+        `Starting Auth.ensureAccessTokenWithDeviceCode. resource: ${resource}, debug: ${debug}`,
+      );
     }
 
     this.deviceCodeRequest = {
       // deviceCodeCallback is called by MSAL which we're not testing
       /* c8 ignore next 1 */
-      deviceCodeCallback: response => this.processDeviceCodeCallback(response, logger, debug),
-      scopes: [`${resource}/.default`]
+      deviceCodeCallback: (response) =>
+        this.processDeviceCodeCallback(response, logger, debug),
+      scopes: [`${resource}/.default`],
     };
-    return (this.clientApplication as Msal.PublicClientApplication).acquireTokenByDeviceCode(this.deviceCodeRequest) as Promise<AccessToken | null>;
+    return (
+      this.clientApplication as Msal.PublicClientApplication
+    ).acquireTokenByDeviceCode(
+      this.deviceCodeRequest,
+    ) as Promise<AccessToken | null>;
   }
 
-  private processDeviceCodeCallback(response: DeviceCodeResponse, logger: Logger, debug: boolean): void {
+  private processDeviceCodeCallback(
+    response: DeviceCodeResponse,
+    logger: Logger,
+    debug: boolean,
+  ): void {
     if (debug) {
-      logger.logToStderr('Response:');
+      logger.logToStderr("Response:");
       logger.logToStderr(response);
-      logger.logToStderr('');
+      logger.logToStderr("");
     }
 
     logger.log(response.message);
 
-    if (Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.autoOpenLinksInBrowser, false)) {
+    if (
+      Cli.getInstance().getSettingWithDefaultValue<boolean>(
+        settingsNames.autoOpenLinksInBrowser,
+        false,
+      )
+    ) {
       browserUtil.open(response.verificationUri);
     }
 
-    if (Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.copyDeviceCodeToClipboard, false)) {
+    if (
+      Cli.getInstance().getSettingWithDefaultValue<boolean>(
+        settingsNames.copyDeviceCodeToClipboard,
+        false,
+      )
+    ) {
       // _clipboardy is never set before hitting this line, but this check
       // is implemented so that we can support lazy loading
       // but also stub it for testing
       /* c8 ignore next 3 */
       if (!this._clipboardy) {
-        this._clipboardy = require('clipboardy');
+        this._clipboardy = require("clipboardy");
       }
 
       (this._clipboardy as typeof clipboard).writeSync(response.userCode);
     }
   }
 
-  private async ensureAccessTokenWithPassword(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
+  private async ensureAccessTokenWithPassword(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
     if (debug) {
       logger.logToStderr(`Retrieving new access token using credentials...`);
     }
 
-    return (this.clientApplication as Msal.PublicClientApplication).acquireTokenByUsernamePassword({
+    return (
+      this.clientApplication as Msal.PublicClientApplication
+    ).acquireTokenByUsernamePassword({
       username: this.service.userName as string,
       password: this.service.password as string,
-      scopes: [`${resource}/.default`]
+      scopes: [`${resource}/.default`],
     });
   }
 
-  private async ensureAccessTokenWithCertificate(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
-    const nodeForge: typeof NodeForge = require('node-forge');
+  private async ensureAccessTokenWithCertificate(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
+    const nodeForge: typeof NodeForge = require("node-forge");
     const { pem, pki, asn1, pkcs12 } = nodeForge;
 
     if (debug) {
       logger.logToStderr(`Retrieving new access token using certificate...`);
     }
 
-    let cert: string = '';
-    const buf = Buffer.from(this.service.certificate as string, 'base64');
+    let cert: string = "";
+    const buf = Buffer.from(this.service.certificate as string, "base64");
 
-    if (this.service.certificateType === CertificateType.Unknown || this.service.certificateType === CertificateType.Base64) {
+    if (
+      this.service.certificateType === CertificateType.Unknown ||
+      this.service.certificateType === CertificateType.Base64
+    ) {
       // First time this method is called, we don't know if certificate is PEM or PFX (type is Unknown)
       // We assume it is PEM but when parsing of PEM fails, we assume it could be PFX
       // Type is persisted on service so subsequent calls only run through the correct parsing flow
       try {
-        cert = buf.toString('utf8');
+        cert = buf.toString("utf8");
         const pemObjs: NodeForge.pem.ObjectPEM[] = pem.decode(cert);
 
         if (this.service.thumbprint === undefined) {
-          const pemCertObj: NodeForge.pem.ObjectPEM = pemObjs.find(pem => pem.type === "CERTIFICATE") as NodeForge.pem.ObjectPEM;
+          const pemCertObj: NodeForge.pem.ObjectPEM = pemObjs.find(
+            (pem) => pem.type === "CERTIFICATE",
+          ) as NodeForge.pem.ObjectPEM;
           const pemCertStr: string = pem.encode(pemCertObj);
-          const pemCert: NodeForge.pki.Certificate = pki.certificateFromPem(pemCertStr);
+          const pemCert: NodeForge.pki.Certificate =
+            pki.certificateFromPem(pemCertStr);
 
           this.service.thumbprint = this.calculateThumbprint(pemCert);
         }
-      }
-      catch (e) {
+      } catch (e) {
         this.service.certificateType = CertificateType.Binary;
       }
     }
 
     if (this.service.certificateType === CertificateType.Binary) {
-      const p12Asn1 = asn1.fromDer(buf.toString('binary'), false);
+      const p12Asn1 = asn1.fromDer(buf.toString("binary"), false);
 
-      const p12Parsed = pkcs12.pkcs12FromAsn1(p12Asn1, false, this.service.password);
+      const p12Parsed = pkcs12.pkcs12FromAsn1(
+        p12Asn1,
+        false,
+        this.service.password,
+      );
 
-      let keyBags: any = p12Parsed.getBags({ bagType: pki.oids.pkcs8ShroudedKeyBag });
+      let keyBags: any = p12Parsed.getBags({
+        bagType: pki.oids.pkcs8ShroudedKeyBag,
+      });
       const pkcs8ShroudedKeyBag = keyBags[pki.oids.pkcs8ShroudedKeyBag][0];
 
       if (debug) {
         // check if there is something in the keyBag as well as
         // the pkcs8ShroudedKeyBag. This will give us more information
         // whether there is a cert that can potentially store keys in the keyBag.
-        // I could not find a way to add something to the keyBag with all 
+        // I could not find a way to add something to the keyBag with all
         // my attempts, but lets keep it here for troubleshooting purposes.
-        logger.logToStderr(`pkcs8ShroudedKeyBagkeyBags length is ${[pki.oids.pkcs8ShroudedKeyBag].length}`);
+        logger.logToStderr(
+          `pkcs8ShroudedKeyBagkeyBags length is ${
+            [pki.oids.pkcs8ShroudedKeyBag].length
+          }`,
+        );
 
         keyBags = p12Parsed.getBags({ bagType: pki.oids.keyBag });
-        logger.logToStderr(`keyBag length is ${keyBags[pki.oids.keyBag].length}`);
+        logger.logToStderr(
+          `keyBag length is ${keyBags[pki.oids.keyBag].length}`,
+        );
       }
 
       // convert a Forge private key to an ASN.1 RSAPrivateKey
@@ -518,117 +671,156 @@ export class Auth {
           localKeyId?: NodeForge.pkcs12.Bag[];
           friendlyName?: NodeForge.pkcs12.Bag[];
         } = p12Parsed.getBags({ bagType: pki.oids.certBag });
-        const certBag: NodeForge.pkcs12.Bag = (certBags[pki.oids.certBag] as NodeForge.pkcs12.Bag[])[0];
+        const certBag: NodeForge.pkcs12.Bag = (
+          certBags[pki.oids.certBag] as NodeForge.pkcs12.Bag[]
+        )[0];
 
-        this.service.thumbprint = this.calculateThumbprint(certBag.cert as NodeForge.pki.Certificate);
+        this.service.thumbprint = this.calculateThumbprint(
+          certBag.cert as NodeForge.pki.Certificate,
+        );
       }
     }
 
-    this.clientApplication = this.getConfidentialClient(logger, debug, this.service.thumbprint as string, cert);
-    return (this.clientApplication as Msal.ConfidentialClientApplication).acquireTokenByClientCredential({
-      scopes: [`${resource}/.default`]
+    this.clientApplication = this.getConfidentialClient(
+      logger,
+      debug,
+      this.service.thumbprint as string,
+      cert,
+    );
+    return (
+      this.clientApplication as Msal.ConfidentialClientApplication
+    ).acquireTokenByClientCredential({
+      scopes: [`${resource}/.default`],
     });
   }
 
-  private async ensureAccessTokenWithIdentity(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
+  private async ensureAccessTokenWithIdentity(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
     const userName = this.service.userName;
     if (debug) {
-      logger.logToStderr('Will try to retrieve access token using identity...');
+      logger.logToStderr("Will try to retrieve access token using identity...");
     }
 
     const requestOptions: any = {
-      url: '',
+      url: "",
       headers: {
-        accept: 'application/json',
+        accept: "application/json",
         Metadata: true,
-        'x-anonymous': true
+        "x-anonymous": true,
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
     if (process.env.IDENTITY_ENDPOINT && process.env.IDENTITY_HEADER) {
       if (debug) {
-        logger.logToStderr('IDENTITY_ENDPOINT and IDENTITY_HEADER env variables found it is Azure Function, WebApp...');
+        logger.logToStderr(
+          "IDENTITY_ENDPOINT and IDENTITY_HEADER env variables found it is Azure Function, WebApp...",
+        );
       }
 
-      requestOptions.url = `${process.env.IDENTITY_ENDPOINT}?resource=${encodeURIComponent(resource)}&api-version=2019-08-01`;
-      requestOptions.headers['X-IDENTITY-HEADER'] = process.env.IDENTITY_HEADER;
-    }
-    else if (process.env.MSI_ENDPOINT && process.env.MSI_SECRET) {
+      requestOptions.url = `${
+        process.env.IDENTITY_ENDPOINT
+      }?resource=${encodeURIComponent(resource)}&api-version=2019-08-01`;
+      requestOptions.headers["X-IDENTITY-HEADER"] = process.env.IDENTITY_HEADER;
+    } else if (process.env.MSI_ENDPOINT && process.env.MSI_SECRET) {
       if (debug) {
-        logger.logToStderr('MSI_ENDPOINT and MSI_SECRET env variables found it is Azure Function or WebApp, but using the old names of the env variables...');
+        logger.logToStderr(
+          "MSI_ENDPOINT and MSI_SECRET env variables found it is Azure Function or WebApp, but using the old names of the env variables...",
+        );
       }
 
-      requestOptions.url = `${process.env.MSI_ENDPOINT}?resource=${encodeURIComponent(resource)}&api-version=2019-08-01`;
-      requestOptions.headers['X-IDENTITY-HEADER'] = process.env.MSI_SECRET;
-    }
-    else if (process.env.IDENTITY_ENDPOINT) {
+      requestOptions.url = `${
+        process.env.MSI_ENDPOINT
+      }?resource=${encodeURIComponent(resource)}&api-version=2019-08-01`;
+      requestOptions.headers["X-IDENTITY-HEADER"] = process.env.MSI_SECRET;
+    } else if (process.env.IDENTITY_ENDPOINT) {
       if (debug) {
-        logger.logToStderr('IDENTITY_ENDPOINT env variable found it is Azure Could Shell...');
+        logger.logToStderr(
+          "IDENTITY_ENDPOINT env variable found it is Azure Could Shell...",
+        );
       }
 
       if (userName && process.env.ACC_CLOUD) {
-        // reject for now since the Azure Cloud Shell does not support user-managed identity 
-        return Promise.reject('Azure Cloud Shell does not support user-managed identity. You can execute the command without the --userName option to login with user identity');
+        // reject for now since the Azure Cloud Shell does not support user-managed identity
+        return Promise.reject(
+          "Azure Cloud Shell does not support user-managed identity. You can execute the command without the --userName option to login with user identity",
+        );
       }
 
-      requestOptions.url = `${process.env.IDENTITY_ENDPOINT}?resource=${encodeURIComponent(resource)}`;
-    }
-    else if (process.env.MSI_ENDPOINT) {
+      requestOptions.url = `${
+        process.env.IDENTITY_ENDPOINT
+      }?resource=${encodeURIComponent(resource)}`;
+    } else if (process.env.MSI_ENDPOINT) {
       if (debug) {
-        logger.logToStderr('MSI_ENDPOINT env variable found it is Azure Could Shell, but using the old names of the env variables...');
+        logger.logToStderr(
+          "MSI_ENDPOINT env variable found it is Azure Could Shell, but using the old names of the env variables...",
+        );
       }
 
       if (userName && process.env.ACC_CLOUD) {
-        // reject for now since the Azure Cloud Shell does not support user-managed identity 
-        return Promise.reject('Azure Cloud Shell does not support user-managed identity. You can execute the command without the --userName option to login with user identity');
+        // reject for now since the Azure Cloud Shell does not support user-managed identity
+        return Promise.reject(
+          "Azure Cloud Shell does not support user-managed identity. You can execute the command without the --userName option to login with user identity",
+        );
       }
 
-      requestOptions.url = `${process.env.MSI_ENDPOINT}?resource=${encodeURIComponent(resource)}`;
-    }
-    else {
+      requestOptions.url = `${
+        process.env.MSI_ENDPOINT
+      }?resource=${encodeURIComponent(resource)}`;
+    } else {
       if (debug) {
-        logger.logToStderr('IDENTITY_ENDPOINT and MSI_ENDPOINT env variables not found. Attempt to get Managed Identity token by using the Azure Virtual Machine API...');
+        logger.logToStderr(
+          "IDENTITY_ENDPOINT and MSI_ENDPOINT env variables not found. Attempt to get Managed Identity token by using the Azure Virtual Machine API...",
+        );
       }
 
-      requestOptions.url = `http://169.254.169.254/metadata/identity/oauth2/token?resource=${encodeURIComponent(resource)}&api-version=2018-02-01`;
+      requestOptions.url = `http://169.254.169.254/metadata/identity/oauth2/token?resource=${encodeURIComponent(
+        resource,
+      )}&api-version=2018-02-01`;
     }
 
     if (userName) {
       // if name present then the identity is user-assigned managed identity
-      // the name option in this case is either client_id or principal_id (object_id) 
+      // the name option in this case is either client_id or principal_id (object_id)
       // of the managed identity service principal
-      requestOptions.url += `&client_id=${encodeURIComponent(userName as string)}`;
+      requestOptions.url += `&client_id=${encodeURIComponent(
+        userName as string,
+      )}`;
 
       if (debug) {
-        logger.logToStderr('Wil try to get token using client_id param...');
+        logger.logToStderr("Wil try to get token using client_id param...");
       }
     }
 
     try {
-      const accessTokenResponse = await request.get<{ access_token: string; expires_on: string }>(requestOptions);
+      const accessTokenResponse = await request.get<{
+        access_token: string;
+        expires_on: string;
+      }>(requestOptions);
       return {
         accessToken: accessTokenResponse.access_token,
-        expiresOn: new Date(parseInt(accessTokenResponse.expires_on) * 1000)
+        expiresOn: new Date(parseInt(accessTokenResponse.expires_on) * 1000),
       };
-    }
-    catch (e: any) {
+    } catch (e: any) {
       if (!userName) {
         throw e;
       }
 
-      // since the userName option can be either client_id or principal_id (object_id) 
+      // since the userName option can be either client_id or principal_id (object_id)
       // and the first attempt was using client_id
       // now lets see if the api returned 'not found' response and
       // try to get token using principal_id (object_id)
       let isNotFoundResponse = false;
-      if ( e.error?.Message) {
+      if (e.error?.Message) {
         // check if it is Azure Function api 'not found' response
-        isNotFoundResponse = (e.error.Message.indexOf("No Managed Identity found") !== -1);
-      }
-      else if ( e.error?.error_description) {
+        isNotFoundResponse =
+          e.error.Message.indexOf("No Managed Identity found") !== -1;
+      } else if (e.error?.error_description) {
         // check if it is Azure VM api 'not found' response
-        isNotFoundResponse = (e.error.error_description === "Identity not found");
+        isNotFoundResponse = e.error.error_description === "Identity not found";
       }
 
       if (!isNotFoundResponse) {
@@ -637,66 +829,90 @@ export class Auth {
       }
 
       if (debug) {
-        logger.logToStderr('Wil try to get token using principal_id (also known as object_id) param ...');
+        logger.logToStderr(
+          "Wil try to get token using principal_id (also known as object_id) param ...",
+        );
       }
 
-      requestOptions.url = requestOptions.url.replace('&client_id=', '&principal_id=');
-      requestOptions.headers['x-anonymous'] = true;
+      requestOptions.url = requestOptions.url.replace(
+        "&client_id=",
+        "&principal_id=",
+      );
+      requestOptions.headers["x-anonymous"] = true;
 
       try {
-        const accessTokenResponse = await request.get<{ access_token: string; expires_on: string }>(requestOptions);
+        const accessTokenResponse = await request.get<{
+          access_token: string;
+          expires_on: string;
+        }>(requestOptions);
         return {
           accessToken: accessTokenResponse.access_token,
-          expiresOn: new Date(parseInt(accessTokenResponse.expires_on) * 1000)
+          expiresOn: new Date(parseInt(accessTokenResponse.expires_on) * 1000),
         };
-      }
-      catch (err: any) {
+      } catch (err: any) {
         // will give up and not try any further with the 'msi_res_id' (resource id) query string param
         // since it does not work with the Azure Functions api, but just with the Azure VM api
-        if (err.error.code === 'EACCES') {
+        if (err.error.code === "EACCES") {
           // the CLI does not know if managed identity is actually assigned when EACCES code thrown
-          // so show meaningful message since the raw error response could be misleading 
-          return Promise.reject('Error while logging with Managed Identity. Please check if a Managed Identity is assigned to the current Azure resource.');
-        }
-        else {
+          // so show meaningful message since the raw error response could be misleading
+          return Promise.reject(
+            "Error while logging with Managed Identity. Please check if a Managed Identity is assigned to the current Azure resource.",
+          );
+        } else {
           throw err;
         }
       }
     }
   }
 
-  private async ensureAccessTokenWithSecret(resource: string, logger: Logger, debug: boolean): Promise<AccessToken | null> {
-    this.clientApplication = this.getConfidentialClient(logger, debug, undefined, undefined, this.service.secret);
-    return (this.clientApplication as Msal.ConfidentialClientApplication).acquireTokenByClientCredential({
-      scopes: [`${resource}/.default`]
+  private async ensureAccessTokenWithSecret(
+    resource: string,
+    logger: Logger,
+    debug: boolean,
+  ): Promise<AccessToken | null> {
+    this.clientApplication = this.getConfidentialClient(
+      logger,
+      debug,
+      undefined,
+      undefined,
+      this.service.secret,
+    );
+    return (
+      this.clientApplication as Msal.ConfidentialClientApplication
+    ).acquireTokenByClientCredential({
+      scopes: [`${resource}/.default`],
     });
   }
 
   private calculateThumbprint(certificate: NodeForge.pki.Certificate): string {
-    const nodeForge: typeof NodeForge = require('node-forge');
+    const nodeForge: typeof NodeForge = require("node-forge");
     const { md, asn1, pki } = nodeForge;
 
     const messageDigest: NodeForge.md.MessageDigest = md.sha1.create();
-    messageDigest.update(asn1.toDer(pki.certificateToAsn1(certificate)).getBytes());
+    messageDigest.update(
+      asn1.toDer(pki.certificateToAsn1(certificate)).getBytes(),
+    );
     return messageDigest.digest().toHex();
   }
 
   public static getResourceFromUrl(url: string): string {
     let resource: string = url;
-    const pos: number = resource.indexOf('/', 8);
+    const pos: number = resource.indexOf("/", 8);
     if (pos > -1) {
       resource = resource.substr(0, pos);
     }
 
-    if (resource === 'https://api.bap.microsoft.com' ||
-      resource === 'https://api.powerapps.com') {
-      resource = 'https://service.powerapps.com/';
+    if (
+      resource === "https://api.bap.microsoft.com" ||
+      resource === "https://api.powerapps.com"
+    ) {
+      resource = "https://service.powerapps.com/";
     }
 
-    if (resource === 'https://api.powerbi.com') {
+    if (resource === "https://api.powerbi.com") {
       // api.powerbi.com is not a valid resource
       // we need to use https://analysis.windows.net/powerbi/api instead
-      resource = 'https://analysis.windows.net/powerbi/api';
+      resource = "https://analysis.windows.net/powerbi/api";
     }
 
     return resource;
@@ -730,12 +946,13 @@ export class Auth {
     return new FileTokenStorage(FileTokenStorage.msalCacheFilePath());
   }
 
-  public static getEndpointForResource(resource: string, cloudType: CloudType): string {
-    if (
-      Auth.cloudEndpoints[cloudType]?.[resource]) {
+  public static getEndpointForResource(
+    resource: string,
+    cloudType: CloudType,
+  ): string {
+    if (Auth.cloudEndpoints[cloudType]?.[resource]) {
       return Auth.cloudEndpoints[cloudType][resource];
-    }
-    else {
+    } else {
       return resource;
     }
   }

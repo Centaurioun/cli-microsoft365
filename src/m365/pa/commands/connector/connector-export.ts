@@ -1,13 +1,13 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { Logger } from '../../../../cli/Logger';
-import GlobalOptions from '../../../../GlobalOptions';
-import request, { CliRequestOptions } from '../../../../request';
-import { formatting } from '../../../../utils/formatting';
-import PowerAppsCommand from '../../../base/PowerAppsCommand';
-import flowCommands from '../../../flow/commands';
-import commands from '../../commands';
-import { Connector } from './Connector';
+import * as fs from "fs";
+import * as path from "path";
+import { Logger } from "../../../../cli/Logger";
+import GlobalOptions from "../../../../GlobalOptions";
+import request, { CliRequestOptions } from "../../../../request";
+import { formatting } from "../../../../utils/formatting";
+import PowerAppsCommand from "../../../base/PowerAppsCommand";
+import flowCommands from "../../../flow/commands";
+import commands from "../../commands";
+import { Connector } from "./Connector";
 
 interface CommandArgs {
   options: Options;
@@ -25,7 +25,7 @@ class PaConnectorExportCommand extends PowerAppsCommand {
   }
 
   public get description(): string {
-    return 'Exports the specified power automate or power apps custom connector';
+    return "Exports the specified power automate or power apps custom connector";
   }
 
   public alias(): string[] | undefined {
@@ -43,7 +43,7 @@ class PaConnectorExportCommand extends PowerAppsCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        outputFolder: typeof args.options.outputFolder !== 'undefined'
+        outputFolder: typeof args.options.outputFolder !== "undefined",
       });
     });
   }
@@ -51,57 +51,69 @@ class PaConnectorExportCommand extends PowerAppsCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-e, --environmentName <environmentName>'
+        option: "-e, --environmentName <environmentName>",
       },
       {
-        option: '-c, --connector <connector>'
+        option: "-c, --connector <connector>",
       },
       {
-        option: '--outputFolder [outputFolder]'
-      }
+        option: "--outputFolder [outputFolder]",
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (args.options.outputFolder &&
-          !fs.existsSync(path.resolve(args.options.outputFolder))) {
-          return `Specified output folder ${args.options.outputFolder} doesn't exist`;
-        }
-
-        const outputFolder = path.resolve(args.options.outputFolder || '.', args.options.connector);
-        if (fs.existsSync(outputFolder)) {
-          return `Connector output folder ${outputFolder} already exists`;
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      if (
+        args.options.outputFolder &&
+        !fs.existsSync(path.resolve(args.options.outputFolder))
+      ) {
+        return `Specified output folder ${args.options.outputFolder} doesn't exist`;
       }
-    );
+
+      const outputFolder = path.resolve(
+        args.options.outputFolder || ".",
+        args.options.connector,
+      );
+      if (fs.existsSync(outputFolder)) {
+        return `Connector output folder ${outputFolder} already exists`;
+      }
+
+      return true;
+    });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    const outputFolder = path.resolve(args.options.outputFolder || '.', args.options.connector);
+    const outputFolder = path.resolve(
+      args.options.outputFolder || ".",
+      args.options.connector,
+    );
 
     const requestOptions: CliRequestOptions = {
-      url: `${this.resource}/providers/Microsoft.PowerApps/apis/${formatting.encodeQueryParameter(args.options.connector)}?api-version=2016-11-01&$filter=environment%20eq%20%27${formatting.encodeQueryParameter(args.options.environmentName)}%27%20and%20IsCustomApi%20eq%20%27True%27`,
+      url: `${
+        this.resource
+      }/providers/Microsoft.PowerApps/apis/${formatting.encodeQueryParameter(
+        args.options.connector,
+      )}?api-version=2016-11-01&$filter=environment%20eq%20%27${formatting.encodeQueryParameter(
+        args.options.environmentName,
+      )}%27%20and%20IsCustomApi%20eq%20%27True%27`,
       headers: {
-        accept: 'application/json'
+        accept: "application/json",
       },
-      responseType: 'json'
+      responseType: "json",
     };
 
     let connector: Connector;
 
     if (this.verbose) {
-      logger.logToStderr('Downloading connector...');
+      logger.logToStderr("Downloading connector...");
     }
 
     try {
       connector = await request.get<Connector>(requestOptions);
 
       if (!connector.properties) {
-        throw 'Properties not present in the api registration information.';
+        throw "Properties not present in the api registration information.";
       }
 
       if (this.verbose) {
@@ -116,98 +128,107 @@ class PaConnectorExportCommand extends PowerAppsCommand {
         environment: args.options.environmentName,
         icon: "icon.png",
         powerAppsApiVersion: "2016-11-01",
-        powerAppsUrl: "https://api.powerapps.com"
+        powerAppsUrl: "https://api.powerapps.com",
       };
       if (this.verbose) {
-        logger.logToStderr('Exporting settings...');
+        logger.logToStderr("Exporting settings...");
       }
-      fs.writeFileSync(path.join(outputFolder, 'settings.json'), JSON.stringify(settings, null, 2), 'utf8');
+      fs.writeFileSync(
+        path.join(outputFolder, "settings.json"),
+        JSON.stringify(settings, null, 2),
+        "utf8",
+      );
 
       const propertiesWhitelist: string[] = [
         "connectionParameters",
         "iconBrandColor",
         "capabilities",
-        "policyTemplateInstances"
+        "policyTemplateInstances",
       ];
 
       const apiProperties: any = {
-        properties: JSON.parse(JSON.stringify(connector.properties))
+        properties: JSON.parse(JSON.stringify(connector.properties)),
       };
-      Object.keys(apiProperties.properties).forEach(k => {
+      Object.keys(apiProperties.properties).forEach((k) => {
         if (propertiesWhitelist.indexOf(k) < 0) {
           delete apiProperties.properties[k];
         }
       });
       if (this.verbose) {
-        logger.logToStderr('Exporting API properties...');
+        logger.logToStderr("Exporting API properties...");
       }
-      fs.writeFileSync(path.join(outputFolder, 'apiProperties.json'), JSON.stringify(apiProperties, null, 2), 'utf8');
+      fs.writeFileSync(
+        path.join(outputFolder, "apiProperties.json"),
+        JSON.stringify(apiProperties, null, 2),
+        "utf8",
+      );
 
-      let swagger = '';
-      if (
-        connector.properties.apiDefinitions?.originalSwaggerUrl) {
+      let swagger = "";
+      if (connector.properties.apiDefinitions?.originalSwaggerUrl) {
         if (this.verbose) {
-          logger.logToStderr(`Downloading swagger from ${connector.properties.apiDefinitions.originalSwaggerUrl}...`);
+          logger.logToStderr(
+            `Downloading swagger from ${connector.properties.apiDefinitions.originalSwaggerUrl}...`,
+          );
         }
-        swagger = await request
-          .get({
-            url: connector.properties.apiDefinitions.originalSwaggerUrl,
-            headers: {
-              'x-anonymous': 'true'
-            }
-          });
-      }
-      else {
+        swagger = await request.get({
+          url: connector.properties.apiDefinitions.originalSwaggerUrl,
+          headers: {
+            "x-anonymous": "true",
+          },
+        });
+      } else {
         if (this.debug) {
-          logger.logToStderr('originalSwaggerUrl not set. Skipping');
+          logger.logToStderr("originalSwaggerUrl not set. Skipping");
         }
       }
 
       if (swagger && swagger.length > 0) {
         if (this.debug) {
-          logger.logToStderr('Downloaded swagger');
+          logger.logToStderr("Downloaded swagger");
           logger.logToStderr(swagger);
         }
         if (this.verbose) {
-          logger.logToStderr('Exporting swagger...');
+          logger.logToStderr("Exporting swagger...");
         }
-        fs.writeFileSync(path.join(outputFolder, 'apiDefinition.swagger.json'), swagger, 'utf8');
+        fs.writeFileSync(
+          path.join(outputFolder, "apiDefinition.swagger.json"),
+          swagger,
+          "utf8",
+        );
       }
 
-      let icon = '';
+      let icon = "";
       if (connector.properties.iconUri) {
         if (this.verbose) {
-          logger.logToStderr(`Downloading icon from ${connector.properties.iconUri}...`);
+          logger.logToStderr(
+            `Downloading icon from ${connector.properties.iconUri}...`,
+          );
         }
-        icon = await request
-          .get({
-            url: connector.properties.iconUri,
-            responseType: 'arraybuffer',
-            headers: {
-              'x-anonymous': 'true'
-            }
-          });
-      }
-      else {
+        icon = await request.get({
+          url: connector.properties.iconUri,
+          responseType: "arraybuffer",
+          headers: {
+            "x-anonymous": "true",
+          },
+        });
+      } else {
         if (this.debug) {
-          logger.logToStderr('iconUri not set. Skipping');
+          logger.logToStderr("iconUri not set. Skipping");
         }
       }
 
       if (icon) {
         if (this.verbose) {
-          logger.logToStderr('Exporting icon...');
+          logger.logToStderr("Exporting icon...");
         }
-        const iconBuffer: Buffer = Buffer.from(icon, 'utf8');
-        fs.writeFileSync(path.join(outputFolder, 'icon.png'), iconBuffer);
-      }
-      else {
+        const iconBuffer: Buffer = Buffer.from(icon, "utf8");
+        fs.writeFileSync(path.join(outputFolder, "icon.png"), iconBuffer);
+      } else {
         if (this.debug) {
-          logger.logToStderr('No icon retrieved');
+          logger.logToStderr("No icon retrieved");
         }
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }

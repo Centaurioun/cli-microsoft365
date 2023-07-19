@@ -582,7 +582,7 @@ export const spo = {
             const contents: ClientSvcResponseContents = json.find((x) => {
               return x.ErrorInfo;
             });
-            if ( contents?.ErrorInfo) {
+            if (contents?.ErrorInfo) {
               return reject(
                 contents.ErrorInfo.ErrorMessage || "ClientSvc unknown error",
               );
@@ -650,7 +650,7 @@ export const spo = {
             const contents: ClientSvcResponseContents = json.find((x) => {
               return x.ErrorInfo;
             });
-            if ( contents?.ErrorInfo) {
+            if (contents?.ErrorInfo) {
               return reject(
                 contents.ErrorInfo.ErrorMessage || "ClientSvc unknown error",
               );
@@ -719,7 +719,7 @@ export const spo = {
             const contents: ClientSvcResponseContents = json.find((x) => {
               return x.ErrorInfo;
             });
-            if ( contents?.ErrorInfo) {
+            if (contents?.ErrorInfo) {
               return reject(
                 contents.ErrorInfo.ErrorMessage || "ClientSvc unknown error",
               );

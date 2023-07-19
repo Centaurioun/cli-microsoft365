@@ -1,10 +1,10 @@
-import * as child_process from 'child_process';
-import { satisfies } from 'semver';
-import { Logger } from '../../../cli/Logger';
-import GlobalOptions from '../../../GlobalOptions';
-import { CheckStatus, formatting } from '../../../utils/formatting';
-import commands from '../commands';
-import { BaseProjectCommand } from './project/base-project-command';
+import * as child_process from "child_process";
+import { satisfies } from "semver";
+import { Logger } from "../../../cli/Logger";
+import GlobalOptions from "../../../GlobalOptions";
+import { CheckStatus, formatting } from "../../../utils/formatting";
+import commands from "../commands";
+import { BaseProjectCommand } from "./project/base-project-command";
 
 interface CommandArgs {
   options: Options;
@@ -22,7 +22,7 @@ interface Options extends GlobalOptions {
 enum PackageSearchMode {
   LocalOnly,
   GlobalOnly,
-  LocalAndGlobal
+  LocalAndGlobal,
 }
 
 /**
@@ -30,7 +30,7 @@ enum PackageSearchMode {
  */
 enum OptionalOrRequired {
   Optional,
-  Required
+  Required,
 }
 
 /**
@@ -38,7 +38,7 @@ enum OptionalOrRequired {
  */
 enum HandlePromise {
   Fail,
-  Continue
+  Continue,
 }
 
 interface VersionCheck {
@@ -59,7 +59,7 @@ enum SharePointVersion {
   SP2016 = 1 << 0,
   SP2019 = 1 << 1,
   SPO = 1 << 2,
-  All = ~(~0 << 3)
+  All = ~(~0 << 3),
 }
 
 interface SpfxVersionPrerequisites {
@@ -71,490 +71,490 @@ interface SpfxVersionPrerequisites {
 
 class SpfxDoctorCommand extends BaseProjectCommand {
   private readonly versions: { [version: string]: SpfxVersionPrerequisites } = {
-    '1.0.0': {
+    "1.0.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6',
-        fix: 'Install Node.js v6'
+        range: "^6",
+        fix: "Install Node.js v6",
       },
       sp: SharePointVersion.All,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.1.0': {
+    "1.1.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6',
-        fix: 'Install Node.js v6'
+        range: "^6",
+        fix: "Install Node.js v6",
       },
       sp: SharePointVersion.All,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.2.0': {
+    "1.2.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6',
-        fix: 'Install Node.js v6'
+        range: "^6",
+        fix: "Install Node.js v6",
       },
       sp: SharePointVersion.SP2019 | SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.4.0': {
+    "1.4.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6',
-        fix: 'Install Node.js v6'
+        range: "^6",
+        fix: "Install Node.js v6",
       },
       sp: SharePointVersion.SP2019 | SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.4.1': {
+    "1.4.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6 || ^8',
-        fix: 'Install Node.js v8'
+        range: "^6 || ^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SP2019 | SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.5.0': {
+    "1.5.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6 || ^8',
-        fix: 'Install Node.js v8'
+        range: "^6 || ^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.5.1': {
+    "1.5.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6 || ^8',
-        fix: 'Install Node.js v8'
+        range: "^6 || ^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.6.0': {
+    "1.6.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^6 || ^8',
-        fix: 'Install Node.js v8'
+        range: "^6 || ^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.7.0': {
+    "1.7.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8',
-        fix: 'Install Node.js v8'
+        range: "^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.7.1': {
+    "1.7.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8',
-        fix: 'Install Node.js v8'
+        range: "^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.8.0': {
+    "1.8.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8',
-        fix: 'Install Node.js v8'
+        range: "^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.8.1': {
+    "1.8.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8',
-        fix: 'Install Node.js v8'
+        range: "^8",
+        fix: "Install Node.js v8",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.8.2': {
+    "1.8.2": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8 || ^10',
-        fix: 'Install Node.js v10'
+        range: "^8 || ^10",
+        fix: "Install Node.js v10",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.9.0': {
+    "1.9.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^8 || ^10',
-        fix: 'Install Node.js v10'
+        range: "^8 || ^10",
+        fix: "Install Node.js v10",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.9.1': {
+    "1.9.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^10',
-        fix: 'Install Node.js v10'
+        range: "^10",
+        fix: "Install Node.js v10",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.10.0': {
+    "1.10.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^10',
-        fix: 'Install Node.js v10'
+        range: "^10",
+        fix: "Install Node.js v10",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.11.0': {
+    "1.11.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^10',
-        fix: 'Install Node.js v10'
+        range: "^10",
+        fix: "Install Node.js v10",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.12.0': {
+    "1.12.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12',
-        fix: 'Install Node.js v12'
+        range: "^12",
+        fix: "Install Node.js v12",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.12.1': {
+    "1.12.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12 || ^14',
-        fix: 'Install Node.js v12 or v14'
+        range: "^12 || ^14",
+        fix: "Install Node.js v12 or v14",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^3',
-        fix: 'npm i -g yo@3'
-      }
+        range: "^3",
+        fix: "npm i -g yo@3",
+      },
     },
-    '1.13.0': {
+    "1.13.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12 || ^14',
-        fix: 'Install Node.js v12 or v14'
+        range: "^12 || ^14",
+        fix: "Install Node.js v12 or v14",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.13.1': {
+    "1.13.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12 || ^14',
-        fix: 'Install Node.js v12 or v14'
+        range: "^12 || ^14",
+        fix: "Install Node.js v12 or v14",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.14.0': {
+    "1.14.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12 || ^14',
-        fix: 'Install Node.js v12 or v14'
+        range: "^12 || ^14",
+        fix: "Install Node.js v12 or v14",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.15.0': {
+    "1.15.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12.13 || ^14.15 || ^16.13',
-        fix: 'Install Node.js v12.13, v14.15, v16.13 or higher'
+        range: "^12.13 || ^14.15 || ^16.13",
+        fix: "Install Node.js v12.13, v14.15, v16.13 or higher",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.15.2': {
+    "1.15.2": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '^12.13 || ^14.15 || ^16.13',
-        fix: 'Install Node.js v12.13, v14.15, v16.13 or higher'
+        range: "^12.13 || ^14.15 || ^16.13",
+        fix: "Install Node.js v12.13, v14.15, v16.13 or higher",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.16.0': {
+    "1.16.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.16.1': {
+    "1.16.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.17.0': {
+    "1.17.0": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.17.1': {
+    "1.17.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.17.2': {
+    "1.17.2": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.17.3': {
+    "1.17.3": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.17.4': {
+    "1.17.4": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
     },
-    '1.18.0-beta.1': {
+    "1.18.0-beta.1": {
       gulpCli: {
-        range: '^1 || ^2',
-        fix: 'npm i -g gulp-cli@2'
+        range: "^1 || ^2",
+        fix: "npm i -g gulp-cli@2",
       },
       node: {
-        range: '>=16.13.0 <17.0.0',
-        fix: 'Install Node.js >=16.13.0 <17.0.0'
+        range: ">=16.13.0 <17.0.0",
+        fix: "Install Node.js >=16.13.0 <17.0.0",
       },
       sp: SharePointVersion.SPO,
       yo: {
-        range: '^4',
-        fix: 'npm i -g yo@4'
-      }
-    }
+        range: "^4",
+        fix: "npm i -g yo@4",
+      },
+    },
   };
 
   protected get allowedOutputs(): string[] {
-    return ['text'];
+    return ["text"];
   }
 
   public get name(): string {
@@ -562,7 +562,7 @@ class SpfxDoctorCommand extends BaseProjectCommand {
   }
 
   public get description(): string {
-    return 'Verifies environment configuration for using the specific version of the SharePoint Framework';
+    return "Verifies environment configuration for using the specific version of the SharePoint Framework";
   }
 
   constructor() {
@@ -577,7 +577,7 @@ class SpfxDoctorCommand extends BaseProjectCommand {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
         env: args.options.env,
-        spfxVersion: args.options.spfxVersion
+        spfxVersion: args.options.spfxVersion,
       });
     });
   }
@@ -585,76 +585,105 @@ class SpfxDoctorCommand extends BaseProjectCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-e, --env [env]',
-        autocomplete: ['sp2016', 'sp2019', 'spo']
+        option: "-e, --env [env]",
+        autocomplete: ["sp2016", "sp2019", "spo"],
       },
       {
-        option: '-v, --spfxVersion [spfxVersion]',
-        autocomplete: Object.keys(this.versions)
-      }
+        option: "-v, --spfxVersion [spfxVersion]",
+        autocomplete: Object.keys(this.versions),
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        if (args.options.env) {
-          const sp: SharePointVersion | undefined = this.spVersionStringToEnum(args.options.env);
-          if (!sp) {
-            return `${args.options.env} is not a valid SharePoint version. Valid versions are sp2016, sp2019 or spo`;
-          }
+    this.validators.push(async (args: CommandArgs) => {
+      if (args.options.env) {
+        const sp: SharePointVersion | undefined = this.spVersionStringToEnum(
+          args.options.env,
+        );
+        if (!sp) {
+          return `${args.options.env} is not a valid SharePoint version. Valid versions are sp2016, sp2019 or spo`;
         }
-
-        if (args.options.spfxVersion) {
-          if (!this.versions[args.options.spfxVersion]) {
-            return `${args.options.spfxVersion} is not a supported SharePoint Framework version. Supported versions are ${Object.keys(this.versions).join(', ')}`;
-          }
-        }
-
-        return true;
       }
-    );
+
+      if (args.options.spfxVersion) {
+        if (!this.versions[args.options.spfxVersion]) {
+          return `${
+            args.options.spfxVersion
+          } is not a supported SharePoint Framework version. Supported versions are ${Object.keys(
+            this.versions,
+          ).join(", ")}`;
+        }
+      }
+
+      return true;
+    });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     if (!args.options.output) {
-      args.options.output = 'text';
+      args.options.output = "text";
     }
 
     this.projectRootPath = this.getProjectRoot(process.cwd());
 
-    logger.log(' ');
-    logger.log('CLI for Microsoft 365 SharePoint Framework doctor');
-    logger.log('Verifying configuration of your system for working with the SharePoint Framework');
-    logger.log(' ');
+    logger.log(" ");
+    logger.log("CLI for Microsoft 365 SharePoint Framework doctor");
+    logger.log(
+      "Verifying configuration of your system for working with the SharePoint Framework",
+    );
+    logger.log(" ");
 
-    let spfxVersion: string = '';
+    let spfxVersion: string = "";
     let prerequisites: SpfxVersionPrerequisites;
     const fixes: string[] = [];
 
     try {
-      spfxVersion = args.options.spfxVersion ?? await this.getSharePointFrameworkVersion(logger);
+      spfxVersion =
+        args.options.spfxVersion ??
+        (await this.getSharePointFrameworkVersion(logger));
 
       if (!spfxVersion) {
-        logger.log(formatting.getStatus(CheckStatus.Failure, `SharePoint Framework`));
+        logger.log(
+          formatting.getStatus(CheckStatus.Failure, `SharePoint Framework`),
+        );
         throw `SharePoint Framework not found`;
       }
 
       prerequisites = this.versions[spfxVersion];
       if (!prerequisites) {
-        logger.log(formatting.getStatus(CheckStatus.Failure, `SharePoint Framework v${spfxVersion}`));
+        logger.log(
+          formatting.getStatus(
+            CheckStatus.Failure,
+            `SharePoint Framework v${spfxVersion}`,
+          ),
+        );
         throw `spfx doctor doesn't support SPFx v${spfxVersion} at this moment`;
       }
 
       if (args.options.spfxVersion) {
-        await this.checkSharePointFrameworkVersion(args.options.spfxVersion, fixes, logger);
-      }
-      else {
+        await this.checkSharePointFrameworkVersion(
+          args.options.spfxVersion,
+          fixes,
+          logger,
+        );
+      } else {
         // spfx was detected and if we are here, it means that we support it
-        logger.log(formatting.getStatus(CheckStatus.Success, `SharePoint Framework v${spfxVersion}`));
+        logger.log(
+          formatting.getStatus(
+            CheckStatus.Success,
+            `SharePoint Framework v${spfxVersion}`,
+          ),
+        );
       }
 
-      await this.checkSharePointCompatibility(spfxVersion, prerequisites, args, fixes, logger);
+      await this.checkSharePointCompatibility(
+        spfxVersion,
+        prerequisites,
+        args,
+        fixes,
+        logger,
+      );
       await this.checkNodeVersion(prerequisites, fixes, logger);
       await this.checkYo(prerequisites, fixes, logger);
       await this.checkGulp(fixes, logger);
@@ -662,123 +691,219 @@ class SpfxDoctorCommand extends BaseProjectCommand {
       await this.checkTypeScript(fixes, logger);
 
       if (fixes.length > 0) {
-        logger.log(' ');
-        logger.log('Recommended fixes:');
-        logger.log(' ');
-        fixes.forEach(f => logger.log(`- ${f}`));
-        logger.log(' ');
+        logger.log(" ");
+        logger.log("Recommended fixes:");
+        logger.log(" ");
+        fixes.forEach((f) => logger.log(`- ${f}`));
+        logger.log(" ");
       }
-    }
-    catch (err: any) {
-      logger.log(' ');
+    } catch (err: any) {
+      logger.log(" ");
 
       if (fixes.length > 0) {
-        logger.log('Recommended fixes:');
-        logger.log(' ');
-        fixes.forEach(f => logger.log(`- ${f}`));
-        logger.log(' ');
+        logger.log("Recommended fixes:");
+        logger.log(" ");
+        fixes.forEach((f) => logger.log(`- ${f}`));
+        logger.log(" ");
       }
       this.handleRejectedPromise(err);
     }
   }
 
-  private checkSharePointCompatibility(spfxVersion: string, prerequisites: SpfxVersionPrerequisites, args: CommandArgs, fixes: string[], logger: Logger): Promise<void> {
-    return new Promise<void>((resolve: () => void, reject: (error: string) => void): void => {
-      if (args.options.env) {
-        const sp: SharePointVersion = this.spVersionStringToEnum(args.options.env) as SharePointVersion;
-        if ((prerequisites.sp & sp) === sp) {
-          logger.log(formatting.getStatus(CheckStatus.Success, `Supported in ${SharePointVersion[sp]}`));
+  private checkSharePointCompatibility(
+    spfxVersion: string,
+    prerequisites: SpfxVersionPrerequisites,
+    args: CommandArgs,
+    fixes: string[],
+    logger: Logger,
+  ): Promise<void> {
+    return new Promise<void>(
+      (resolve: () => void, reject: (error: string) => void): void => {
+        if (args.options.env) {
+          const sp: SharePointVersion = this.spVersionStringToEnum(
+            args.options.env,
+          ) as SharePointVersion;
+          if ((prerequisites.sp & sp) === sp) {
+            logger.log(
+              formatting.getStatus(
+                CheckStatus.Success,
+                `Supported in ${SharePointVersion[sp]}`,
+              ),
+            );
+            resolve();
+          } else {
+            logger.log(
+              formatting.getStatus(
+                CheckStatus.Failure,
+                `Not supported in ${SharePointVersion[sp]}`,
+              ),
+            );
+            fixes.push(
+              `Use SharePoint Framework v${
+                sp === SharePointVersion.SP2016 ? "1.1" : "1.4.1"
+              }`,
+            );
+            reject(
+              `SharePoint Framework v${spfxVersion} is not supported in ${SharePointVersion[sp]}`,
+            );
+          }
+        } else {
           resolve();
         }
-        else {
-          logger.log(formatting.getStatus(CheckStatus.Failure, `Not supported in ${SharePointVersion[sp]}`));
-          fixes.push(`Use SharePoint Framework v${(sp === SharePointVersion.SP2016 ? '1.1' : '1.4.1')}`);
-          reject(`SharePoint Framework v${spfxVersion} is not supported in ${SharePointVersion[sp]}`);
-        }
-      }
-      else {
-        resolve();
-      }
-    });
+      },
+    );
   }
 
-  private checkNodeVersion(prerequisites: SpfxVersionPrerequisites, fixes: string[], logger: Logger): Promise<void> {
-    return Promise
-      .resolve(this.getNodeVersion())
-      .then((nodeVersion: string): void => {
-        this.checkStatus('Node', nodeVersion, prerequisites.node, OptionalOrRequired.Required, fixes, logger);
-      });
+  private checkNodeVersion(
+    prerequisites: SpfxVersionPrerequisites,
+    fixes: string[],
+    logger: Logger,
+  ): Promise<void> {
+    return Promise.resolve(this.getNodeVersion()).then(
+      (nodeVersion: string): void => {
+        this.checkStatus(
+          "Node",
+          nodeVersion,
+          prerequisites.node,
+          OptionalOrRequired.Required,
+          fixes,
+          logger,
+        );
+      },
+    );
   }
 
-  private async checkSharePointFrameworkVersion(spfxVersionRequested: string, fixes: string[], logger: Logger): Promise<void> {
+  private async checkSharePointFrameworkVersion(
+    spfxVersionRequested: string,
+    fixes: string[],
+    logger: Logger,
+  ): Promise<void> {
     let spfxVersionDetected = this.getSPFxVersionFromYoRcFile(logger);
     if (!spfxVersionDetected) {
-      spfxVersionDetected = await this.getPackageVersion('@microsoft/generator-sharepoint', PackageSearchMode.GlobalOnly, HandlePromise.Continue, logger);
+      spfxVersionDetected = await this.getPackageVersion(
+        "@microsoft/generator-sharepoint",
+        PackageSearchMode.GlobalOnly,
+        HandlePromise.Continue,
+        logger,
+      );
     }
     const versionCheck: VersionCheck = {
       range: spfxVersionRequested,
-      fix: `npm i -g @microsoft/generator-sharepoint@${spfxVersionRequested}`
+      fix: `npm i -g @microsoft/generator-sharepoint@${spfxVersionRequested}`,
     };
     if (spfxVersionDetected) {
-      this.checkStatus(`SharePoint Framework`, spfxVersionDetected, versionCheck, OptionalOrRequired.Required, fixes, logger);
-    }
-    else {
-      logger.log(formatting.getStatus(CheckStatus.Failure, `SharePoint Framework v${spfxVersionRequested} not found`));
+      this.checkStatus(
+        `SharePoint Framework`,
+        spfxVersionDetected,
+        versionCheck,
+        OptionalOrRequired.Required,
+        fixes,
+        logger,
+      );
+    } else {
+      logger.log(
+        formatting.getStatus(
+          CheckStatus.Failure,
+          `SharePoint Framework v${spfxVersionRequested} not found`,
+        ),
+      );
       fixes.push(versionCheck.fix);
     }
   }
 
-  private checkYo(prerequisites: SpfxVersionPrerequisites, fixes: string[], logger: Logger): Promise<void> {
-    return this
-      .getPackageVersion('yo', PackageSearchMode.GlobalOnly, HandlePromise.Continue, logger)
-      .then((yoVersion: string): void => {
-        if (yoVersion) {
-          this.checkStatus('yo', yoVersion, prerequisites.yo, OptionalOrRequired.Required, fixes, logger);
-        }
-        else {
-          logger.log(formatting.getStatus(CheckStatus.Failure, `yo not found`));
-          fixes.push(prerequisites.yo.fix);
-        }
-      });
+  private checkYo(
+    prerequisites: SpfxVersionPrerequisites,
+    fixes: string[],
+    logger: Logger,
+  ): Promise<void> {
+    return this.getPackageVersion(
+      "yo",
+      PackageSearchMode.GlobalOnly,
+      HandlePromise.Continue,
+      logger,
+    ).then((yoVersion: string): void => {
+      if (yoVersion) {
+        this.checkStatus(
+          "yo",
+          yoVersion,
+          prerequisites.yo,
+          OptionalOrRequired.Required,
+          fixes,
+          logger,
+        );
+      } else {
+        logger.log(formatting.getStatus(CheckStatus.Failure, `yo not found`));
+        fixes.push(prerequisites.yo.fix);
+      }
+    });
   }
 
-  private checkGulpCli(prerequisites: SpfxVersionPrerequisites, fixes: string[], logger: Logger): Promise<void> {
-    return this
-      .getPackageVersion('gulp-cli', PackageSearchMode.GlobalOnly, HandlePromise.Continue, logger)
-      .then((gulpCliVersion: string): void => {
-        if (gulpCliVersion) {
-          this.checkStatus('gulp-cli', gulpCliVersion, prerequisites.gulpCli, OptionalOrRequired.Required, fixes, logger);
-        }
-        else {
-          logger.log(formatting.getStatus(CheckStatus.Failure, `gulp-cli not found`));
-          fixes.push(prerequisites.gulpCli.fix);
-        }
-      });
+  private checkGulpCli(
+    prerequisites: SpfxVersionPrerequisites,
+    fixes: string[],
+    logger: Logger,
+  ): Promise<void> {
+    return this.getPackageVersion(
+      "gulp-cli",
+      PackageSearchMode.GlobalOnly,
+      HandlePromise.Continue,
+      logger,
+    ).then((gulpCliVersion: string): void => {
+      if (gulpCliVersion) {
+        this.checkStatus(
+          "gulp-cli",
+          gulpCliVersion,
+          prerequisites.gulpCli,
+          OptionalOrRequired.Required,
+          fixes,
+          logger,
+        );
+      } else {
+        logger.log(
+          formatting.getStatus(CheckStatus.Failure, `gulp-cli not found`),
+        );
+        fixes.push(prerequisites.gulpCli.fix);
+      }
+    });
   }
 
   private checkGulp(fixes: string[], logger: Logger): Promise<void> {
-    return this
-      .getPackageVersion('gulp', PackageSearchMode.GlobalOnly, HandlePromise.Continue, logger)
-      .then((gulpVersion: string): void => {
-        if (gulpVersion) {
-          logger.log(formatting.getStatus(CheckStatus.Failure, `gulp should be removed`));
-          fixes.push('npm un -g gulp');
-        }
-      });
+    return this.getPackageVersion(
+      "gulp",
+      PackageSearchMode.GlobalOnly,
+      HandlePromise.Continue,
+      logger,
+    ).then((gulpVersion: string): void => {
+      if (gulpVersion) {
+        logger.log(
+          formatting.getStatus(CheckStatus.Failure, `gulp should be removed`),
+        );
+        fixes.push("npm un -g gulp");
+      }
+    });
   }
 
   private checkTypeScript(fixes: string[], logger: Logger): Promise<void> {
-    return this
-      .getPackageVersion('typescript', PackageSearchMode.LocalOnly, HandlePromise.Continue, logger)
-      .then((typeScriptVersion: string): void => {
-        if (typeScriptVersion) {
-          logger.log(formatting.getStatus(CheckStatus.Failure, `typescript v${typeScriptVersion} installed in the project`));
-          fixes.push('npm un typescript');
-        }
-        else {
-          logger.log(formatting.getStatus(CheckStatus.Success, `bundled typescript used`));
-        }
-      });
+    return this.getPackageVersion(
+      "typescript",
+      PackageSearchMode.LocalOnly,
+      HandlePromise.Continue,
+      logger,
+    ).then((typeScriptVersion: string): void => {
+      if (typeScriptVersion) {
+        logger.log(
+          formatting.getStatus(
+            CheckStatus.Failure,
+            `typescript v${typeScriptVersion} installed in the project`,
+          ),
+        );
+        fixes.push("npm un typescript");
+      } else {
+        logger.log(
+          formatting.getStatus(CheckStatus.Success, `bundled typescript used`),
+        );
+      }
+    });
   }
 
   private spVersionStringToEnum(sp: string): SharePointVersion | undefined {
@@ -790,7 +915,9 @@ class SpfxDoctorCommand extends BaseProjectCommand {
       const spfxVersion = this.getProjectVersion();
       if (spfxVersion) {
         if (this.debug) {
-          logger.logToStderr(`SPFx version retrieved from .yo-rc.json file. Retrieved version: ${spfxVersion}`);
+          logger.logToStderr(
+            `SPFx version retrieved from .yo-rc.json file. Retrieved version: ${spfxVersion}`,
+          );
         }
         return spfxVersion;
       }
@@ -804,123 +931,159 @@ class SpfxDoctorCommand extends BaseProjectCommand {
       return spfxVersion;
     }
     try {
-      spfxVersion = await this.getPackageVersion('@microsoft/sp-core-library', PackageSearchMode.LocalOnly, HandlePromise.Fail, logger);
+      spfxVersion = await this.getPackageVersion(
+        "@microsoft/sp-core-library",
+        PackageSearchMode.LocalOnly,
+        HandlePromise.Fail,
+        logger,
+      );
       if (this.debug) {
         logger.logToStderr(`Found @microsoft/sp-core-library@${spfxVersion}`);
       }
       return spfxVersion;
-    }
-    catch {
+    } catch {
       if (this.debug) {
-        logger.logToStderr(`@microsoft/sp-core-library not found. Search for @microsoft/generator-sharepoint local or global...`);
+        logger.logToStderr(
+          `@microsoft/sp-core-library not found. Search for @microsoft/generator-sharepoint local or global...`,
+        );
       }
 
       try {
-        return await this.getPackageVersion('@microsoft/generator-sharepoint', PackageSearchMode.LocalAndGlobal, HandlePromise.Fail, logger);
-      }
-      catch (error: any) {
+        return await this.getPackageVersion(
+          "@microsoft/generator-sharepoint",
+          PackageSearchMode.LocalAndGlobal,
+          HandlePromise.Fail,
+          logger,
+        );
+      } catch (error: any) {
         if (this.debug) {
-          logger.logToStderr('@microsoft/generator-sharepoint not found');
+          logger.logToStderr("@microsoft/generator-sharepoint not found");
         }
 
-        if (error && error.indexOf('ENOENT') > -1) {
-          throw 'npm not found';
-        }
-        else {
-          return '';
+        if (error && error.indexOf("ENOENT") > -1) {
+          throw "npm not found";
+        } else {
+          return "";
         }
       }
     }
   }
 
-  private getPackageVersion(packageName: string, searchMode: PackageSearchMode, handlePromise: HandlePromise, logger: Logger): Promise<string> {
-    return new Promise<string>((resolve: (version: string) => void, reject: (err?: any) => void): void => {
-      const args: string[] = ['ls', packageName, '--depth=0', '--json'];
-      if (searchMode === PackageSearchMode.GlobalOnly) {
-        args.push('-g');
-      }
+  private getPackageVersion(
+    packageName: string,
+    searchMode: PackageSearchMode,
+    handlePromise: HandlePromise,
+    logger: Logger,
+  ): Promise<string> {
+    return new Promise<string>(
+      (
+        resolve: (version: string) => void,
+        reject: (err?: any) => void,
+      ): void => {
+        const args: string[] = ["ls", packageName, "--depth=0", "--json"];
+        if (searchMode === PackageSearchMode.GlobalOnly) {
+          args.push("-g");
+        }
 
-      this
-        .getPackageVersionFromNpm(args, logger)
-        .then((version: string): Promise<string> => {
-          return Promise.resolve(version);
-        })
-        .catch((): Promise<string> => {
-          if (searchMode === PackageSearchMode.LocalAndGlobal) {
-            args.push('-g');
-            return this.getPackageVersionFromNpm(args, logger);
-          }
-          else {
-            return Promise.resolve('');
-          }
-        })
-        .then((version: string): void => {
-          if (version) {
-            resolve(version);
-          }
-          else {
-            if (handlePromise === HandlePromise.Continue) {
-              resolve('');
+        this.getPackageVersionFromNpm(args, logger)
+          .then((version: string): Promise<string> => {
+            return Promise.resolve(version);
+          })
+          .catch((): Promise<string> => {
+            if (searchMode === PackageSearchMode.LocalAndGlobal) {
+              args.push("-g");
+              return this.getPackageVersionFromNpm(args, logger);
+            } else {
+              return Promise.resolve("");
             }
-            else {
-              reject();
+          })
+          .then((version: string): void => {
+            if (version) {
+              resolve(version);
+            } else {
+              if (handlePromise === HandlePromise.Continue) {
+                resolve("");
+              } else {
+                reject();
+              }
             }
-          }
-        })
-        .catch((err: string): void => {
-          reject(err);
-        });
-    });
+          })
+          .catch((err: string): void => {
+            reject(err);
+          });
+      },
+    );
   }
 
-  private getPackageVersionFromNpm(args: string[], logger: Logger): Promise<string> {
-    return new Promise<string>((resolve: (version: string) => void, reject: (error: string) => void): void => {
-      const packageName: string = args[1];
+  private getPackageVersionFromNpm(
+    args: string[],
+    logger: Logger,
+  ): Promise<string> {
+    return new Promise<string>(
+      (
+        resolve: (version: string) => void,
+        reject: (error: string) => void,
+      ): void => {
+        const packageName: string = args[1];
 
-      if (this.debug) {
-        logger.logToStderr(`Executing npm: ${args.join(' ')}...`);
-      }
-
-      child_process.exec(`npm ${args.join(' ')}`, (err: child_process.ExecException | null, stdout: string): void => {
-        if (err) {
-          reject(err.message);
+        if (this.debug) {
+          logger.logToStderr(`Executing npm: ${args.join(" ")}...`);
         }
 
-        const responseString: string = stdout;
-        try {
-          const packageInfo: {
-            dependencies?: {
-              [packageName: string]: {
-                version: string;
-              };
-            };
-          } = JSON.parse(responseString);
-          if (
-            packageInfo.dependencies?.[packageName]) {
-            resolve(packageInfo.dependencies[packageName].version);
-          }
-          else {
-            reject('Package not found');
-          }
-        }
-        catch (ex: any) {
-          return reject(ex);
-        }
-      });
-    });
+        child_process.exec(
+          `npm ${args.join(" ")}`,
+          (err: child_process.ExecException | null, stdout: string): void => {
+            if (err) {
+              reject(err.message);
+            }
+
+            const responseString: string = stdout;
+            try {
+              const packageInfo: {
+                dependencies?: {
+                  [packageName: string]: {
+                    version: string;
+                  };
+                };
+              } = JSON.parse(responseString);
+              if (packageInfo.dependencies?.[packageName]) {
+                resolve(packageInfo.dependencies[packageName].version);
+              } else {
+                reject("Package not found");
+              }
+            } catch (ex: any) {
+              return reject(ex);
+            }
+          },
+        );
+      },
+    );
   }
 
   private getNodeVersion(): string {
     return process.version.substr(1);
   }
 
-  private checkStatus(what: string, versionFound: string, versionCheck: VersionCheck, optionalOrRequired: OptionalOrRequired, fixes: string[], logger: Logger): void {
+  private checkStatus(
+    what: string,
+    versionFound: string,
+    versionCheck: VersionCheck,
+    optionalOrRequired: OptionalOrRequired,
+    fixes: string[],
+    logger: Logger,
+  ): void {
     if (versionFound) {
       if (satisfies(versionFound, versionCheck.range)) {
-        logger.log(formatting.getStatus(CheckStatus.Success, `${what} v${versionFound}`));
-      }
-      else {
-        logger.log(formatting.getStatus(CheckStatus.Failure, `${what} v${versionFound} found, v${versionCheck.range} required`));
+        logger.log(
+          formatting.getStatus(CheckStatus.Success, `${what} v${versionFound}`),
+        );
+      } else {
+        logger.log(
+          formatting.getStatus(
+            CheckStatus.Failure,
+            `${what} v${versionFound} found, v${versionCheck.range} required`,
+          ),
+        );
         fixes.push(versionCheck.fix);
       }
     }

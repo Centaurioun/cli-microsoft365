@@ -1,6 +1,6 @@
-import { JsonRule } from '../../JsonRule';
-import { Project } from '../../project-model';
-import { Finding } from '../../report-model';
+import { JsonRule } from "../../JsonRule";
+import { Project } from "../../project-model";
+import { Finding } from "../../report-model";
 
 export class FN008003_CFG_TSL_preferConst extends JsonRule {
   constructor() {
@@ -8,11 +8,11 @@ export class FN008003_CFG_TSL_preferConst extends JsonRule {
   }
 
   get id(): string {
-    return 'FN008003';
+    return "FN008003";
   }
 
   get title(): string {
-    return 'tslint.json prefer-const';
+    return "tslint.json prefer-const";
   }
 
   get description(): string {
@@ -30,15 +30,15 @@ export class FN008003_CFG_TSL_preferConst extends JsonRule {
   }
 
   get resolutionType(): string {
-    return 'json';
+    return "json";
   }
 
   get severity(): string {
-    return 'Required';
+    return "Required";
   }
 
   get file(): string {
-    return './config/tslint.json';
+    return "./config/tslint.json";
   }
 
   visit(project: Project, findings: Finding[]): void {
@@ -46,9 +46,14 @@ export class FN008003_CFG_TSL_preferConst extends JsonRule {
       return;
     }
 
-    if ( project.tsLintJson.lintConfig?.rules &&
-      project.tsLintJson.lintConfig.rules["prefer-const"] === true) {
-      const node = this.getAstNodeFromFile(project.tsLintJson, 'lintConfig.rules.prefer-const');
+    if (
+      project.tsLintJson.lintConfig?.rules &&
+      project.tsLintJson.lintConfig.rules["prefer-const"] === true
+    ) {
+      const node = this.getAstNodeFromFile(
+        project.tsLintJson,
+        "lintConfig.rules.prefer-const",
+      );
       this.addFindingWithPosition(findings, node);
     }
   }
