@@ -245,7 +245,7 @@ class Autocomplete {
             const option: CommandOptionInfo = commandInfo.options.filter(
               (opt) => opt.long === optionName || opt.short === optionName,
             )[0];
-            if (option && option.autocomplete) {
+            if ( option?.autocomplete) {
               optionsObj[o] = option.autocomplete;
             } else {
               optionsObj[o] = {};

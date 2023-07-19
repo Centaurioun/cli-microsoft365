@@ -829,7 +829,7 @@ export class ClientSideText extends ClientSidePart {
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
         zoneIndex:
-          this.column && this.column.section ? this.column.section.order : 0,
+           this.column?.section ? this.column.section.order : 0,
       },
     };
   }
@@ -1013,7 +1013,7 @@ export class ClientSideWebpart extends ClientSidePart {
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
         zoneIndex:
-          this.column && this.column.section ? this.column.section.order : 0,
+           this.column?.section ? this.column.section.order : 0,
       },
       webPartId: this.webPartId,
     };

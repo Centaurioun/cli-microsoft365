@@ -127,8 +127,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listId option is passed and prompt confirmed (debug)', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/lists(guid\'dfddade1-4729-428d-881e-7fedf3cae50d\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -155,8 +155,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listTitle option is passed and prompt confirmed (debug)', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/lists/getByTitle(\'Documents\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -185,8 +185,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listUrl option is passed and prompt confirmed (debug)', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/GetList(\'%2Fsites%2Fdocuments\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -213,8 +213,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listUrl option is passed and prompt confirmed', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/GetList(\'%2Fsites%2Fdocuments\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -240,8 +240,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listId option is passed and prompt confirmed', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/lists(guid\'dfddade1-4729-428d-881e-7fedf3cae50d\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -269,8 +269,8 @@ describe(commands.LIST_CONTENTTYPE_REMOVE, () => {
   it('removes content type from list when listTitle option is passed and prompt confirmed', async () => {
     const postStub = sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/lists/getByTitle(\'Documents\')/ContentTypes(\'0x010109010053EE7AEB1FC54A41B4D9F66ADBDC312A\')') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }

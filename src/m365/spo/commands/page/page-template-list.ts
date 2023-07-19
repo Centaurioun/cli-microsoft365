@@ -62,7 +62,7 @@ class SpoPageTemplateListCommand extends SpoCommand {
     }
     catch (err: any) {
       // The API returns a 404 when no templates are created on the site collection
-      if (err && err.response && err.response.status && err.response.status === 404) {
+      if ( err?.response && err.response.status && err.response.status === 404) {
         logger.log([]);
         return;
       }

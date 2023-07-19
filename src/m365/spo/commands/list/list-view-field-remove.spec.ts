@@ -193,8 +193,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists/GetByTitle('Documents')/views('cc27a922-8224-4296-90a5-ebbc54da2e81')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -226,8 +226,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists/GetByTitle('Documents')/views/GetByTitle('MyView')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -255,8 +255,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'0cd891ef-afce-4e55-b836-fce03286cccf')/views/GetByTitle('MyView')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -287,8 +287,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'0cd891ef-afce-4e55-b836-fce03286cccf')/views('cc27a922-8224-4296-90a5-ebbc54da2e81')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -319,8 +319,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists/GetByTitle('Documents')/views('cc27a922-8224-4296-90a5-ebbc54da2e81')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -351,8 +351,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists/GetByTitle('Documents')/views/GetByTitle('MyView')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -383,8 +383,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'0cd891ef-afce-4e55-b836-fce03286cccf')/views/GetByTitle('MyView')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -415,8 +415,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'0cd891ef-afce-4e55-b836-fce03286cccf')/views('cc27a922-8224-4296-90a5-ebbc54da2e81')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -447,8 +447,8 @@ describe(commands.LIST_VIEW_FIELD_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/GetList('%2Fsites%2Fninja%2FShared%20Documents')/views('cc27a922-8224-4296-90a5-ebbc54da2e81')/viewfields/removeviewfield('Author')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }

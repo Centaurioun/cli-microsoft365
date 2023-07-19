@@ -85,8 +85,8 @@ describe(commands.FEATURE_ENABLE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(requestUrl) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -116,8 +116,8 @@ describe(commands.FEATURE_ENABLE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(requestUrl) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }

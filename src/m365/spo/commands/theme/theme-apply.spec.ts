@@ -120,8 +120,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -159,8 +159,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -198,8 +198,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -237,8 +237,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -276,8 +276,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -315,8 +315,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -354,8 +354,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -393,8 +393,8 @@ describe(commands.THEME_APPLY, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, true]));
         }
@@ -466,8 +466,8 @@ describe(commands.THEME_APPLY, () => {
     sinon.stub(request, 'post').callsFake((opts) => {
       requests.push(opts);
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.headers['X-RequestDigest'] === 'abc') {
           return Promise.resolve(JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": "{ErrorMessage:error occurred}", "TraceCorrelationId": "3d92299e-e019-4000-c866-de7d45aa9628" }, 12, false]));
         }

@@ -124,7 +124,7 @@ class SpoPropertyBagRemoveCommand extends SpoPropertyBagBaseCommand {
       request.post(requestOptions).then((res: any): void => {
         const json: ClientSvcResponse = JSON.parse(res);
         const contents: ClientSvcResponseContents = json.find(x => { return x['ErrorInfo']; });
-        if (contents && contents.ErrorInfo) {
+        if ( contents?.ErrorInfo) {
           reject(contents.ErrorInfo.ErrorMessage || 'ClientSvc unknown error');
         }
         else {

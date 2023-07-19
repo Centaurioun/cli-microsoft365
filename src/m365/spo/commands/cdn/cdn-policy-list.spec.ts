@@ -71,8 +71,8 @@ describe(commands.CDN_POLICY_LIST, () => {
   it('retrieves the policies for the public CDN when type set to Public', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
@@ -101,8 +101,8 @@ describe(commands.CDN_POLICY_LIST, () => {
   it('retrieves the policies for the private CDN when type set to Private', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
@@ -131,8 +131,8 @@ describe(commands.CDN_POLICY_LIST, () => {
   it('retrieves the policies for the public CDN when no type set', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
@@ -162,16 +162,16 @@ describe(commands.CDN_POLICY_LIST, () => {
     sinonUtil.restore(request.post);
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
       }
 
       if ((opts.url as string).indexOf('/_vti_bin/client.svc/ProcessQuery') > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.data) {
           if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Method Name="GetTenantCdnPolicies" Id="7" ObjectPathId="3"><Parameters><Parameter Type="Enum">0</Parameter></Parameters></Method></Actions><ObjectPaths><Identity Id="3" Name="abc" /></ObjectPaths></Request>`) {
             return JSON.stringify([

@@ -79,8 +79,8 @@ describe(commands.LIST_WEBHOOK_GET, () => {
   it('retrieves specified webhook of the given list if title option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists/GetByTitle('Documents')/Subscriptions('cc27a922-8224-4296-90a5-ebbc54da2e85')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return webhookGetResponse;
         }
@@ -102,8 +102,8 @@ describe(commands.LIST_WEBHOOK_GET, () => {
   it('retrieves specified webhook of the given list if url option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/ninja/_api/web/GetList('${formatting.encodeQueryParameter('/sites/ninja/lists/Documents')}')/Subscriptions('cc27a922-8224-4296-90a5-ebbc54da2e85')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return webhookGetResponse;
         }
@@ -125,8 +125,8 @@ describe(commands.LIST_WEBHOOK_GET, () => {
   it('retrieves specific webhook of the specific list if id option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/Subscriptions('cc27a922-8224-4296-90a5-ebbc54da2e85')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return webhookGetResponse;
         }
@@ -149,8 +149,8 @@ describe(commands.LIST_WEBHOOK_GET, () => {
   it('retrieves specific webhook of the specific list if url option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/ninja/_api/web/GetList('%2Fsites%2Fninja%2Fshared%20documents')/Subscriptions('cc27a922-8224-4296-90a5-ebbc54da2e85')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return webhookGetResponse;
         }
@@ -185,8 +185,8 @@ describe(commands.LIST_WEBHOOK_GET, () => {
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/Subscriptions('ab27a922-8224-4296-90a5-ebbc54da1981')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           throw error;
         }

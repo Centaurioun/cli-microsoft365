@@ -66,8 +66,8 @@ describe(commands.GET, () => {
   it('retrieves information about the specified flow (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.ProcessSimple/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5/flows/3989cb59-ce1a-4a5c-bb78-257c5c39381d?api-version=2016-11-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "name": "3989cb59-ce1a-4a5c-bb78-257c5c39381d",
@@ -1451,8 +1451,8 @@ describe(commands.GET, () => {
   it('retrieves information about the specified flow', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.ProcessSimple/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5/flows/3989cb59-ce1a-4a5c-bb78-257c5c39381d?api-version=2016-11-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "name": "3989cb59-ce1a-4a5c-bb78-257c5c39381d",
@@ -2836,8 +2836,8 @@ describe(commands.GET, () => {
   it('retrieves information about the specified flow (with trigger type)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.ProcessSimple/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5/flows/3989cb59-ce1a-4a5c-bb78-257c5c39381d?api-version=2016-11-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "name": "3989cb59-ce1a-4a5c-bb78-257c5c39381d",
@@ -4229,8 +4229,8 @@ describe(commands.GET, () => {
   it('retrieves information about the specified flow as admin', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.ProcessSimple/scopes/admin/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5/flows/3989cb59-ce1a-4a5c-bb78-257c5c39381d?api-version=2016-11-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "name": "3989cb59-ce1a-4a5c-bb78-257c5c39381d",
@@ -6298,8 +6298,8 @@ describe(commands.GET, () => {
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`providers/Microsoft.ProcessSimple/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5/flows/3989cb59-ce1a-4a5c-bb78-257c5c39381d?api-version=2016-11-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return flowInfo;
         }

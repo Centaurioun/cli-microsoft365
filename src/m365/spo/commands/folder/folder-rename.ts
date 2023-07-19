@@ -85,7 +85,7 @@ class SpoFolderRenameCommand extends SpoCommand {
       const res = await request.post<string>(requestOptions);
       const json: ClientSvcResponse = JSON.parse(res);
       const contents: ClientSvcResponseContents = json.find(x => { return x['ErrorInfo']; });
-      if (contents && contents.ErrorInfo) {
+      if ( contents?.ErrorInfo) {
         throw contents.ErrorInfo.ErrorMessage || 'ClientSvc unknown error';
       }
     }

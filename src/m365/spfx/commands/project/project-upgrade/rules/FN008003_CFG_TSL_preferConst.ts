@@ -46,7 +46,7 @@ export class FN008003_CFG_TSL_preferConst extends JsonRule {
       return;
     }
 
-    if (project.tsLintJson.lintConfig && project.tsLintJson.lintConfig.rules &&
+    if ( project.tsLintJson.lintConfig?.rules &&
       project.tsLintJson.lintConfig.rules["prefer-const"] === true) {
       const node = this.getAstNodeFromFile(project.tsLintJson, 'lintConfig.rules.prefer-const');
       this.addFindingWithPosition(findings, node);

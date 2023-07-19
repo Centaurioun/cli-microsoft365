@@ -97,8 +97,8 @@ describe(commands.LIST_CONTENTTYPE_ADD, () => {
   it('adds content type to the specific list if listTitle option is passed (debug)', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/dummy/_api/web/lists/getByTitle('Documents')/ContentTypes/AddAvailableContentType`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           JSON.stringify(opts.data) === JSON.stringify({
             contentTypeId: '0x0120'
@@ -124,8 +124,8 @@ describe(commands.LIST_CONTENTTYPE_ADD, () => {
   it('adds content type to the specific list if listTitle option is passed', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/dummy/_api/web/lists/getByTitle('Documents')/ContentTypes/AddAvailableContentType`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           JSON.stringify(opts.data) === JSON.stringify({
             contentTypeId: '0x0120'
@@ -150,8 +150,8 @@ describe(commands.LIST_CONTENTTYPE_ADD, () => {
   it('adds content type to the specific list if listId option is passed (debug)', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/dummy/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/ContentTypes/AddAvailableContentType`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           JSON.stringify(opts.data) === JSON.stringify({
             contentTypeId: '0x0120'
@@ -177,8 +177,8 @@ describe(commands.LIST_CONTENTTYPE_ADD, () => {
   it('adds content type to the specific list if listId option is passed', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/dummy/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/ContentTypes/AddAvailableContentType`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           JSON.stringify(opts.data) === JSON.stringify({
             contentTypeId: '0x0120'

@@ -76,8 +76,8 @@ describe(commands.APP_LIST, () => {
         return { "CorporateCatalogUrl": "https://contoso.sharepoint.com/sites/apps" };
       }
       if ((opts.url as string).indexOf('/_api/web/tenantappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             value: [
@@ -121,8 +121,8 @@ describe(commands.APP_LIST, () => {
   it('retrieves available apps from the site app catalog', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/sitecollectionappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             value: [
@@ -170,8 +170,8 @@ describe(commands.APP_LIST, () => {
       }
 
       if ((opts.url as string).indexOf('/_api/web/tenantappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             value: [
@@ -234,8 +234,8 @@ describe(commands.APP_LIST, () => {
         return { "CorporateCatalogUrl": "https://contoso.sharepoint.com/sites/apps" };
       }
       if ((opts.url as string).indexOf('/_api/web/tenantappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return JSON.stringify({ value: [] });
         }
@@ -260,8 +260,8 @@ describe(commands.APP_LIST, () => {
   it('correctly handles no apps in the site app catalog', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/sitecollectionappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return JSON.stringify({ value: [] });
         }
@@ -280,8 +280,8 @@ describe(commands.APP_LIST, () => {
         return { "CorporateCatalogUrl": "https://contoso.sharepoint.com/sites/apps" };
       }
       if ((opts.url as string).indexOf('/_api/web/tenantappcatalog/AvailableApps') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return JSON.stringify({ value: [] });
         }

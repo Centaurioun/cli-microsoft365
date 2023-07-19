@@ -386,7 +386,7 @@ class SpoListItemSetCommand extends SpoCommand {
     const json: ClientSvcResponse = JSON.parse(response);
 
     const contents: ClientSvcResponseContents = json.find(x => { return x['ErrorInfo']; });
-    if (contents && contents.ErrorInfo) {
+    if ( contents?.ErrorInfo) {
       throw contents.ErrorInfo.ErrorMessage || 'ClientSvc unknown error';
     }
 

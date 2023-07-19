@@ -143,8 +143,8 @@ describe(commands.CHATBOT_LIST, () => {
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.1/bots?fetchXml=${fetchXml}`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return chatbotResponse;
         }

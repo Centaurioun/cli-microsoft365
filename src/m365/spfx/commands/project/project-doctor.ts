@@ -348,7 +348,7 @@ ${f.resolution}
     };
 
     findings.forEach(f => {
-      const lineNumber: number = f.position && f.position.line ? f.position.line : 1;
+      const lineNumber: number =  f.position?.line ? f.position.line : 1;
 
       let resolution: string = '';
       switch (f.resolutionType) {

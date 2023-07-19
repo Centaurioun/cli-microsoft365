@@ -111,10 +111,10 @@ export class FN018002_TEAMS_manifest extends Rule {
       if (manifest.preconfiguredEntries &&
         manifest.preconfiguredEntries.length > 0) {
         const entry = manifest.preconfiguredEntries[0];
-        if (entry.title && entry.title.default) {
+        if ( entry.title?.default) {
           webPartTitle = entry.title.default;
         }
-        if (entry.description && entry.description.default) {
+        if ( entry.description?.default) {
           webPartDescription = entry.description.default;
         }
       }

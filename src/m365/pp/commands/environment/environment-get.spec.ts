@@ -95,8 +95,8 @@ describe(commands.ENVIRONMENT_GET, () => {
   it('retrieves Microsoft Power Platform environment by name', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/${formatting.encodeQueryParameter(environmentName)}?api-version=2020-10-01`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return environmentResponse;
         }
@@ -117,8 +117,8 @@ describe(commands.ENVIRONMENT_GET, () => {
   it('retrieves default Microsoft Power Platform environment', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/environments/~Default?api-version=2020-10-01`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return environmentResponse;
         }
@@ -138,8 +138,8 @@ describe(commands.ENVIRONMENT_GET, () => {
   it('retrieves Microsoft Power Platform environment as Admin', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://api.bap.microsoft.com/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments/${formatting.encodeQueryParameter(environmentName)}?api-version=2020-10-01`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return environmentResponse;
         }

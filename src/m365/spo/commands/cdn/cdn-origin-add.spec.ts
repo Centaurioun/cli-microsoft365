@@ -41,8 +41,8 @@ describe(commands.CDN_ORIGIN_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf('/_vti_bin/client.svc/ProcessQuery') > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.data) {
           if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Method Name="AddTenantCdnOrigin" Id="27" ObjectPathId="23"><Parameters><Parameter Type="Enum">0</Parameter><Parameter Type="String">*/cdn</Parameter></Parameters></Method></Actions><ObjectPaths><Identity Id="23" Name="abc" /></ObjectPaths></Request>`) {
             return JSON.stringify([
@@ -140,16 +140,16 @@ describe(commands.CDN_ORIGIN_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
       }
 
       if ((opts.url as string).indexOf('/_vti_bin/client.svc/ProcessQuery') > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.data) {
           if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Method Name="AddTenantCdnOrigin" Id="27" ObjectPathId="23"><Parameters><Parameter Type="Enum">0</Parameter><Parameter Type="String">*/cdn</Parameter></Parameters></Method></Actions><ObjectPaths><Identity Id="23" Name="abc" /></ObjectPaths></Request>`) {
             return JSON.stringify([
@@ -182,16 +182,16 @@ describe(commands.CDN_ORIGIN_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf('/_api/contextinfo') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { FormDigestValue: 'abc' };
         }
       }
 
       if ((opts.url as string).indexOf('/_vti_bin/client.svc/ProcessQuery') > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest'] &&
+        if (
+          opts.headers?.['X-RequestDigest'] &&
           opts.data) {
           if (opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Method Name="AddTenantCdnOrigin" Id="27" ObjectPathId="23"><Parameters><Parameter Type="Enum">0</Parameter><Parameter Type="String">&lt;*/CDN&gt;</Parameter></Parameters></Method></Actions><ObjectPaths><Identity Id="23" Name="abc" /></ObjectPaths></Request>`) {
             return JSON.stringify([

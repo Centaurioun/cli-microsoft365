@@ -84,8 +84,8 @@ describe(commands.APP_INSTANCE_LIST, () => {
   it('retrieves available apps from the site collection', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/AppTiles') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             value: [
@@ -123,8 +123,8 @@ describe(commands.APP_INSTANCE_LIST, () => {
   it('correctly handles no apps found in the site collection', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/AppTiles') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return JSON.stringify({ value: [] });
         }
@@ -140,8 +140,8 @@ describe(commands.APP_INSTANCE_LIST, () => {
   it('correctly handles no apps found in the site collection (verbose)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/web/AppTiles') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return JSON.stringify({ value: [] });
         }

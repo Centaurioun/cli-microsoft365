@@ -70,8 +70,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('retrieves the list of configured tenant properties', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             storageentitiesindex: JSON.stringify({
@@ -110,8 +110,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('doesn\'t fail if no tenant properties have been configured', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { storageentitiesindex: '' };
         }
@@ -125,8 +125,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('doesn\'t fail if tenant properties web property value is empty', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {};
         }
@@ -151,8 +151,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('doesn\'t fail if tenant properties web property value is empty JSON object', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { storageentitiesindex: JSON.stringify({}) };
         }
@@ -166,8 +166,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('doesn\'t fail if tenant properties web property value is empty JSON object (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { storageentitiesindex: JSON.stringify({}) };
         }
@@ -192,8 +192,8 @@ describe(commands.STORAGEENTITY_LIST, () => {
   it('doesn\'t fail if tenant properties web property value is invalid JSON', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/AllProperties?$select=storageentitiesindex`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { storageentitiesindex: 'a' };
         }

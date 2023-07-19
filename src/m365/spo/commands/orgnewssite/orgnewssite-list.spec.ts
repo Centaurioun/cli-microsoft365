@@ -103,8 +103,8 @@ describe(commands.ORGNEWSSITE_LIST, () => {
   it('handles error getting request', async () => {
     const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest']) {
+        if (
+          opts.headers?.['X-RequestDigest']) {
           return JSON.stringify([
             {
               "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7018.1204", "ErrorInfo": {

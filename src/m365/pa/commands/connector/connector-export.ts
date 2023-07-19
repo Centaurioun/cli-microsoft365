@@ -144,8 +144,8 @@ class PaConnectorExportCommand extends PowerAppsCommand {
       fs.writeFileSync(path.join(outputFolder, 'apiProperties.json'), JSON.stringify(apiProperties, null, 2), 'utf8');
 
       let swagger = '';
-      if (connector.properties.apiDefinitions &&
-        connector.properties.apiDefinitions.originalSwaggerUrl) {
+      if (
+        connector.properties.apiDefinitions?.originalSwaggerUrl) {
         if (this.verbose) {
           logger.logToStderr(`Downloading swagger from ${connector.properties.apiDefinitions.originalSwaggerUrl}...`);
         }

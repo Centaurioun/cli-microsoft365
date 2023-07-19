@@ -243,20 +243,20 @@ export class Cli {
     const logger: Logger = {
       log: (message: any): void => {
         const formattedMessage = Cli.formatOutput(command, message, args.options);
-        if (listener && listener.stdout) {
+        if ( listener?.stdout) {
           listener.stdout(formattedMessage);
         }
         log.push(formattedMessage);
       },
       logRaw: (message: any): void => {
         const formattedMessage = Cli.formatOutput(command, message, args.options);
-        if (listener && listener.stdout) {
+        if ( listener?.stdout) {
           listener.stdout(formattedMessage);
         }
         log.push(formattedMessage);
       },
       logToStderr: (message: any): void => {
-        if (listener && listener.stderr) {
+        if ( listener?.stderr) {
           listener.stderr(message);
         }
         logErr.push(message);
@@ -265,7 +265,7 @@ export class Cli {
 
     if (args.options.debug && args.options.output !== 'none') {
       const message = `Executing command ${command.name} with options ${JSON.stringify(args)}`;
-      if (listener && listener.stderr) {
+      if ( listener?.stderr) {
         listener.stderr(message);
       }
       logErr.push(message);
@@ -800,8 +800,8 @@ export class Cli {
     };
 
     // get current command group
-    if (this.optionsFromArgs &&
-      this.optionsFromArgs.options &&
+    if (
+      this.optionsFromArgs?.options &&
       this.optionsFromArgs.options._ &&
       this.optionsFromArgs.options._.length > 0) {
       currentGroup = this.optionsFromArgs.options._.join(' ');

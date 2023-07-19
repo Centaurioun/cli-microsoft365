@@ -68,8 +68,8 @@ describe(commands.ENVIRONMENT_GET, () => {
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === 'https://api.powerapps.com/providers/Microsoft.PowerApps/environments/~default?api-version=2016-11-01') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return env;
         }
@@ -87,8 +87,8 @@ describe(commands.ENVIRONMENT_GET, () => {
 
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === 'https://api.powerapps.com/providers/Microsoft.PowerApps/environments/Default-d87a7535-dd31-4437-bfe1-95340acd55c5?api-version=2016-11-01') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return env;
         }

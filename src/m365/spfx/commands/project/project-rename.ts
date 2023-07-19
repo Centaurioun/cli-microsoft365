@@ -99,8 +99,8 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     const existingContent: string = fs.readFileSync(filePath, 'utf-8');
     const updatedContent = JSON.parse(existingContent);
 
-    if (updatedContent &&
-      updatedContent.name) {
+    if (
+      updatedContent?.name) {
       updatedContent.name = args.options.newName;
     }
 
@@ -123,18 +123,18 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     const existingContent: string = fs.readFileSync(filePath, 'utf-8');
     const updatedContent = JSON.parse(existingContent);
 
-    if (updatedContent &&
-      updatedContent['@microsoft/generator-sharepoint'] &&
+    if (
+      updatedContent?.['@microsoft/generator-sharepoint'] &&
       updatedContent['@microsoft/generator-sharepoint'].libraryName) {
       updatedContent['@microsoft/generator-sharepoint'].libraryName = args.options.newName;
     }
-    if (updatedContent &&
-      updatedContent['@microsoft/generator-sharepoint'] &&
+    if (
+      updatedContent?.['@microsoft/generator-sharepoint'] &&
       updatedContent['@microsoft/generator-sharepoint'].solutionName) {
       updatedContent['@microsoft/generator-sharepoint'].solutionName = args.options.newName;
     }
-    if (updatedContent &&
-      updatedContent['@microsoft/generator-sharepoint'] &&
+    if (
+      updatedContent?.['@microsoft/generator-sharepoint'] &&
       updatedContent['@microsoft/generator-sharepoint'].libraryId &&
       args.options.generateNewId) {
       updatedContent['@microsoft/generator-sharepoint'].libraryId = newId;
@@ -159,19 +159,19 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     const existingContent: string = fs.readFileSync(filePath, 'utf-8');
     const updatedContent = JSON.parse(existingContent);
 
-    if (updatedContent &&
-      updatedContent.solution &&
+    if (
+      updatedContent?.solution &&
       updatedContent.solution.name) {
       updatedContent.solution.name = updatedContent.solution.name.replace(new RegExp(projectName, 'g'), args.options.newName);
     }
-    if (updatedContent &&
-      updatedContent.solution &&
+    if (
+      updatedContent?.solution &&
       updatedContent.solution.id &&
       args.options.generateNewId) {
       updatedContent.solution.id = newId;
     }
-    if (updatedContent &&
-      updatedContent.paths &&
+    if (
+      updatedContent?.paths &&
       updatedContent.paths.zippedPackage) {
       updatedContent.paths.zippedPackage = updatedContent.paths.zippedPackage.replace(new RegExp(projectName, 'g'), args.options.newName);
     }
@@ -195,8 +195,8 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     const existingContent: string = fs.readFileSync(filePath, 'utf-8');
     const updatedContent = JSON.parse(existingContent);
 
-    if (updatedContent &&
-      updatedContent.container) {
+    if (
+      updatedContent?.container) {
       updatedContent.container = args.options.newName;
     }
 
