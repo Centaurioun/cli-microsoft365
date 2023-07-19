@@ -828,8 +828,7 @@ export class ClientSideText extends ClientSidePart {
         controlIndex: this.order,
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
-        zoneIndex:
-           this.column?.section ? this.column.section.order : 0,
+        zoneIndex: this.column?.section ? this.column.section.order : 0,
       },
     };
   }
@@ -1012,8 +1011,7 @@ export class ClientSideWebpart extends ClientSidePart {
         controlIndex: this.order,
         sectionFactor: this.column ? this.column.factor : 0,
         sectionIndex: this.column ? this.column.order : 0,
-        zoneIndex:
-           this.column?.section ? this.column.section.order : 0,
+        zoneIndex: this.column?.section ? this.column.section.order : 0,
       },
       webPartId: this.webPartId,
     };

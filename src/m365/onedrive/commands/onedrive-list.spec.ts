@@ -1,6 +1,6 @@
 import sinon = require("sinon");
 import auth from "../../../Auth";
-import { Logger } from '../../../cli/Logger';
+import { Logger } from "../../../cli/Logger";
 import Command, { CommandError } from "../../../Command";
 import config from "../../../config";
 import request from "../../../request";
@@ -11,7 +11,7 @@ import { spo } from "../../../utils/spo";
 import commands from "../commands";
 import assert = require("assert");
 import { telemetry } from "../../../telemetry";
-const command: Command = require('./onedrive-list');
+const command: Command = require("./onedrive-list");
 
 describe(commands.LIST, () => {
   let log: string[];
@@ -19,13 +19,18 @@ describe(commands.LIST, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
-    sinon.stub(spo, 'ensureFormDigest').resolves({ FormDigestValue: 'abc', FormDigestTimeoutSeconds: 1800, FormDigestExpiresAt: new Date(), WebFullUrl: 'https://contoso.sharepoint.com' });
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
+    sinon.stub(spo, "ensureFormDigest").resolves({
+      FormDigestValue: "abc",
+      FormDigestTimeoutSeconds: 1800,
+      FormDigestExpiresAt: new Date(),
+      WebFullUrl: "https://contoso.sharepoint.com",
+    });
     auth.service.connected = true;
-    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+    auth.service.spoUrl = "https://contoso.sharepoint.com";
   });
 
   beforeEach(() => {
@@ -39,15 +44,13 @@ describe(commands.LIST, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
-    loggerLogSpy = sinon.spy(logger, 'log');
+    loggerLogSpy = sinon.spy(logger, "log");
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.post
-    ]);
+    sinonUtil.restore([request.post]);
   });
 
   after(() => {
@@ -56,201 +59,1460 @@ describe(commands.LIST, () => {
     auth.service.spoUrl = undefined;
   });
 
-  it('has correct name', () => {
+  it("has correct name", () => {
     assert.strictEqual(command.name, commands.LIST);
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('defines correct properties for the default output', () => {
-    assert.deepStrictEqual(command.defaultProperties(), ['Title', 'Url']);
+  it("defines correct properties for the default output", () => {
+    assert.deepStrictEqual(command.defaultProperties(), ["Title", "Url"]);
   });
 
-  it('correctly handles random API error', async () => {
-    sinon.stub(request, 'post').rejects(new Error('An error has occurred'));
+  it("correctly handles random API error", async () => {
+    sinon.stub(request, "post").rejects(new Error("An error has occurred"));
 
-    await assert.rejects(command.action(logger, { options: { debug: true } } as any), new CommandError("An error has occurred"));
+    await assert.rejects(
+      command.action(logger, { options: { debug: true } } as any),
+      new CommandError("An error has occurred"),
+    );
   });
 
-  it('retrieves list of OneDrive sites', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("retrieves list of OneDrive sites", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+      ) {
         if (
-          opts.headers?.['X-RequestDigest'] &&
-          opts.headers['X-RequestDigest'] === 'abc' &&
-          opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`) {
+          opts.headers?.["X-RequestDigest"] &&
+          opts.headers["X-RequestDigest"] === "abc" &&
+          opts.data ===
+            `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`
+        ) {
           return JSON.stringify([
             {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.21402.12001", "ErrorInfo": null, "TraceCorrelationId": "2d63d39f-3016-0000-a532-30514e76ae73"
-            }, 2, {
-              "IsNull": false
-            }, 4, {
-              "IsNull": false
-            }, 5, {
-              "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable", "NextStartIndex": -1, "NextStartIndexFromSharePoint": null, "_Child_Items_": [
+              SchemaVersion: "15.0.0.0",
+              LibraryVersion: "16.0.21402.12001",
+              ErrorInfo: null,
+              TraceCorrelationId: "2d63d39f-3016-0000-a532-30514e76ae73",
+            },
+            2,
+            {
+              IsNull: false,
+            },
+            4,
+            {
+              IsNull: false,
+            },
+            5,
+            {
+              _ObjectType_:
+                "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable",
+              NextStartIndex: -1,
+              NextStartIndexFromSharePoint: null,
+              _Child_Items_: [
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "lidiah@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Lidia Holloway",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
                 },
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-                }
-              ]
-            }
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "diegos@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Diego Siciliani",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
+                },
+              ],
+            },
           ]);
         }
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     await command.action(logger, { options: {} });
-    assert(loggerLogSpy.calledWith([
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      },
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      }
-    ]));
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "lidiah@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Lidia Holloway",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "diegos@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Diego Siciliani",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+      ]),
+    );
   });
 
-  it('retrieves list of OneDrive sites (debug)', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("retrieves list of OneDrive sites (debug)", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+      ) {
         if (
-          opts.headers?.['X-RequestDigest'] &&
-          opts.headers['X-RequestDigest'] === 'abc' &&
-          opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`) {
+          opts.headers?.["X-RequestDigest"] &&
+          opts.headers["X-RequestDigest"] === "abc" &&
+          opts.data ===
+            `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`
+        ) {
           return JSON.stringify([
             {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.21402.12001", "ErrorInfo": null, "TraceCorrelationId": "2d63d39f-3016-0000-a532-30514e76ae73"
-            }, 2, {
-              "IsNull": false
-            }, 4, {
-              "IsNull": false
-            }, 5, {
-              "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable", "NextStartIndex": -1, "NextStartIndexFromSharePoint": null, "_Child_Items_": [
+              SchemaVersion: "15.0.0.0",
+              LibraryVersion: "16.0.21402.12001",
+              ErrorInfo: null,
+              TraceCorrelationId: "2d63d39f-3016-0000-a532-30514e76ae73",
+            },
+            2,
+            {
+              IsNull: false,
+            },
+            4,
+            {
+              IsNull: false,
+            },
+            5,
+            {
+              _ObjectType_:
+                "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable",
+              NextStartIndex: -1,
+              NextStartIndexFromSharePoint: null,
+              _Child_Items_: [
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "lidiah@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Lidia Holloway",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
                 },
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-                }
-              ]
-            }
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "diegos@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Diego Siciliani",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
+                },
+              ],
+            },
           ]);
         }
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     await command.action(logger, { options: { debug: true } });
-    assert(loggerLogSpy.calledWith([
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      },
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      }
-    ]));
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "lidiah@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Lidia Holloway",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "diegos@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Diego Siciliani",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+      ]),
+    );
   });
 
-  it('retrieves list of all OneDrive sites when results are returned in pages', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("retrieves list of all OneDrive sites when results are returned in pages", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+      ) {
         if (
-          opts.headers?.['X-RequestDigest'] &&
-          opts.headers['X-RequestDigest'] === 'abc' &&
-          opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`) {
+          opts.headers?.["X-RequestDigest"] &&
+          opts.headers["X-RequestDigest"] === "abc" &&
+          opts.data ===
+            `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">0</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`
+        ) {
           return JSON.stringify([
             {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.21402.12001", "ErrorInfo": null, "TraceCorrelationId": "2d63d39f-3016-0000-a532-30514e76ae73"
-            }, 2, {
-              "IsNull": false
-            }, 4, {
-              "IsNull": false
-            }, 5, {
-              "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable", "NextStartIndex": -1, "NextStartIndexFromSharePoint": "SPSiteQuery,841cb9d7-61a2-4029-b405-8cef77f591e2,924a239d-6416-49ff-86e2-0283b03bc4aa,0f820ed9-1927-4d48-8f88-94f863949574", "_Child_Items_": [
+              SchemaVersion: "15.0.0.0",
+              LibraryVersion: "16.0.21402.12001",
+              ErrorInfo: null,
+              TraceCorrelationId: "2d63d39f-3016-0000-a532-30514e76ae73",
+            },
+            2,
+            {
+              IsNull: false,
+            },
+            4,
+            {
+              IsNull: false,
+            },
+            5,
+            {
+              _ObjectType_:
+                "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable",
+              NextStartIndex: -1,
+              NextStartIndexFromSharePoint:
+                "SPSiteQuery,841cb9d7-61a2-4029-b405-8cef77f591e2,924a239d-6416-49ff-86e2-0283b03bc4aa,0f820ed9-1927-4d48-8f88-94f863949574",
+              _Child_Items_: [
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "lidiah@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Lidia Holloway",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
                 },
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-                }
-              ]
-            }
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "diegos@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Diego Siciliani",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
+                },
+              ],
+            },
           ]);
         }
 
         if (
-          opts.headers?.['X-RequestDigest'] &&
-          opts.headers['X-RequestDigest'] === 'abc' &&
-          opts.data === `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">SPSiteQuery,841cb9d7-61a2-4029-b405-8cef77f591e2,924a239d-6416-49ff-86e2-0283b03bc4aa,0f820ed9-1927-4d48-8f88-94f863949574</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`) {
+          opts.headers?.["X-RequestDigest"] &&
+          opts.headers["X-RequestDigest"] === "abc" &&
+          opts.data ===
+            `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><ObjectPath Id="2" ObjectPathId="1" /><ObjectPath Id="4" ObjectPathId="3" /><Query Id="5" ObjectPathId="3"><Query SelectAllProperties="true"><Properties /></Query><ChildItemQuery SelectAllProperties="true"><Properties /></ChildItemQuery></Query></Actions><ObjectPaths><Constructor Id="1" TypeId="{268004ae-ef6b-4e9b-8425-127220d84719}" /><Method Id="3" ParentId="1" Name="GetSitePropertiesFromSharePointByFilters"><Parameters><Parameter TypeId="{b92aeee2-c92c-4b67-abcc-024e471bc140}"><Property Name="IncludeDetail" Type="Boolean">false</Property><Property Name="IncludePersonalSite" Type="Enum">1</Property><Property Name="StartIndex" Type="String">SPSiteQuery,841cb9d7-61a2-4029-b405-8cef77f591e2,924a239d-6416-49ff-86e2-0283b03bc4aa,0f820ed9-1927-4d48-8f88-94f863949574</Property><Property Name="Template" Type="String">SPSPERS</Property></Parameter></Parameters></Method></ObjectPaths></Request>`
+        ) {
           return JSON.stringify([
             {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.21402.12001", "ErrorInfo": null, "TraceCorrelationId": "2d63d39f-3016-0000-a532-30514e76ae73"
-            }, 2, {
-              "IsNull": false
-            }, 4, {
-              "IsNull": false
-            }, 5, {
-              "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable", "NextStartIndex": -1, "NextStartIndexFromSharePoint": null, "_Child_Items_": [
+              SchemaVersion: "15.0.0.0",
+              LibraryVersion: "16.0.21402.12001",
+              ErrorInfo: null,
+              TraceCorrelationId: "2d63d39f-3016-0000-a532-30514e76ae73",
+            },
+            2,
+            {
+              IsNull: false,
+            },
+            4,
+            {
+              IsNull: false,
+            },
+            5,
+            {
+              _ObjectType_:
+                "Microsoft.Online.SharePoint.TenantAdministration.SPOSitePropertiesEnumerable",
+              NextStartIndex: -1,
+              NextStartIndexFromSharePoint: null,
+              _Child_Items_: [
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "lidiah@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Lidia Holloway",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
                 },
                 {
-                  "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-                }
-              ]
-            }
+                  _ObjectType_:
+                    "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+                  _ObjectIdentity_:
+                    "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+                  AllowDownloadingNonWebViewableFiles: false,
+                  AllowEditing: false,
+                  AllowSelfServiceUpgrade: true,
+                  AnonymousLinkExpirationInDays: 0,
+                  AuthContextStrength: null,
+                  AverageResourceUsage: 0,
+                  BlockDownloadLinksFileType: 0,
+                  CommentsOnSitePagesDisabled: false,
+                  CompatibilityLevel: 15,
+                  ConditionalAccessPolicy: 0,
+                  CurrentResourceUsage: 0,
+                  DefaultLinkPermission: 0,
+                  DefaultLinkToExistingAccess: false,
+                  DefaultLinkToExistingAccessReset: false,
+                  DefaultSharingLinkType: 0,
+                  DenyAddAndCustomizePages: 2,
+                  Description: null,
+                  DisableAppViews: 0,
+                  DisableCompanyWideSharingLinks: 0,
+                  DisableFlows: 0,
+                  ExternalUserExpirationInDays: 0,
+                  GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  GroupOwnerLoginName: null,
+                  HasHolds: false,
+                  HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  IBMode: null,
+                  IBSegments: [],
+                  IBSegmentsToAdd: null,
+                  IBSegmentsToRemove: null,
+                  IsGroupOwnerSiteAdmin: false,
+                  IsHubSite: false,
+                  LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+                  Lcid: 1033,
+                  LimitedAccessFileType: 0,
+                  LockIssue: null,
+                  LockState: "Unlock",
+                  OverrideBlockUserInfoVisibility: 0,
+                  OverrideTenantAnonymousLinkExpirationPolicy: false,
+                  OverrideTenantExternalUserExpirationPolicy: false,
+                  Owner: "diegos@dev365.onmicrosoft.com",
+                  OwnerEmail: null,
+                  OwnerLoginName: null,
+                  OwnerName: null,
+                  PWAEnabled: 1,
+                  RelatedGroupId:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  RestrictedToRegion: 3,
+                  SandboxedCodeActivationCapability: 0,
+                  SensitivityLabel:
+                    "/Guid(00000000-0000-0000-0000-000000000000)/",
+                  SensitivityLabel2: null,
+                  SetOwnerWithoutUpdatingSecondaryAdmin: false,
+                  SharingAllowedDomainList: null,
+                  SharingBlockedDomainList: null,
+                  SharingCapability: 2,
+                  SharingDomainRestrictionMode: 0,
+                  ShowPeoplePickerSuggestionsForGuestUsers: false,
+                  SiteDefinedSharingCapability: 2,
+                  SocialBarOnSitePagesDisabled: false,
+                  Status: "Active",
+                  StorageMaximumLevel: 1048576,
+                  StorageQuotaType: null,
+                  StorageUsage: 1,
+                  StorageWarningLevel: 943718,
+                  Template: "SPSPERS#10",
+                  TimeZoneId: 13,
+                  Title: "Diego Siciliani",
+                  Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+                  UserCodeMaximumLevel: 300,
+                  UserCodeWarningLevel: 200,
+                  WebsCount: 0,
+                },
+              ],
+            },
           ]);
         }
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
     await command.action(logger, { options: {} });
-    assert(loggerLogSpy.calledWith([
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      },
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      },
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,15,517)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "lidiah@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Lidia Holloway", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      },
-      {
-        "_ObjectType_": "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties", "_ObjectIdentity_": "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com", "AllowDownloadingNonWebViewableFiles": false, "AllowEditing": false, "AllowSelfServiceUpgrade": true, "AnonymousLinkExpirationInDays": 0, "AuthContextStrength": null, "AverageResourceUsage": 0, "BlockDownloadLinksFileType": 0, "CommentsOnSitePagesDisabled": false, "CompatibilityLevel": 15, "ConditionalAccessPolicy": 0, "CurrentResourceUsage": 0, "DefaultLinkPermission": 0, "DefaultLinkToExistingAccess": false, "DefaultLinkToExistingAccessReset": false, "DefaultSharingLinkType": 0, "DenyAddAndCustomizePages": 2, "Description": null, "DisableAppViews": 0, "DisableCompanyWideSharingLinks": 0, "DisableFlows": 0, "ExternalUserExpirationInDays": 0, "GroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "GroupOwnerLoginName": null, "HasHolds": false, "HubSiteId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "IBMode": null, "IBSegments": [], "IBSegmentsToAdd": null, "IBSegmentsToRemove": null, "IsGroupOwnerSiteAdmin": false, "IsHubSite": false, "LastContentModifiedDate": "\/Date(2021,3,1,16,45,44,240)\/", "Lcid": 1033, "LimitedAccessFileType": 0, "LockIssue": null, "LockState": "Unlock", "OverrideBlockUserInfoVisibility": 0, "OverrideTenantAnonymousLinkExpirationPolicy": false, "OverrideTenantExternalUserExpirationPolicy": false, "Owner": "diegos@dev365.onmicrosoft.com", "OwnerEmail": null, "OwnerLoginName": null, "OwnerName": null, "PWAEnabled": 1, "RelatedGroupId": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "RestrictedToRegion": 3, "SandboxedCodeActivationCapability": 0, "SensitivityLabel": "\/Guid(00000000-0000-0000-0000-000000000000)\/", "SensitivityLabel2": null, "SetOwnerWithoutUpdatingSecondaryAdmin": false, "SharingAllowedDomainList": null, "SharingBlockedDomainList": null, "SharingCapability": 2, "SharingDomainRestrictionMode": 0, "ShowPeoplePickerSuggestionsForGuestUsers": false, "SiteDefinedSharingCapability": 2, "SocialBarOnSitePagesDisabled": false, "Status": "Active", "StorageMaximumLevel": 1048576, "StorageQuotaType": null, "StorageUsage": 1, "StorageWarningLevel": 943718, "Template": "SPSPERS#10", "TimeZoneId": 13, "Title": "Diego Siciliani", "Url": "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com", "UserCodeMaximumLevel": 300, "UserCodeWarningLevel": 200, "WebsCount": 0
-      }
-    ]));
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "lidiah@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Lidia Holloway",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "diegos@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Diego Siciliani",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fcontoso-my.sharepoint.com%2fpersonal%2fjohn_doe_contoso_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,15,517)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "lidiah@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Lidia Holloway",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002flidiah_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+        {
+          _ObjectType_:
+            "Microsoft.Online.SharePoint.TenantAdministration.SiteProperties",
+          _ObjectIdentity_:
+            "2d63d39f-3016-0000-a532-30514e76ae73|908bed80-a04a-4433-b4a0-883d9847d110:d23a1d52-e19a-4bc5-be17-463a24e17fa2\nSiteProperties\nhttps%3a%2f%2fdev365-my.sharepoint.com%2fpersonal%2fdiegos_dev365_onmicrosoft_com",
+          AllowDownloadingNonWebViewableFiles: false,
+          AllowEditing: false,
+          AllowSelfServiceUpgrade: true,
+          AnonymousLinkExpirationInDays: 0,
+          AuthContextStrength: null,
+          AverageResourceUsage: 0,
+          BlockDownloadLinksFileType: 0,
+          CommentsOnSitePagesDisabled: false,
+          CompatibilityLevel: 15,
+          ConditionalAccessPolicy: 0,
+          CurrentResourceUsage: 0,
+          DefaultLinkPermission: 0,
+          DefaultLinkToExistingAccess: false,
+          DefaultLinkToExistingAccessReset: false,
+          DefaultSharingLinkType: 0,
+          DenyAddAndCustomizePages: 2,
+          Description: null,
+          DisableAppViews: 0,
+          DisableCompanyWideSharingLinks: 0,
+          DisableFlows: 0,
+          ExternalUserExpirationInDays: 0,
+          GroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          GroupOwnerLoginName: null,
+          HasHolds: false,
+          HubSiteId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          IBMode: null,
+          IBSegments: [],
+          IBSegmentsToAdd: null,
+          IBSegmentsToRemove: null,
+          IsGroupOwnerSiteAdmin: false,
+          IsHubSite: false,
+          LastContentModifiedDate: "/Date(2021,3,1,16,45,44,240)/",
+          Lcid: 1033,
+          LimitedAccessFileType: 0,
+          LockIssue: null,
+          LockState: "Unlock",
+          OverrideBlockUserInfoVisibility: 0,
+          OverrideTenantAnonymousLinkExpirationPolicy: false,
+          OverrideTenantExternalUserExpirationPolicy: false,
+          Owner: "diegos@dev365.onmicrosoft.com",
+          OwnerEmail: null,
+          OwnerLoginName: null,
+          OwnerName: null,
+          PWAEnabled: 1,
+          RelatedGroupId: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          RestrictedToRegion: 3,
+          SandboxedCodeActivationCapability: 0,
+          SensitivityLabel: "/Guid(00000000-0000-0000-0000-000000000000)/",
+          SensitivityLabel2: null,
+          SetOwnerWithoutUpdatingSecondaryAdmin: false,
+          SharingAllowedDomainList: null,
+          SharingBlockedDomainList: null,
+          SharingCapability: 2,
+          SharingDomainRestrictionMode: 0,
+          ShowPeoplePickerSuggestionsForGuestUsers: false,
+          SiteDefinedSharingCapability: 2,
+          SocialBarOnSitePagesDisabled: false,
+          Status: "Active",
+          StorageMaximumLevel: 1048576,
+          StorageQuotaType: null,
+          StorageUsage: 1,
+          StorageWarningLevel: 943718,
+          Template: "SPSPERS#10",
+          TimeZoneId: 13,
+          Title: "Diego Siciliani",
+          Url: "https:\u002f\u002fdev365-my.sharepoint.com\u002fpersonal\u002fdiegos_dev365_onmicrosoft_com",
+          UserCodeMaximumLevel: 300,
+          UserCodeWarningLevel: 200,
+          WebsCount: 0,
+        },
+      ]),
+    );
   });
 
-  it('correctly handles error when retrieving sites', async () => {
-    sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("correctly handles error when retrieving sites", async () => {
+    sinon.stub(request, "post").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+      ) {
         if (
-          opts.headers?.['X-RequestDigest'] &&
-          opts.headers['X-RequestDigest'] === 'abc') {
-
+          opts.headers?.["X-RequestDigest"] &&
+          opts.headers["X-RequestDigest"] === "abc"
+        ) {
           return JSON.stringify([
             {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.21402.12001", "ErrorInfo": {
-                "ErrorMessage": "FillSiteCollectionDTOInfo: Could not obtain valid templateId (-1) from provided template filter 'SPS-PERSONAL'", "ErrorValue": null, "TraceCorrelationId": "6ec7d39f-e0a0-0000-8a64-c2725ef5f458", "ErrorCode": -1, "ErrorTypeName": "Microsoft.Online.SharePoint.Common.SpoException"
-              }, "TraceCorrelationId": "6ec7d39f-e0a0-0000-8a64-c2725ef5f458"
-            }
+              SchemaVersion: "15.0.0.0",
+              LibraryVersion: "16.0.21402.12001",
+              ErrorInfo: {
+                ErrorMessage:
+                  "FillSiteCollectionDTOInfo: Could not obtain valid templateId (-1) from provided template filter 'SPS-PERSONAL'",
+                ErrorValue: null,
+                TraceCorrelationId: "6ec7d39f-e0a0-0000-8a64-c2725ef5f458",
+                ErrorCode: -1,
+                ErrorTypeName:
+                  "Microsoft.Online.SharePoint.Common.SpoException",
+              },
+              TraceCorrelationId: "6ec7d39f-e0a0-0000-8a64-c2725ef5f458",
+            },
           ]);
         }
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
-    await assert.rejects(command.action(logger, { options: { debug: true } } as any),
-      new CommandError("FillSiteCollectionDTOInfo: Could not obtain valid templateId (-1) from provided template filter 'SPS-PERSONAL'"));
+    await assert.rejects(
+      command.action(logger, { options: { debug: true } } as any),
+      new CommandError(
+        "FillSiteCollectionDTOInfo: Could not obtain valid templateId (-1) from provided template filter 'SPS-PERSONAL'",
+      ),
+    );
   });
 });

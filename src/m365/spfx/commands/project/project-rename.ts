@@ -1,11 +1,11 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import { v4 } from 'uuid';
-import { Logger } from '../../../../cli/Logger';
-import { CommandError } from '../../../../Command';
-import GlobalOptions from '../../../../GlobalOptions';
-import commands from '../../commands';
-import { BaseProjectCommand } from './base-project-command';
+import * as fs from "fs";
+import * as path from "path";
+import { v4 } from "uuid";
+import { Logger } from "../../../../cli/Logger";
+import { CommandError } from "../../../../Command";
+import GlobalOptions from "../../../../GlobalOptions";
+import commands from "../../commands";
+import { BaseProjectCommand } from "./base-project-command";
 
 interface CommandArgs {
   options: Options;
@@ -24,65 +24,93 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
   }
 
   public get description(): string {
-    return 'Renames SharePoint Framework project';
+    return "Renames SharePoint Framework project";
   }
 
   constructor() {
     super();
-  
+
     this.#initTelemetry();
     this.#initOptions();
   }
-  
+
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        generateNewId: args.options.generateNewId
+        generateNewId: args.options.generateNewId,
       });
     });
   }
-  
+
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-n, --newName <newName>'
+        option: "-n, --newName <newName>",
       },
       {
-        option: '--generateNewId'
-      }
+        option: "--generateNewId",
+      },
     );
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
     this.projectRootPath = this.getProjectRoot(process.cwd());
     if (this.projectRootPath === null) {
-      throw new CommandError(`Couldn't find project root folder`, SpfxProjectRenameCommand.ERROR_NO_PROJECT_ROOT_FOLDER);
+      throw new CommandError(
+        `Couldn't find project root folder`,
+        SpfxProjectRenameCommand.ERROR_NO_PROJECT_ROOT_FOLDER,
+      );
     }
 
     const packageJson: any = this.getProject(this.projectRootPath).packageJson;
     const projectName: string = packageJson.name;
 
-    let newId: string = '';
+    let newId: string = "";
     if (args.options.generateNewId) {
       newId = this.generateNewId();
       if (this.debug) {
-        logger.logToStderr('Created new solution id');
+        logger.logToStderr("Created new solution id");
         logger.logToStderr(newId);
       }
     }
 
     if (this.debug) {
-      logger.logToStderr(`Renaming SharePoint Framework project to '${args.options.newName}'`);
+      logger.logToStderr(
+        `Renaming SharePoint Framework project to '${args.options.newName}'`,
+      );
     }
 
     try {
-      this.replacePackageJsonContent(path.join(this.projectRootPath, 'package.json'), args, logger);
-      this.replaceYoRcJsonContent(path.join(this.projectRootPath, '.yo-rc.json'), newId, args, logger);
-      this.replacePackageSolutionJsonContent(path.join(this.projectRootPath, 'config', 'package-solution.json'), projectName, newId, args, logger);
-      this.replaceDeployAzureStorageJsonContent(path.join(this.projectRootPath, 'config', 'deploy-azure-storage.json'), args, logger);
-      this.replaceReadMeContent(path.join(this.projectRootPath, 'README.md'), projectName, args, logger);
-    }
-    catch (error: any) {
+      this.replacePackageJsonContent(
+        path.join(this.projectRootPath, "package.json"),
+        args,
+        logger,
+      );
+      this.replaceYoRcJsonContent(
+        path.join(this.projectRootPath, ".yo-rc.json"),
+        newId,
+        args,
+        logger,
+      );
+      this.replacePackageSolutionJsonContent(
+        path.join(this.projectRootPath, "config", "package-solution.json"),
+        projectName,
+        newId,
+        args,
+        logger,
+      );
+      this.replaceDeployAzureStorageJsonContent(
+        path.join(this.projectRootPath, "config", "deploy-azure-storage.json"),
+        args,
+        logger,
+      );
+      this.replaceReadMeContent(
+        path.join(this.projectRootPath, "README.md"),
+        projectName,
+        args,
+        logger,
+      );
+    } catch (error: any) {
       throw new CommandError(error);
     }
   }
@@ -91,23 +119,30 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     return v4();
   };
 
-  private replacePackageJsonContent = (filePath: string, args: CommandArgs, logger: Logger): void => {
+  private replacePackageJsonContent = (
+    filePath: string,
+    args: CommandArgs,
+    logger: Logger,
+  ): void => {
     if (!fs.existsSync(filePath)) {
       return;
     }
 
-    const existingContent: string = fs.readFileSync(filePath, 'utf-8');
+    const existingContent: string = fs.readFileSync(filePath, "utf-8");
     const updatedContent = JSON.parse(existingContent);
 
-    if (
-      updatedContent?.name) {
+    if (updatedContent?.name) {
       updatedContent.name = args.options.newName;
     }
 
-    const updatedContentString: string = JSON.stringify(updatedContent, null, 2);
+    const updatedContentString: string = JSON.stringify(
+      updatedContent,
+      null,
+      2,
+    );
 
     if (updatedContentString !== existingContent) {
-      fs.writeFileSync(filePath, updatedContentString, 'utf-8');
+      fs.writeFileSync(filePath, updatedContentString, "utf-8");
 
       if (this.debug) {
         logger.logToStderr(`Updated ${path.basename(filePath)}`);
@@ -115,35 +150,49 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     }
   };
 
-  private replaceYoRcJsonContent = (filePath: string, newId: string, args: CommandArgs, logger: Logger): void => {
+  private replaceYoRcJsonContent = (
+    filePath: string,
+    newId: string,
+    args: CommandArgs,
+    logger: Logger,
+  ): void => {
     if (!fs.existsSync(filePath)) {
       return;
     }
 
-    const existingContent: string = fs.readFileSync(filePath, 'utf-8');
+    const existingContent: string = fs.readFileSync(filePath, "utf-8");
     const updatedContent = JSON.parse(existingContent);
 
     if (
-      updatedContent?.['@microsoft/generator-sharepoint'] &&
-      updatedContent['@microsoft/generator-sharepoint'].libraryName) {
-      updatedContent['@microsoft/generator-sharepoint'].libraryName = args.options.newName;
+      updatedContent?.["@microsoft/generator-sharepoint"] &&
+      updatedContent["@microsoft/generator-sharepoint"].libraryName
+    ) {
+      updatedContent["@microsoft/generator-sharepoint"].libraryName =
+        args.options.newName;
     }
     if (
-      updatedContent?.['@microsoft/generator-sharepoint'] &&
-      updatedContent['@microsoft/generator-sharepoint'].solutionName) {
-      updatedContent['@microsoft/generator-sharepoint'].solutionName = args.options.newName;
+      updatedContent?.["@microsoft/generator-sharepoint"] &&
+      updatedContent["@microsoft/generator-sharepoint"].solutionName
+    ) {
+      updatedContent["@microsoft/generator-sharepoint"].solutionName =
+        args.options.newName;
     }
     if (
-      updatedContent?.['@microsoft/generator-sharepoint'] &&
-      updatedContent['@microsoft/generator-sharepoint'].libraryId &&
-      args.options.generateNewId) {
-      updatedContent['@microsoft/generator-sharepoint'].libraryId = newId;
+      updatedContent?.["@microsoft/generator-sharepoint"] &&
+      updatedContent["@microsoft/generator-sharepoint"].libraryId &&
+      args.options.generateNewId
+    ) {
+      updatedContent["@microsoft/generator-sharepoint"].libraryId = newId;
     }
 
-    const updatedContentString: string = JSON.stringify(updatedContent, null, 2);
+    const updatedContentString: string = JSON.stringify(
+      updatedContent,
+      null,
+      2,
+    );
 
     if (updatedContentString !== existingContent) {
-      fs.writeFileSync(filePath, updatedContentString, 'utf-8');
+      fs.writeFileSync(filePath, updatedContentString, "utf-8");
 
       if (this.debug) {
         logger.logToStderr(`Updated ${path.basename(filePath)}`);
@@ -151,35 +200,49 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     }
   };
 
-  private replacePackageSolutionJsonContent = (filePath: string, projectName: string, newId: string, args: CommandArgs, logger: Logger): void => {
+  private replacePackageSolutionJsonContent = (
+    filePath: string,
+    projectName: string,
+    newId: string,
+    args: CommandArgs,
+    logger: Logger,
+  ): void => {
     if (!fs.existsSync(filePath)) {
       return;
     }
 
-    const existingContent: string = fs.readFileSync(filePath, 'utf-8');
+    const existingContent: string = fs.readFileSync(filePath, "utf-8");
     const updatedContent = JSON.parse(existingContent);
 
-    if (
-      updatedContent?.solution &&
-      updatedContent.solution.name) {
-      updatedContent.solution.name = updatedContent.solution.name.replace(new RegExp(projectName, 'g'), args.options.newName);
+    if (updatedContent?.solution && updatedContent.solution.name) {
+      updatedContent.solution.name = updatedContent.solution.name.replace(
+        new RegExp(projectName, "g"),
+        args.options.newName,
+      );
     }
     if (
       updatedContent?.solution &&
       updatedContent.solution.id &&
-      args.options.generateNewId) {
+      args.options.generateNewId
+    ) {
       updatedContent.solution.id = newId;
     }
-    if (
-      updatedContent?.paths &&
-      updatedContent.paths.zippedPackage) {
-      updatedContent.paths.zippedPackage = updatedContent.paths.zippedPackage.replace(new RegExp(projectName, 'g'), args.options.newName);
+    if (updatedContent?.paths && updatedContent.paths.zippedPackage) {
+      updatedContent.paths.zippedPackage =
+        updatedContent.paths.zippedPackage.replace(
+          new RegExp(projectName, "g"),
+          args.options.newName,
+        );
     }
 
-    const updatedContentString: string = JSON.stringify(updatedContent, null, 2);
+    const updatedContentString: string = JSON.stringify(
+      updatedContent,
+      null,
+      2,
+    );
 
     if (updatedContentString !== existingContent) {
-      fs.writeFileSync(filePath, updatedContentString, 'utf-8');
+      fs.writeFileSync(filePath, updatedContentString, "utf-8");
 
       if (this.debug) {
         logger.logToStderr(`Updated ${path.basename(filePath)}`);
@@ -187,23 +250,30 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     }
   };
 
-  private replaceDeployAzureStorageJsonContent = (filePath: string, args: CommandArgs, logger: Logger): void => {
+  private replaceDeployAzureStorageJsonContent = (
+    filePath: string,
+    args: CommandArgs,
+    logger: Logger,
+  ): void => {
     if (!fs.existsSync(filePath)) {
       return;
     }
 
-    const existingContent: string = fs.readFileSync(filePath, 'utf-8');
+    const existingContent: string = fs.readFileSync(filePath, "utf-8");
     const updatedContent = JSON.parse(existingContent);
 
-    if (
-      updatedContent?.container) {
+    if (updatedContent?.container) {
       updatedContent.container = args.options.newName;
     }
 
-    const updatedContentString: string = JSON.stringify(updatedContent, null, 2);
+    const updatedContentString: string = JSON.stringify(
+      updatedContent,
+      null,
+      2,
+    );
 
     if (updatedContentString !== existingContent) {
-      fs.writeFileSync(filePath, updatedContentString, 'utf-8');
+      fs.writeFileSync(filePath, updatedContentString, "utf-8");
 
       if (this.debug) {
         logger.logToStderr(`Updated ${path.basename(filePath)}`);
@@ -211,16 +281,24 @@ class SpfxProjectRenameCommand extends BaseProjectCommand {
     }
   };
 
-  private replaceReadMeContent = (filePath: string, projectName: string, args: CommandArgs, logger: Logger): void => {
+  private replaceReadMeContent = (
+    filePath: string,
+    projectName: string,
+    args: CommandArgs,
+    logger: Logger,
+  ): void => {
     if (!fs.existsSync(filePath)) {
       return;
     }
 
-    const existingContent: string = fs.readFileSync(filePath, 'utf-8');
-    const updatedContent = existingContent.replace(new RegExp(projectName, 'g'), args.options.newName);
+    const existingContent: string = fs.readFileSync(filePath, "utf-8");
+    const updatedContent = existingContent.replace(
+      new RegExp(projectName, "g"),
+      args.options.newName,
+    );
 
     if (updatedContent !== existingContent) {
-      fs.writeFileSync(filePath, updatedContent, 'utf-8');
+      fs.writeFileSync(filePath, updatedContent, "utf-8");
 
       if (this.debug) {
         logger.logToStderr(`Updated ${path.basename(filePath)}`);

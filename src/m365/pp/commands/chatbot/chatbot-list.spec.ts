@@ -1,20 +1,20 @@
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
-import auth from '../../../../Auth';
-import { Logger } from '../../../../cli/Logger';
-import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
-import { pid } from '../../../../utils/pid';
-import { session } from '../../../../utils/session';
-import { powerPlatform } from '../../../../utils/powerPlatform';
-import { sinonUtil } from '../../../../utils/sinonUtil';
-import commands from '../../commands';
-const command: Command = require('./chatbot-list');
+import * as assert from "assert";
+import * as sinon from "sinon";
+import { telemetry } from "../../../../telemetry";
+import auth from "../../../../Auth";
+import { Logger } from "../../../../cli/Logger";
+import Command, { CommandError } from "../../../../Command";
+import request from "../../../../request";
+import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
+import { powerPlatform } from "../../../../utils/powerPlatform";
+import { sinonUtil } from "../../../../utils/sinonUtil";
+import commands from "../../commands";
+const command: Command = require("./chatbot-list");
 
 describe(commands.CHATBOT_LIST, () => {
   const envUrl = "https://contoso-dev.api.crm4.dynamics.com";
-  const validEnvironment = '4be50206-9576-4237-8b17-38d8aadfaa36';
+  const validEnvironment = "4be50206-9576-4237-8b17-38d8aadfaa36";
   const fetchXml: string = `
       <fetch mapping='logical' version='1.0' >
         <entity name='bot'>
@@ -57,33 +57,33 @@ describe(commands.CHATBOT_LIST, () => {
     `;
 
   const chatbotResponse: any = {
-    "value": [
+    value: [
       {
-        "language": 1033,
-        "botid": "23f5f586-97fd-43d5-95eb-451c9797a53d",
-        "authenticationTrigger": 0,
-        "stateCode": 0,
-        "createdOn": "2022-11-19T10:42:22Z",
-        "cdsBotId": "23f5f586-97fd-43d5-95eb-451c9797a53d",
-        "schemaName": "new_bot_23f5f58697fd43d595eb451c9797a53d",
-        "ownerId": "5fa787c1-1c4d-ed11-bba1-000d3a2caf7f",
-        "botModifiedOn": "2022-11-19T20:19:57Z",
-        "solutionId": "fd140aae-4df4-11dd-bd17-0019b9312238",
-        "isManaged": false,
-        "versionNumber": 1429641,
-        "timezoneRuleVersionNumber": 0,
-        "displayName": "CLI Chatbot",
-        "statusCode": 1,
-        "owner": "Doe, John",
-        "overwriteTime": "1900-01-01T00:00:00Z",
-        "componentState": 0,
-        "componentIdUnique": "cdcd6496-e25d-4ad1-91cf-3f4d547fdd23",
-        "authenticationMode": 1,
-        "botModifiedBy": "Doe, John",
-        "accessControlPolicy": 0,
-        "publishedOn": "2022-11-19T19:19:53Z"
-      }
-    ]
+        language: 1033,
+        botid: "23f5f586-97fd-43d5-95eb-451c9797a53d",
+        authenticationTrigger: 0,
+        stateCode: 0,
+        createdOn: "2022-11-19T10:42:22Z",
+        cdsBotId: "23f5f586-97fd-43d5-95eb-451c9797a53d",
+        schemaName: "new_bot_23f5f58697fd43d595eb451c9797a53d",
+        ownerId: "5fa787c1-1c4d-ed11-bba1-000d3a2caf7f",
+        botModifiedOn: "2022-11-19T20:19:57Z",
+        solutionId: "fd140aae-4df4-11dd-bd17-0019b9312238",
+        isManaged: false,
+        versionNumber: 1429641,
+        timezoneRuleVersionNumber: 0,
+        displayName: "CLI Chatbot",
+        statusCode: 1,
+        owner: "Doe, John",
+        overwriteTime: "1900-01-01T00:00:00Z",
+        componentState: 0,
+        componentIdUnique: "cdcd6496-e25d-4ad1-91cf-3f4d547fdd23",
+        authenticationMode: 1,
+        botModifiedBy: "Doe, John",
+        accessControlPolicy: 0,
+        publishedOn: "2022-11-19T19:19:53Z",
+      },
+    ],
   };
 
   let log: string[];
@@ -91,10 +91,10 @@ describe(commands.CHATBOT_LIST, () => {
   let loggerLogSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
     auth.service.connected = true;
   });
 
@@ -109,16 +109,13 @@ describe(commands.CHATBOT_LIST, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
-    loggerLogSpy = sinon.spy(logger, 'log');
+    loggerLogSpy = sinon.spy(logger, "log");
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.get,
-      powerPlatform.getDynamicsInstanceApiUrl
-    ]);
+    sinonUtil.restore([request.get, powerPlatform.getDynamicsInstanceApiUrl]);
   });
 
   after(() => {
@@ -126,58 +123,85 @@ describe(commands.CHATBOT_LIST, () => {
     auth.service.connected = false;
   });
 
-  it('has correct name', () => {
+  it("has correct name", () => {
     assert.strictEqual(command.name, commands.CHATBOT_LIST);
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('defines correct properties for the default output', () => {
-    assert.deepStrictEqual(command.defaultProperties(), ['displayName', 'botid', 'publishedOn', 'createdOn', 'botModifiedOn']);
+  it("defines correct properties for the default output", () => {
+    assert.deepStrictEqual(command.defaultProperties(), [
+      "displayName",
+      "botid",
+      "publishedOn",
+      "createdOn",
+      "botModifiedOn",
+    ]);
   });
 
-  it('retrieves chatbots', async () => {
-    sinon.stub(powerPlatform, 'getDynamicsInstanceApiUrl').callsFake(async () => envUrl);
+  it("retrieves chatbots", async () => {
+    sinon
+      .stub(powerPlatform, "getDynamicsInstanceApiUrl")
+      .callsFake(async () => envUrl);
 
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.1/bots?fetchXml=${fetchXml}`) {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        opts.url ===
+        `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.1/bots?fetchXml=${fetchXml}`
+      ) {
         if (
           opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
           return chatbotResponse;
         }
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
-    await command.action(logger, { options: { debug: true, environment: validEnvironment } });
+    await command.action(logger, {
+      options: { debug: true, environment: validEnvironment },
+    });
     assert(loggerLogSpy.calledWith(chatbotResponse.value));
   });
 
-  it('correctly handles API OData error', async () => {
-    sinon.stub(powerPlatform, 'getDynamicsInstanceApiUrl').callsFake(async () => envUrl);
+  it("correctly handles API OData error", async () => {
+    sinon
+      .stub(powerPlatform, "getDynamicsInstanceApiUrl")
+      .callsFake(async () => envUrl);
 
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if (opts.url === `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.1/bots?fetchXml=${fetchXml}`) {
-        if ((opts.headers?.accept as string)?.indexOf('application/json') === 0) {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        opts.url ===
+        `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.1/bots?fetchXml=${fetchXml}`
+      ) {
+        if (
+          (opts.headers?.accept as string)?.indexOf("application/json") === 0
+        ) {
           throw {
             error: {
-              'odata.error': {
-                code: '-1, InvalidOperationException',
+              "odata.error": {
+                code: "-1, InvalidOperationException",
                 message: {
-                  value: `Resource '' does not exist or one of its queried reference-property objects are not present`
-                }
-              }
-            }
+                  value: `Resource '' does not exist or one of its queried reference-property objects are not present`,
+                },
+              },
+            },
           };
         }
       }
     });
 
-    await assert.rejects(command.action(logger, { options: { environment: validEnvironment } } as any),
-      new CommandError(`Resource '' does not exist or one of its queried reference-property objects are not present`));
+    await assert.rejects(
+      command.action(logger, {
+        options: { environment: validEnvironment },
+      } as any),
+      new CommandError(
+        `Resource '' does not exist or one of its queried reference-property objects are not present`,
+      ),
+    );
   });
 });

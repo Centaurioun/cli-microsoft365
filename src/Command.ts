@@ -1,26 +1,26 @@
-import type * as Chalk from 'chalk';
-import type { Inquirer } from 'inquirer';
-import * as os from 'os';
-import auth from './Auth';
-import { Cli } from './cli/Cli';
-import { CommandInfo } from './cli/CommandInfo';
-import { CommandOptionInfo } from './cli/CommandOptionInfo';
-import { Logger } from './cli/Logger';
-import GlobalOptions from './GlobalOptions';
-import request from './request';
-import { settingsNames } from './settingsNames';
-import { telemetry } from './telemetry';
-import { accessToken } from './utils/accessToken';
-import { md } from './utils/md';
-import { GraphResponseError } from './utils/odata';
+import type * as Chalk from "chalk";
+import type { Inquirer } from "inquirer";
+import * as os from "os";
+import auth from "./Auth";
+import { Cli } from "./cli/Cli";
+import { CommandInfo } from "./cli/CommandInfo";
+import { CommandOptionInfo } from "./cli/CommandOptionInfo";
+import { Logger } from "./cli/Logger";
+import GlobalOptions from "./GlobalOptions";
+import request from "./request";
+import { settingsNames } from "./settingsNames";
+import { telemetry } from "./telemetry";
+import { accessToken } from "./utils/accessToken";
+import { md } from "./utils/md";
+import { GraphResponseError } from "./utils/odata";
 
 export interface CommandOption {
   option: string;
-  autocomplete?: string[]
+  autocomplete?: string[];
 }
 
 export interface CommandHelp {
-  (args: any, cbOrLog: (msg?: string) => void): void
+  (args: any, cbOrLog: (msg?: string) => void): void;
 }
 
 export interface CommandTypes {
@@ -29,13 +29,17 @@ export interface CommandTypes {
 }
 
 export class CommandError {
-  constructor(public message: string, public code?: number) {
-  }
+  constructor(
+    public message: string,
+    public code?: number,
+  ) {}
 }
 
 export class CommandErrorWithOutput {
-  constructor(public error: CommandError, public stderr?: string) {
-  }
+  constructor(
+    public error: CommandError,
+    public stderr?: string,
+  ) {}
 }
 
 export interface ODataError {
@@ -44,8 +48,8 @@ export interface ODataError {
     message: {
       lang: string;
       value: string;
-    }
-  }
+    };
+  };
 }
 
 export interface CommandArgs {
@@ -65,17 +69,20 @@ export default abstract class Command {
   protected telemetryProperties: any = {};
 
   protected get allowedOutputs(): string[] {
-    return ['csv', 'json', 'md', 'text', 'none'];
+    return ["csv", "json", "md", "text", "none"];
   }
 
   public options: CommandOption[] = [];
   public optionSets: OptionSet[] = [];
   public types: CommandTypes = {
     boolean: [],
-    string: []
+    string: [],
   };
 
-  protected validators: ((args: any, command: CommandInfo) => Promise<boolean | string>)[] = [];
+  protected validators: ((
+    args: any,
+    command: CommandInfo,
+  ) => Promise<boolean | string>)[] = [];
 
   public abstract get name(): string;
   public abstract get description(): string;
@@ -99,20 +106,20 @@ export default abstract class Command {
         debug: this.debug.toString(),
         verbose: this.verbose.toString(),
         output: args.options.output,
-        query: typeof args.options.query !== 'undefined'
+        query: typeof args.options.query !== "undefined",
       });
     });
   }
 
   #initOptions(): void {
     this.options.unshift(
-      { option: '--query [query]' },
+      { option: "--query [query]" },
       {
-        option: '-o, --output [output]',
-        autocomplete: this.allowedOutputs
+        option: "-o, --output [output]",
+        autocomplete: this.allowedOutputs,
       },
-      { option: '--verbose' },
-      { option: '--debug' }
+      { option: "--verbose" },
+      { option: "--debug" },
     );
   }
 
@@ -120,12 +127,15 @@ export default abstract class Command {
     this.validators.push(
       (args, command) => this.validateUnknownOptions(args, command),
       (args, command) => this.validateRequiredOptions(args, command),
-      args => this.validateOutput(args),
-      (args, command) => this.validateOptionSets(args, command)
+      (args) => this.validateOutput(args),
+      (args, command) => this.validateOptionSets(args, command),
     );
   }
 
-  private async validateUnknownOptions(args: CommandArgs, command: CommandInfo): Promise<string | boolean> {
+  private async validateUnknownOptions(
+    args: CommandArgs,
+    command: CommandInfo,
+  ): Promise<string | boolean> {
     if (this.allowUnknownOptions()) {
       return true;
     }
@@ -137,8 +147,7 @@ export default abstract class Command {
 
       for (let i = 0; i < command.options.length; i++) {
         const option: CommandOptionInfo = command.options[i];
-        if (optionFromArgs === option.long ||
-          optionFromArgs === option.short) {
+        if (optionFromArgs === option.long || optionFromArgs === option.short) {
           matches = true;
           break;
         }
@@ -152,14 +161,22 @@ export default abstract class Command {
     return true;
   }
 
-  private async validateRequiredOptions(args: CommandArgs, command: CommandInfo): Promise<string | boolean> {
-    const shouldPrompt = Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.prompt, false);
+  private async validateRequiredOptions(
+    args: CommandArgs,
+    command: CommandInfo,
+  ): Promise<string | boolean> {
+    const shouldPrompt = Cli.getInstance().getSettingWithDefaultValue<boolean>(
+      settingsNames.prompt,
+      false,
+    );
 
     let inquirer: Inquirer | undefined;
     let prompted: boolean = false;
     for (let i = 0; i < command.options.length; i++) {
-      if (!command.options[i].required ||
-        typeof args.options[command.options[i].name] !== 'undefined') {
+      if (
+        !command.options[i].required ||
+        typeof args.options[command.options[i].name] !== "undefined"
+      ) {
         continue;
       }
 
@@ -169,19 +186,19 @@ export default abstract class Command {
 
       if (!prompted) {
         prompted = true;
-        Cli.log('Provide values for the following parameters:');
+        Cli.log("Provide values for the following parameters:");
       }
 
       if (!inquirer) {
-        inquirer = require('inquirer');
+        inquirer = require("inquirer");
       }
 
       const missingRequireOptionValue = await (inquirer as Inquirer)
         .prompt({
-          name: 'missingRequireOptionValue',
-          message: `${command.options[i].name}: `
+          name: "missingRequireOptionValue",
+          message: `${command.options[i].name}: `,
         })
-        .then(result => result.missingRequireOptionValue);
+        .then((result) => result.missingRequireOptionValue);
 
       args.options[command.options[i].name] = missingRequireOptionValue;
     }
@@ -191,26 +208,36 @@ export default abstract class Command {
     return true;
   }
 
-  private async validateOptionSets(args: CommandArgs, command: CommandInfo): Promise<string | boolean> {
+  private async validateOptionSets(
+    args: CommandArgs,
+    command: CommandInfo,
+  ): Promise<string | boolean> {
     const optionsSets: OptionSet[] | undefined = command.command.optionSets;
     if (!optionsSets || optionsSets.length === 0) {
       return true;
     }
 
     let inquirer: Inquirer | undefined;
-    const shouldPrompt = Cli.getInstance().getSettingWithDefaultValue<boolean>(settingsNames.prompt, false);
+    const shouldPrompt = Cli.getInstance().getSettingWithDefaultValue<boolean>(
+      settingsNames.prompt,
+      false,
+    );
 
     const argsOptions: string[] = Object.keys(args.options);
 
-    for (const optionSet of optionsSets.sort(opt => opt.runsWhen ? 0 : 1)) {
+    for (const optionSet of optionsSets.sort((opt) => (opt.runsWhen ? 0 : 1))) {
       if (optionSet.runsWhen && !optionSet.runsWhen!(args)) {
         continue;
       }
 
-      const commonOptions = argsOptions.filter(opt => optionSet.options.includes(opt));
+      const commonOptions = argsOptions.filter((opt) =>
+        optionSet.options.includes(opt),
+      );
       if (commonOptions.length === 0) {
         if (!shouldPrompt) {
-          return `Specify one of the following options: ${optionSet.options.join(', ')}.`;
+          return `Specify one of the following options: ${optionSet.options.join(
+            ", ",
+          )}.`;
         }
 
         await this.promptForOptionSetNameAndValue(args, optionSet, inquirer);
@@ -218,7 +245,9 @@ export default abstract class Command {
 
       if (commonOptions.length > 1) {
         if (!shouldPrompt) {
-          return `Specify one of the following options: ${optionSet.options.join(', ')}, but not multiple.`;
+          return `Specify one of the following options: ${optionSet.options.join(
+            ", ",
+          )}, but not multiple.`;
         }
 
         await this.promptForSpecificOption(args, commonOptions, inquirer);
@@ -228,56 +257,72 @@ export default abstract class Command {
     return true;
   }
 
-  private async promptForOptionSetNameAndValue(args: CommandArgs, optionSet: OptionSet, inquirer?: Inquirer): Promise<void> {
+  private async promptForOptionSetNameAndValue(
+    args: CommandArgs,
+    optionSet: OptionSet,
+    inquirer?: Inquirer,
+  ): Promise<void> {
     if (!inquirer) {
-      inquirer = require('inquirer');
+      inquirer = require("inquirer");
     }
 
     Cli.log(`Please specify one of the following options:`);
-    const resultOptionName = await (inquirer as Inquirer)
-      .prompt({
-        type: 'list',
-        name: 'missingRequiredOptionName',
-        message: `Option to use:`,
-        choices: optionSet.options
-      });
-    const missingRequiredOptionName = resultOptionName.missingRequiredOptionName;
+    const resultOptionName = await (inquirer as Inquirer).prompt({
+      type: "list",
+      name: "missingRequiredOptionName",
+      message: `Option to use:`,
+      choices: optionSet.options,
+    });
+    const missingRequiredOptionName =
+      resultOptionName.missingRequiredOptionName;
 
-    const resultOptionValue = await (inquirer as Inquirer)
-      .prompt({
-        name: 'missingRequiredOptionValue',
-        message: `Value for '${missingRequiredOptionName}':`
-      });
+    const resultOptionValue = await (inquirer as Inquirer).prompt({
+      name: "missingRequiredOptionValue",
+      message: `Value for '${missingRequiredOptionName}':`,
+    });
 
-    args.options[missingRequiredOptionName] = resultOptionValue.missingRequiredOptionValue;
+    args.options[missingRequiredOptionName] =
+      resultOptionValue.missingRequiredOptionValue;
     Cli.log();
   }
 
-  private async promptForSpecificOption(args: CommandArgs, commonOptions: string[], inquirer?: Inquirer): Promise<void> {
+  private async promptForSpecificOption(
+    args: CommandArgs,
+    commonOptions: string[],
+    inquirer?: Inquirer,
+  ): Promise<void> {
     if (!inquirer) {
-      inquirer = require('inquirer');
+      inquirer = require("inquirer");
     }
 
-    Cli.log(`Multiple options for an option set specified. Please specify the correct option that you wish to use.`);
+    Cli.log(
+      `Multiple options for an option set specified. Please specify the correct option that you wish to use.`,
+    );
 
-    const requiredOptionNameResult = await (inquirer as Inquirer)
-      .prompt({
-        type: 'list',
-        name: 'missingRequiredOptionName',
-        message: `Option to use:`,
-        choices: commonOptions
-      });
+    const requiredOptionNameResult = await (inquirer as Inquirer).prompt({
+      type: "list",
+      name: "missingRequiredOptionName",
+      message: `Option to use:`,
+      choices: commonOptions,
+    });
 
-    commonOptions.filter(y => y !== requiredOptionNameResult.missingRequiredOptionName).map(optionName => args.options[optionName] = undefined);
+    commonOptions
+      .filter((y) => y !== requiredOptionNameResult.missingRequiredOptionName)
+      .map((optionName) => (args.options[optionName] = undefined));
     Cli.log();
   }
 
   private async validateOutput(args: CommandArgs): Promise<string | boolean> {
-    if (args.options.output &&
-      this.allowedOutputs.indexOf(args.options.output) < 0) {
-      return `'${args.options.output}' is not a valid output type. Allowed output types are ${this.allowedOutputs.join(', ')}`;
-    }
-    else {
+    if (
+      args.options.output &&
+      this.allowedOutputs.indexOf(args.options.output) < 0
+    ) {
+      return `'${
+        args.options.output
+      }' is not a valid output type. Allowed output types are ${this.allowedOutputs.join(
+        ", ",
+      )}`;
+    } else {
       return true;
     }
   }
@@ -305,30 +350,27 @@ export default abstract class Command {
    * @param options Object that contains command's options
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-  public async processOptions(options: any): Promise<void> {
-  }
+  public async processOptions(options: any): Promise<void> {}
 
   public abstract commandAction(logger: Logger, args: any): Promise<void>;
 
   public async action(logger: Logger, args: CommandArgs): Promise<void> {
     try {
       await auth.restoreAuth();
-    }
-    catch (error: any) {
+    } catch (error: any) {
       throw new CommandError(error);
     }
 
     this.initAction(args, logger);
 
     if (!auth.service.connected) {
-      throw new CommandError('Log in to Microsoft 365 first');
+      throw new CommandError("Log in to Microsoft 365 first");
     }
 
     try {
       this.loadValuesFromAccessToken(args);
       await this.commandAction(logger, args);
-    }
-    catch (ex) {
+    } catch (ex) {
       if (ex instanceof CommandError) {
         throw ex;
       }
@@ -336,7 +378,10 @@ export default abstract class Command {
     }
   }
 
-  public async validate(args: CommandArgs, command: CommandInfo): Promise<boolean | string> {
+  public async validate(
+    args: CommandArgs,
+    command: CommandInfo,
+  ): Promise<boolean | string> {
     for (const validate of this.validators) {
       const result = await validate(args, command);
       if (result !== true) {
@@ -348,14 +393,13 @@ export default abstract class Command {
   }
 
   public getCommandName(alias?: string): string {
-    if (alias &&
-      this.alias()?.includes(alias)) {
+    if (alias && this.alias()?.includes(alias)) {
       return alias;
     }
 
     let commandName: string = this.name;
-    let pos: number = commandName.indexOf('<');
-    const pos1: number = commandName.indexOf('[');
+    let pos: number = commandName.indexOf("<");
+    const pos1: number = commandName.indexOf("[");
     if (pos > -1 || pos1 > -1) {
       if (pos1 > -1) {
         pos = pos1;
@@ -371,9 +415,8 @@ export default abstract class Command {
     if (res.error) {
       try {
         const err: ODataError = JSON.parse(res.error);
-        throw new CommandError(err['odata.error'].message.value);
-      }
-      catch (err: any) {
+        throw new CommandError(err["odata.error"].message.value);
+      } catch (err: any) {
         if (err instanceof CommandError) {
           throw err;
         }
@@ -381,13 +424,15 @@ export default abstract class Command {
         try {
           const graphResponseError: GraphResponseError = res.error;
           if (graphResponseError.error.code) {
-            throw new CommandError(graphResponseError.error.code + " - " + graphResponseError.error.message);
-          }
-          else {
+            throw new CommandError(
+              graphResponseError.error.code +
+                " - " +
+                graphResponseError.error.message,
+            );
+          } else {
             throw new CommandError(graphResponseError.error.message);
           }
-        }
-        catch (err: any) {
+        } catch (err: any) {
           if (err instanceof CommandError) {
             throw err;
           }
@@ -395,12 +440,10 @@ export default abstract class Command {
           throw new CommandError(res.error);
         }
       }
-    }
-    else {
+    } else {
       if (res instanceof Error) {
         throw new CommandError(res.message);
-      }
-      else {
+      } else {
         throw new CommandError(res);
       }
     }
@@ -408,22 +451,21 @@ export default abstract class Command {
 
   protected handleRejectedODataJsonPromise(response: any): void {
     if (
-      response.error?.['odata.error'] &&
-      response.error['odata.error'].message) {
-      throw new CommandError(response.error['odata.error'].message.value);
+      response.error?.["odata.error"] &&
+      response.error["odata.error"].message
+    ) {
+      throw new CommandError(response.error["odata.error"].message.value);
     }
 
     if (!response.error) {
       if (response instanceof Error) {
         throw new CommandError(response.message);
-      }
-      else {
+      } else {
         throw new CommandError(response);
       }
     }
 
-    if (
-      response.error.error?.message) {
+    if (response.error.error?.message) {
       throw new CommandError(response.error.error.message);
     }
 
@@ -437,16 +479,12 @@ export default abstract class Command {
 
     try {
       const error: any = JSON.parse(response.error);
-      if (
-        error?.error &&
-        error.error.message) {
+      if (error?.error && error.error.message) {
         throw new CommandError(error.error.message);
-      }
-      else {
+      } else {
         throw new CommandError(response.error);
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       if (err instanceof CommandError) {
         throw err;
       }
@@ -457,8 +495,7 @@ export default abstract class Command {
   protected handleError(rawResponse: any): void {
     if (rawResponse instanceof Error) {
       throw new CommandError(rawResponse.message);
-    }
-    else {
+    } else {
       throw new CommandError(rawResponse);
     }
   }
@@ -468,12 +505,19 @@ export default abstract class Command {
   }
 
   protected initAction(args: CommandArgs, logger: Logger): void {
-    this.debug = args.options.debug || process.env.CLIMICROSOFT365_DEBUG === '1';
-    this.verbose = this.debug || args.options.verbose || process.env.CLIMICROSOFT365_VERBOSE === '1';
+    this.debug =
+      args.options.debug || process.env.CLIMICROSOFT365_DEBUG === "1";
+    this.verbose =
+      this.debug ||
+      args.options.verbose ||
+      process.env.CLIMICROSOFT365_VERBOSE === "1";
     request.debug = this.debug;
     request.logger = logger;
 
-    telemetry.trackEvent(this.getUsedCommandName(), this.getTelemetryProperties(args));
+    telemetry.trackEvent(
+      this.getUsedCommandName(),
+      this.getTelemetryProperties(args),
+    );
   }
 
   protected getUnknownOptions(options: any): any {
@@ -484,13 +528,17 @@ export default abstract class Command {
     const knownOptions: CommandOption[] = this.options;
     const longOptionRegex: RegExp = /--([^\s]+)/;
     const shortOptionRegex: RegExp = /-([a-z])\b/;
-    knownOptions.forEach(o => {
-      const longOptionName: string = (longOptionRegex.exec(o.option) as RegExpExecArray)[1];
+    knownOptions.forEach((o) => {
+      const longOptionName: string = (
+        longOptionRegex.exec(o.option) as RegExpExecArray
+      )[1];
       delete unknownOptions[longOptionName];
 
       // short names are optional so we need to check if the current command has
       // one before continuing
-      const shortOptionMatch: RegExpExecArray | null = shortOptionRegex.exec(o.option);
+      const shortOptionMatch: RegExpExecArray | null = shortOptionRegex.exec(
+        o.option,
+      );
       if (shortOptionMatch) {
         const shortOptionName: string = shortOptionMatch[1];
         delete unknownOptions[shortOptionName];
@@ -502,16 +550,18 @@ export default abstract class Command {
 
   protected trackUnknownOptions(telemetryProps: any, options: any): void {
     const unknownOptions: any = this.getUnknownOptions(options);
-    const unknownOptionsNames: string[] = Object.getOwnPropertyNames(unknownOptions);
-    unknownOptionsNames.forEach(o => {
+    const unknownOptionsNames: string[] =
+      Object.getOwnPropertyNames(unknownOptions);
+    unknownOptionsNames.forEach((o) => {
       telemetryProps[o] = true;
     });
   }
 
   protected addUnknownOptionsToPayload(payload: any, options: any): void {
     const unknownOptions: any = this.getUnknownOptions(options);
-    const unknownOptionsNames: string[] = Object.getOwnPropertyNames(unknownOptions);
-    unknownOptionsNames.forEach(o => {
+    const unknownOptionsNames: string[] =
+      Object.getOwnPropertyNames(unknownOptions);
+    unknownOptionsNames.forEach((o) => {
       payload[o] = unknownOptions[o];
     });
   }
@@ -523,39 +573,51 @@ export default abstract class Command {
 
     const token = auth.service.accessTokens[auth.defaultResource].accessToken;
     const optionNames: string[] = Object.getOwnPropertyNames(args.options);
-    optionNames.forEach(option => {
+    optionNames.forEach((option) => {
       const value = args.options[option];
-      if (!value || typeof value !== 'string') {
+      if (!value || typeof value !== "string") {
         return;
       }
 
       const lowerCaseValue = value.toLowerCase().trim();
-      if (lowerCaseValue === '@meid' || lowerCaseValue === '@meusername') {
-        const isAppOnlyAccessToken = accessToken.isAppOnlyAccessToken(auth.service.accessTokens[auth.defaultResource].accessToken);
+      if (lowerCaseValue === "@meid" || lowerCaseValue === "@meusername") {
+        const isAppOnlyAccessToken = accessToken.isAppOnlyAccessToken(
+          auth.service.accessTokens[auth.defaultResource].accessToken,
+        );
         if (isAppOnlyAccessToken) {
           throw `It's not possible to use ${value} with application permissions`;
         }
       }
-      if (lowerCaseValue === '@meid') {
+      if (lowerCaseValue === "@meid") {
         args.options[option] = accessToken.getUserIdFromAccessToken(token);
       }
-      if (lowerCaseValue === '@meusername') {
+      if (lowerCaseValue === "@meusername") {
         args.options[option] = accessToken.getUserNameFromAccessToken(token);
       }
     });
   }
 
-  protected showDeprecationWarning(logger: Logger, deprecated: string, recommended: string): void {
+  protected showDeprecationWarning(
+    logger: Logger,
+    deprecated: string,
+    recommended: string,
+  ): void {
     const cli: Cli = Cli.getInstance();
-    if (cli.currentCommandName &&
-      cli.currentCommandName.indexOf(deprecated) === 0) {
-      const chalk: typeof Chalk = require('chalk');
-      logger.logToStderr(chalk.yellow(`Command '${deprecated}' is deprecated. Please use '${recommended}' instead`));
+    if (
+      cli.currentCommandName &&
+      cli.currentCommandName.indexOf(deprecated) === 0
+    ) {
+      const chalk: typeof Chalk = require("chalk");
+      logger.logToStderr(
+        chalk.yellow(
+          `Command '${deprecated}' is deprecated. Please use '${recommended}' instead`,
+        ),
+      );
     }
   }
 
   protected warn(logger: Logger, warning: string): void {
-    const chalk: typeof Chalk = require('chalk');
+    const chalk: typeof Chalk = require("chalk");
     logger.logToStderr(chalk.yellow(warning));
   }
 
@@ -566,8 +628,10 @@ export default abstract class Command {
       return commandName;
     }
 
-    if (cli.currentCommandName &&
-      cli.currentCommandName.indexOf(commandName) === 0) {
+    if (
+      cli.currentCommandName &&
+      cli.currentCommandName.indexOf(commandName) === 0
+    ) {
       return commandName;
     }
 
@@ -582,11 +646,11 @@ export default abstract class Command {
     }
 
     // shouldn't happen because the command is called either by its name or alias
-    return '';
+    return "";
   }
 
   private getTelemetryProperties(args: any): any {
-    this.telemetry.forEach(t => t(args));
+    this.telemetry.forEach((t) => t(args));
     return this.telemetryProperties;
   }
 
@@ -595,34 +659,44 @@ export default abstract class Command {
     if (logStatement.length === 1) {
       const obj: any = logStatement[0];
       const propertyNames: string[] = [];
-      Object.getOwnPropertyNames(obj).forEach(p => {
+      Object.getOwnPropertyNames(obj).forEach((p) => {
         propertyNames.push(p);
       });
 
       let longestPropertyLength: number = 0;
-      propertyNames.forEach(p => {
+      propertyNames.forEach((p) => {
         if (p.length > longestPropertyLength) {
           longestPropertyLength = p.length;
         }
       });
 
       const output: string[] = [];
-      propertyNames.sort().forEach(p => {
-        output.push(`${p.length < longestPropertyLength ? p + new Array(longestPropertyLength - p.length + 1).join(' ') : p}: ${Array.isArray(obj[p]) || typeof obj[p] === 'object' ? JSON.stringify(obj[p]) : obj[p]}`);
+      propertyNames.sort().forEach((p) => {
+        output.push(
+          `${
+            p.length < longestPropertyLength
+              ? p + new Array(longestPropertyLength - p.length + 1).join(" ")
+              : p
+          }: ${
+            Array.isArray(obj[p]) || typeof obj[p] === "object"
+              ? JSON.stringify(obj[p])
+              : obj[p]
+          }`,
+        );
       });
 
-      return output.join('\n') + '\n';
+      return output.join("\n") + "\n";
     }
     // display object as a table where each property is a column
     else {
-      const Table = require('easy-table');
+      const Table = require("easy-table");
       const t = new Table();
       logStatement.forEach((r: any) => {
-        if (typeof r !== 'object') {
+        if (typeof r !== "object") {
           return;
         }
 
-        Object.getOwnPropertyNames(r).forEach(p => {
+        Object.getOwnPropertyNames(r).forEach((p) => {
           t.cell(p, r[p]);
         });
         t.newRow();
@@ -633,20 +707,21 @@ export default abstract class Command {
   }
 
   public getJsonOutput(logStatement: any): string {
-    return JSON
-      .stringify(logStatement, null, 2)
-      // replace unescaped newlines with escaped newlines #2807
-      .replace(/([^\\])\\n/g, '$1\\\\\\n');
+    return (
+      JSON.stringify(logStatement, null, 2)
+        // replace unescaped newlines with escaped newlines #2807
+        .replace(/([^\\])\\n/g, "$1\\\\\\n")
+    );
   }
 
   public getCsvOutput(logStatement: any[], options: GlobalOptions): string {
-    const { stringify } = require('csv-stringify/sync');
+    const { stringify } = require("csv-stringify/sync");
     const cli = Cli.getInstance();
 
     if (logStatement && logStatement.length > 0 && !options.query) {
-      logStatement.map(l => {
+      logStatement.map((l) => {
         for (const x of Object.keys(l)) {
-          if (typeof l[x] === 'object') {
+          if (typeof l[x] === "object") {
             delete l[x];
           }
         }
@@ -655,24 +730,42 @@ export default abstract class Command {
 
     // https://csv.js.org/stringify/options/
     return stringify(logStatement, {
-      header: cli.getSettingWithDefaultValue<boolean>(settingsNames.csvHeader, true),
+      header: cli.getSettingWithDefaultValue<boolean>(
+        settingsNames.csvHeader,
+        true,
+      ),
       escape: cli.getSettingWithDefaultValue(settingsNames.csvEscape, '"'),
       quote: cli.config.get(settingsNames.csvQuote),
-      quoted: cli.getSettingWithDefaultValue<boolean>(settingsNames.csvQuoted, false),
-      quotedEmpty: cli.getSettingWithDefaultValue<boolean>(settingsNames.csvQuotedEmpty, false)
+      quoted: cli.getSettingWithDefaultValue<boolean>(
+        settingsNames.csvQuoted,
+        false,
+      ),
+      quotedEmpty: cli.getSettingWithDefaultValue<boolean>(
+        settingsNames.csvQuotedEmpty,
+        false,
+      ),
     });
   }
 
-  public getMdOutput(logStatement: any[], command: Command, options: GlobalOptions): string {
+  public getMdOutput(
+    logStatement: any[],
+    command: Command,
+    options: GlobalOptions,
+  ): string {
     const output: string[] = [
-      `# ${command.getCommandName()} ${Object.keys(options).filter(o => o !== 'output').map(k => `--${k} "${options[k]}"`).join(' ')}`, os.EOL,
+      `# ${command.getCommandName()} ${Object.keys(options)
+        .filter((o) => o !== "output")
+        .map((k) => `--${k} "${options[k]}"`)
+        .join(" ")}`,
       os.EOL,
-      `Date: ${(new Date().toLocaleDateString())}`, os.EOL,
-      os.EOL
+      os.EOL,
+      `Date: ${new Date().toLocaleDateString()}`,
+      os.EOL,
+      os.EOL,
     ];
 
     if (logStatement && logStatement.length > 0) {
-      logStatement.forEach(l => {
+      logStatement.forEach((l) => {
         if (!l) {
           return;
         }
@@ -682,46 +775,60 @@ export default abstract class Command {
 
         if (title && id) {
           output.push(`## ${title} (${id})`, os.EOL, os.EOL);
-        }
-        else if (title) {
+        } else if (title) {
           output.push(`## ${title}`, os.EOL, os.EOL);
-        }
-        else if (id) {
+        } else if (id) {
           output.push(`## ${id}`, os.EOL, os.EOL);
         }
 
+        output.push(`Property | Value`, os.EOL, `---------|-------`, os.EOL);
         output.push(
-          `Property | Value`, os.EOL,
-          `---------|-------`, os.EOL
+          Object.keys(l)
+            .filter((x) => {
+              if (!options.query && typeof l[x] === "object") {
+                return;
+              }
+
+              return x;
+            })
+            .map((k) => {
+              const value = l[k];
+
+              return `${md.escapeMd(k)} | ${md.escapeMd(value)}`;
+            })
+            .join(os.EOL),
+          os.EOL,
         );
-        output.push(Object.keys(l).filter(x => {
-          if (!options.query && typeof l[x] === 'object') {
-            return;
-          }
-
-          return x;
-        }).map(k => {
-          const value = l[k];
-
-          return `${md.escapeMd(k)} | ${md.escapeMd(value)}`;
-        }).join(os.EOL), os.EOL);
         output.push(os.EOL);
       });
     }
 
-    return output.join('').trimEnd();
+    return output.join("").trimEnd();
   }
 
   private getLogItemTitle(logItem: any): string | undefined {
-    return logItem.title ?? logItem.Title ??
-      logItem.displayName ?? logItem.DisplayName ??
-      logItem.name ?? logItem.Name;
+    return (
+      logItem.title ??
+      logItem.Title ??
+      logItem.displayName ??
+      logItem.DisplayName ??
+      logItem.name ??
+      logItem.Name
+    );
   }
 
   private getLogItemId(logItem: any): string | undefined {
-    return logItem.id ?? logItem.Id ?? logItem.ID ??
-      logItem.uniqueId ?? logItem.UniqueId ??
-      logItem.objectId ?? logItem.ObjectId ??
-      logItem.url ?? logItem.Url ?? logItem.URL;
+    return (
+      logItem.id ??
+      logItem.Id ??
+      logItem.ID ??
+      logItem.uniqueId ??
+      logItem.UniqueId ??
+      logItem.objectId ??
+      logItem.ObjectId ??
+      logItem.url ??
+      logItem.Url ??
+      logItem.URL
+    );
   }
 }

@@ -1,16 +1,21 @@
-import * as os from 'os';
-import { Logger } from '../../../../cli/Logger';
-import config from '../../../../config';
-import GlobalOptions from '../../../../GlobalOptions';
-import request, { CliRequestOptions } from '../../../../request';
-import { formatting } from '../../../../utils/formatting';
-import { ClientSvcResponse, ClientSvcResponseContents, ContextInfo, spo } from '../../../../utils/spo';
-import { urlUtil } from '../../../../utils/urlUtil';
-import { validation } from '../../../../utils/validation';
-import SpoCommand from '../../../base/SpoCommand';
-import commands from '../../commands';
-import { ListItemInstance } from './ListItemInstance';
-import { ListItemFieldValueResult } from './ListItemFieldValueResult';
+import * as os from "os";
+import { Logger } from "../../../../cli/Logger";
+import config from "../../../../config";
+import GlobalOptions from "../../../../GlobalOptions";
+import request, { CliRequestOptions } from "../../../../request";
+import { formatting } from "../../../../utils/formatting";
+import {
+  ClientSvcResponse,
+  ClientSvcResponseContents,
+  ContextInfo,
+  spo,
+} from "../../../../utils/spo";
+import { urlUtil } from "../../../../utils/urlUtil";
+import { validation } from "../../../../utils/validation";
+import SpoCommand from "../../../base/SpoCommand";
+import commands from "../../commands";
+import { ListItemInstance } from "./ListItemInstance";
+import { ListItemFieldValueResult } from "./ListItemFieldValueResult";
 
 interface CommandArgs {
   options: Options;
@@ -36,7 +41,7 @@ class SpoListItemSetCommand extends SpoCommand {
   }
 
   public get description(): string {
-    return 'Updates a list item in the specified list';
+    return "Updates a list item in the specified list";
   }
 
   constructor() {
@@ -52,11 +57,11 @@ class SpoListItemSetCommand extends SpoCommand {
   #initTelemetry(): void {
     this.telemetry.push((args: CommandArgs) => {
       Object.assign(this.telemetryProperties, {
-        listId: typeof args.options.listId !== 'undefined',
-        listTitle: typeof args.options.listTitle !== 'undefined',
-        listUrl: typeof args.options.listUrl !== 'undefined',
-        contentType: typeof args.options.contentType !== 'undefined',
-        systemUpdate: typeof args.options.systemUpdate !== 'undefined'
+        listId: typeof args.options.listId !== "undefined",
+        listTitle: typeof args.options.listTitle !== "undefined",
+        listUrl: typeof args.options.listUrl !== "undefined",
+        contentType: typeof args.options.contentType !== "undefined",
+        systemUpdate: typeof args.options.systemUpdate !== "undefined",
       });
     });
   }
@@ -64,80 +69,85 @@ class SpoListItemSetCommand extends SpoCommand {
   #initOptions(): void {
     this.options.unshift(
       {
-        option: '-u, --webUrl <webUrl>'
+        option: "-u, --webUrl <webUrl>",
       },
       {
-        option: '-i, --id <id>'
+        option: "-i, --id <id>",
       },
       {
-        option: '-l, --listId [listId]'
+        option: "-l, --listId [listId]",
       },
       {
-        option: '-t, --listTitle [listTitle]'
+        option: "-t, --listTitle [listTitle]",
       },
       {
-        option: '--listUrl [listUrl]'
+        option: "--listUrl [listUrl]",
       },
       {
-        option: '-c, --contentType [contentType]'
+        option: "-c, --contentType [contentType]",
       },
       {
-        option: '-s, --systemUpdate'
-      }
+        option: "-s, --systemUpdate",
+      },
     );
   }
 
   #initValidators(): void {
-    this.validators.push(
-      async (args: CommandArgs) => {
-        const isValidSharePointUrl: boolean | string = validation.isValidSharePointUrl(args.options.webUrl);
-        if (isValidSharePointUrl !== true) {
-          return isValidSharePointUrl;
-        }
-
-        if (args.options.listId &&
-          !validation.isValidGuid(args.options.listId)) {
-          return `${args.options.listId} in option listId is not a valid GUID`;
-        }
-
-        return true;
+    this.validators.push(async (args: CommandArgs) => {
+      const isValidSharePointUrl: boolean | string =
+        validation.isValidSharePointUrl(args.options.webUrl);
+      if (isValidSharePointUrl !== true) {
+        return isValidSharePointUrl;
       }
-    );
+
+      if (args.options.listId && !validation.isValidGuid(args.options.listId)) {
+        return `${args.options.listId} in option listId is not a valid GUID`;
+      }
+
+      return true;
+    });
   }
 
   #initTypes(): void {
     this.types.string.push(
-      'webUrl',
-      'listId',
-      'listTitle',
-      'listUrl',
-      'id',
-      'contentType'
+      "webUrl",
+      "listId",
+      "listTitle",
+      "listUrl",
+      "id",
+      "contentType",
     );
-    this.types.boolean.push('systemUpdate');
+    this.types.boolean.push("systemUpdate");
   }
 
   #initOptionSets(): void {
-    this.optionSets.push({ options: ['listId', 'listTitle', 'listUrl'] });
+    this.optionSets.push({ options: ["listId", "listTitle", "listUrl"] });
   }
 
   public async commandAction(logger: Logger, args: CommandArgs): Promise<void> {
-    let contentTypeName: string = '';
-    let listId: string = '';
+    let contentTypeName: string = "";
+    let listId: string = "";
 
     try {
       let requestUrl = `${args.options.webUrl}/_api/web`;
 
       if (args.options.listId) {
         listId = args.options.listId;
-        requestUrl += `/lists(guid'${formatting.encodeQueryParameter(args.options.listId)}')`;
-      }
-      else if (args.options.listTitle) {
-        requestUrl += `/lists/getByTitle('${formatting.encodeQueryParameter(args.options.listTitle)}')`;
-      }
-      else if (args.options.listUrl) {
-        const listServerRelativeUrl: string = urlUtil.getServerRelativePath(args.options.webUrl, args.options.listUrl);
-        requestUrl += `/GetList('${formatting.encodeQueryParameter(listServerRelativeUrl)}')`;
+        requestUrl += `/lists(guid'${formatting.encodeQueryParameter(
+          args.options.listId,
+        )}')`;
+      } else if (args.options.listTitle) {
+        requestUrl += `/lists/getByTitle('${formatting.encodeQueryParameter(
+          args.options.listTitle,
+        )}')`;
+      } else if (args.options.listUrl) {
+        const listServerRelativeUrl: string = urlUtil.getServerRelativePath(
+          args.options.webUrl,
+          args.options.listUrl,
+        );
+        requestUrl += `/GetList('${formatting.encodeQueryParameter(
+          listServerRelativeUrl,
+        )}')`;
       }
 
       if (args.options.systemUpdate && !args.options.listId) {
@@ -148,12 +158,12 @@ class SpoListItemSetCommand extends SpoCommand {
         const listRequestOptions: CliRequestOptions = {
           url: `${requestUrl}?$select=Id`,
           headers: {
-            'accept': 'application/json;odata=nometadata'
+            accept: "application/json;odata=nometadata",
           },
-          responseType: 'json'
+          responseType: "json",
         };
 
-        const list = await request.get<{ Id: string; }>(listRequestOptions);
+        const list = await request.get<{ Id: string }>(listRequestOptions);
         listId = list.Id;
       }
 
@@ -165,30 +175,36 @@ class SpoListItemSetCommand extends SpoCommand {
         const requestOptions: any = {
           url: `${requestUrl}/contenttypes?$select=Name,Id`,
           headers: {
-            'accept': 'application/json;odata=nometadata'
+            accept: "application/json;odata=nometadata",
           },
-          responseType: 'json'
+          responseType: "json",
         };
 
         const contentTypes: any = await request.get(requestOptions);
 
         if (this.debug) {
-          logger.logToStderr('content type lookup response...');
+          logger.logToStderr("content type lookup response...");
           logger.logToStderr(contentTypes);
         }
 
-        const foundContentType: { Name: string; }[] = contentTypes.value.filter((ct: any) => {
-          const contentTypeMatch: boolean = ct.Id.StringValue === args.options.contentType || ct.Name === args.options.contentType;
+        const foundContentType: { Name: string }[] = contentTypes.value.filter(
+          (ct: any) => {
+            const contentTypeMatch: boolean =
+              ct.Id.StringValue === args.options.contentType ||
+              ct.Name === args.options.contentType;
 
-          if (this.debug) {
-            logger.logToStderr(`Checking content type value [${ct.Name}]: ${contentTypeMatch}`);
-          }
+            if (this.debug) {
+              logger.logToStderr(
+                `Checking content type value [${ct.Name}]: ${contentTypeMatch}`,
+              );
+            }
 
-          return contentTypeMatch;
-        });
+            return contentTypeMatch;
+          },
+        );
 
         if (this.debug) {
-          logger.logToStderr('content type filter output...');
+          logger.logToStderr("content type filter output...");
           logger.logToStderr(foundContentType);
         }
 
@@ -197,7 +213,7 @@ class SpoListItemSetCommand extends SpoCommand {
         }
 
         // After checking for content types, throw an error if the name is blank
-        if (!contentTypeName || contentTypeName === '') {
+        if (!contentTypeName || contentTypeName === "") {
           throw `Specified content type '${args.options.contentType}' doesn't exist on the target list`;
         }
 
@@ -217,67 +233,95 @@ class SpoListItemSetCommand extends SpoCommand {
       }
 
       if (this.verbose) {
-        logger.logToStderr(`Updating item in list ${args.options.listId || args.options.listTitle || args.options.listUrl} in site ${args.options.webUrl}...`);
+        logger.logToStderr(
+          `Updating item in list ${
+            args.options.listId ||
+            args.options.listTitle ||
+            args.options.listUrl
+          } in site ${args.options.webUrl}...`,
+        );
       }
 
-      const formDigestValue = args.options.systemUpdate ? res['FormDigestValue'] : '';
-      let objectIdentity: string = '';
+      const formDigestValue = args.options.systemUpdate
+        ? res["FormDigestValue"]
+        : "";
+      let objectIdentity: string = "";
 
       if (args.options.systemUpdate) {
-        objectIdentity = await this.requestObjectIdentity(args.options.webUrl, logger, formDigestValue);
+        objectIdentity = await this.requestObjectIdentity(
+          args.options.webUrl,
+          logger,
+          formDigestValue,
+        );
       }
 
-      const additionalContentType: string = (args.options.systemUpdate && args.options.contentType && contentTypeName !== '') ? `
+      const additionalContentType: string =
+        args.options.systemUpdate &&
+        args.options.contentType &&
+        contentTypeName !== ""
+          ? `
           <Method Name="ParseAndSetFieldValue" Id="1" ObjectPathId="147">
             <Parameters>
               <Parameter Type="String">ContentType</Parameter>
               <Parameter Type="String">${contentTypeName}</Parameter>
             </Parameters>
           </Method>`
-        : ``;
+          : ``;
 
-      const requestBody: any = args.options.systemUpdate ?
-        `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009">
+      const requestBody: any = args.options.systemUpdate
+        ? `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${
+            config.applicationName
+          }" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009">
           <Actions>
-            ${this.mapRequestBody(args.options).join('')}${additionalContentType}
+            ${this.mapRequestBody(args.options).join(
+              "",
+            )}${additionalContentType}
             <Method Name="SystemUpdate" Id="2" ObjectPathId="147" />
           </Actions>
           <ObjectPaths>
-            <Identity Id="147" Name="${objectIdentity}:list:${listId}:item:${args.options.id},1" />
+            <Identity Id="147" Name="${objectIdentity}:list:${listId}:item:${
+              args.options.id
+            },1" />
           </ObjectPaths>
         </Request>`
         : {
-          formValues: this.mapRequestBody(args.options)
-        };
+            formValues: this.mapRequestBody(args.options),
+          };
 
-      if (args.options.contentType && contentTypeName !== '' && !args.options.systemUpdate) {
+      if (
+        args.options.contentType &&
+        contentTypeName !== "" &&
+        !args.options.systemUpdate
+      ) {
         if (this.debug) {
-          logger.logToStderr(`Specifying content type name [${contentTypeName}] in request body`);
+          logger.logToStderr(
+            `Specifying content type name [${contentTypeName}] in request body`,
+          );
         }
 
         requestBody.formValues.push({
-          FieldName: 'ContentType',
-          FieldValue: contentTypeName
+          FieldName: "ContentType",
+          FieldValue: contentTypeName,
         });
       }
 
-      const requestOptions: CliRequestOptions = args.options.systemUpdate ?
-        {
-          url: `${args.options.webUrl}/_vti_bin/client.svc/ProcessQuery`,
-          headers: {
-            'Content-Type': 'text/xml',
-            'X-RequestDigest': formDigestValue
-          },
-          data: requestBody
-        } :
-        {
-          url: `${requestUrl}/items(${args.options.id})/ValidateUpdateListItem()`,
-          headers: {
-            'accept': 'application/json;odata=nometadata'
-          },
-          data: requestBody,
-          responseType: 'json'
-        };
+      const requestOptions: CliRequestOptions = args.options.systemUpdate
+        ? {
+            url: `${args.options.webUrl}/_vti_bin/client.svc/ProcessQuery`,
+            headers: {
+              "Content-Type": "text/xml",
+              "X-RequestDigest": formDigestValue,
+            },
+            data: requestBody,
+          }
+        : {
+            url: `${requestUrl}/items(${args.options.id})/ValidateUpdateListItem()`,
+            headers: {
+              accept: "application/json;odata=nometadata",
+            },
+            data: requestBody,
+            responseType: "json",
+          };
 
       const response: any = await request.post(requestOptions);
       let itemId: number = 0;
@@ -285,16 +329,21 @@ class SpoListItemSetCommand extends SpoCommand {
       if (args.options.systemUpdate) {
         if (response.indexOf("ErrorMessage") > -1) {
           throw `Error occurred in systemUpdate operation - ${response}`;
-        }
-        else {
+        } else {
           itemId = Number(args.options.id);
         }
-      }
-      else {
+      } else {
         // Response is from /ValidateUpdateListItem POST call, perform get on updated item to get all field values
         const fieldValues: ListItemFieldValueResult[] = response.value;
-        if (fieldValues.some(f => f.HasException)) {
-          throw `Updating the items has failed with the following errors: ${os.EOL}${fieldValues.filter(f => f.HasException).map(f => { return `- ${f.FieldName} - ${f.ErrorMessage}`; }).join(os.EOL)}`;
+        if (fieldValues.some((f) => f.HasException)) {
+          throw `Updating the items has failed with the following errors: ${
+            os.EOL
+          }${fieldValues
+            .filter((f) => f.HasException)
+            .map((f) => {
+              return `- ${f.FieldName} - ${f.ErrorMessage}`;
+            })
+            .join(os.EOL)}`;
         }
 
         itemId = fieldValues[0].ItemId;
@@ -303,16 +352,14 @@ class SpoListItemSetCommand extends SpoCommand {
       const requestOptionsItems: CliRequestOptions = {
         url: `${requestUrl}/items(${itemId})`,
         headers: {
-          'accept': 'application/json;odata=nometadata'
+          accept: "application/json;odata=nometadata",
         },
-        responseType: 'json'
+        responseType: "json",
       };
 
       const itemsResponse = await request.get(requestOptionsItems);
       logger.log(<ListItemInstance>itemsResponse);
-
-    }
-    catch (err: any) {
+    } catch (err: any) {
       this.handleRejectedODataJsonPromise(err);
     }
   }
@@ -320,37 +367,41 @@ class SpoListItemSetCommand extends SpoCommand {
   private mapRequestBody(options: Options): any {
     const requestBody: any = [];
     const excludeOptions: string[] = [
-      'listTitle',
-      'listId',
-      'listUrl',
-      'webUrl',
-      'id',
-      'contentType',
-      'systemUpdate',
-      'debug',
-      'verbose',
-      'output',
-      's',
-      'i',
-      'o',
-      'u',
-      't',
-      '_'
+      "listTitle",
+      "listId",
+      "listUrl",
+      "webUrl",
+      "id",
+      "contentType",
+      "systemUpdate",
+      "debug",
+      "verbose",
+      "output",
+      "s",
+      "i",
+      "o",
+      "u",
+      "t",
+      "_",
     ];
 
-    Object.keys(options).forEach(key => {
+    Object.keys(options).forEach((key) => {
       if (excludeOptions.indexOf(key) === -1) {
         if (options.systemUpdate) {
           requestBody.push(`
           <Method Name="ParseAndSetFieldValue" Id="1" ObjectPathId="147">
             <Parameters>
               <Parameter Type="String">${key}</Parameter>
-              <Parameter Type="String">${(<any>options)[key].toString()}</Parameter>
+              <Parameter Type="String">${(<any>options)[
+                key
+              ].toString()}</Parameter>
             </Parameters>
           </Method>`);
-        }
-        else {
-          requestBody.push({ FieldName: key, FieldValue: (<any>options)[key].toString() });
+        } else {
+          requestBody.push({
+            FieldName: key,
+            FieldValue: (<any>options)[key].toString(),
+          });
         }
       }
     });
@@ -369,34 +420,41 @@ class SpoListItemSetCommand extends SpoCommand {
    * @param webUrl web url
    * @param cmd command cmd
    */
-  private async requestObjectIdentity(webUrl: string, logger: Logger, formDigestValue: string): Promise<string> {
+  private async requestObjectIdentity(
+    webUrl: string,
+    logger: Logger,
+    formDigestValue: string,
+  ): Promise<string> {
     const requestOptions: CliRequestOptions = {
       url: `${webUrl}/_vti_bin/client.svc/ProcessQuery`,
       headers: {
-        'X-RequestDigest': formDigestValue
+        "X-RequestDigest": formDigestValue,
       },
-      data: `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Query Id="1" ObjectPathId="5"><Query SelectAllProperties="false"><Properties><Property Name="ServerRelativeUrl" ScalarProperty="true" /></Properties></Query></Query></Actions><ObjectPaths><Property Id="5" ParentId="3" Name="Web" /><StaticProperty Id="3" TypeId="{3747adcd-a3c3-41b9-bfab-4a64dd2f1e0a}" Name="Current" /></ObjectPaths></Request>`
+      data: `<Request AddExpandoFieldTypeSuffix="true" SchemaVersion="15.0.0.0" LibraryVersion="16.0.0.0" ApplicationName="${config.applicationName}" xmlns="http://schemas.microsoft.com/sharepoint/clientquery/2009"><Actions><Query Id="1" ObjectPathId="5"><Query SelectAllProperties="false"><Properties><Property Name="ServerRelativeUrl" ScalarProperty="true" /></Properties></Query></Query></Actions><ObjectPaths><Property Id="5" ParentId="3" Name="Web" /><StaticProperty Id="3" TypeId="{3747adcd-a3c3-41b9-bfab-4a64dd2f1e0a}" Name="Current" /></ObjectPaths></Request>`,
     };
 
     const response = await request.post<any>(requestOptions);
     if (this.debug) {
-      logger.logToStderr('Attempt to get _ObjectIdentity_ key values');
+      logger.logToStderr("Attempt to get _ObjectIdentity_ key values");
     }
 
     const json: ClientSvcResponse = JSON.parse(response);
 
-    const contents: ClientSvcResponseContents = json.find(x => { return x['ErrorInfo']; });
-    if ( contents?.ErrorInfo) {
-      throw contents.ErrorInfo.ErrorMessage || 'ClientSvc unknown error';
+    const contents: ClientSvcResponseContents = json.find((x) => {
+      return x["ErrorInfo"];
+    });
+    if (contents?.ErrorInfo) {
+      throw contents.ErrorInfo.ErrorMessage || "ClientSvc unknown error";
     }
 
-    const identityObject = json.find(x => { return x['_ObjectIdentity_']; });
+    const identityObject = json.find((x) => {
+      return x["_ObjectIdentity_"];
+    });
     if (identityObject) {
-      return identityObject['_ObjectIdentity_'];
+      return identityObject["_ObjectIdentity_"];
     }
 
-    throw 'Cannot proceed. _ObjectIdentity_ not found'; // this is not supposed to happen
-
+    throw "Cannot proceed. _ObjectIdentity_ not found"; // this is not supposed to happen
   }
 }
 

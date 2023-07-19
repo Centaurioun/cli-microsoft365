@@ -1,18 +1,18 @@
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
-import auth from '../../../../Auth';
-import { Cli } from '../../../../cli/Cli';
-import { CommandInfo } from '../../../../cli/CommandInfo';
-import { Logger } from '../../../../cli/Logger';
-import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
-import { pid } from '../../../../utils/pid';
-import { session } from '../../../../utils/session';
-import { sinonUtil } from '../../../../utils/sinonUtil';
-import { spo } from '../../../../utils/spo';
-import commands from '../../commands';
-const command: Command = require('./orgnewssite-remove');
+import * as assert from "assert";
+import * as sinon from "sinon";
+import { telemetry } from "../../../../telemetry";
+import auth from "../../../../Auth";
+import { Cli } from "../../../../cli/Cli";
+import { CommandInfo } from "../../../../cli/CommandInfo";
+import { Logger } from "../../../../cli/Logger";
+import Command, { CommandError } from "../../../../Command";
+import request from "../../../../request";
+import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
+import { sinonUtil } from "../../../../utils/sinonUtil";
+import { spo } from "../../../../utils/spo";
+import commands from "../../commands";
+const command: Command = require("./orgnewssite-remove");
 
 describe(commands.ORGNEWSSITE_REMOVE, () => {
   let log: any[];
@@ -21,18 +21,18 @@ describe(commands.ORGNEWSSITE_REMOVE, () => {
   let promptOptions: any;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
-    sinon.stub(spo, 'getRequestDigest').resolves({
-      FormDigestValue: 'ABC',
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
+    sinon.stub(spo, "getRequestDigest").resolves({
+      FormDigestValue: "ABC",
       FormDigestTimeoutSeconds: 1800,
       FormDigestExpiresAt: new Date(),
-      WebFullUrl: 'https://contoso.sharepoint.com'
+      WebFullUrl: "https://contoso.sharepoint.com",
     });
     auth.service.connected = true;
-    auth.service.spoUrl = 'https://contoso.sharepoint.com';
+    auth.service.spoUrl = "https://contoso.sharepoint.com";
     commandInfo = Cli.getCommandInfo(command);
   });
 
@@ -47,20 +47,17 @@ describe(commands.ORGNEWSSITE_REMOVE, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
     promptOptions = undefined;
-    sinon.stub(Cli, 'prompt').callsFake(async (options: any) => {
+    sinon.stub(Cli, "prompt").callsFake(async (options: any) => {
       promptOptions = options;
       return { continue: false };
     });
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.post,
-      Cli.prompt
-    ]);
+    sinonUtil.restore([request.post, Cli.prompt]);
   });
 
   after(() => {
@@ -69,134 +66,195 @@ describe(commands.ORGNEWSSITE_REMOVE, () => {
     auth.service.spoUrl = undefined;
   });
 
-  it('has correct name', () => {
+  it("has correct name", () => {
     assert.strictEqual(command.name, commands.ORGNEWSSITE_REMOVE);
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('completes a remove request - confirm parameter', async () => {
-    const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("completes a remove request - confirm parameter", async () => {
+    const svcListRequest = sinon
+      .stub(request, "post")
+      .callsFake(async (opts) => {
         if (
-          opts.headers?.['X-RequestDigest']) {
-          return JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "8992299e-a003-4000-7686-fda36e26a53c" }, 22, []]);
+          (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+        ) {
+          if (opts.headers?.["X-RequestDigest"]) {
+            return JSON.stringify([
+              {
+                SchemaVersion: "15.0.0.0",
+                LibraryVersion: "16.0.7025.1207",
+                ErrorInfo: null,
+                TraceCorrelationId: "8992299e-a003-4000-7686-fda36e26a53c",
+              },
+              22,
+              [],
+            ]);
+          }
         }
-      }
 
-      throw 'Invalid request';
-    });
+        throw "Invalid request";
+      });
 
     await command.action(logger, {
       options: {
         verbose: true,
         confirm: true,
-        url: "http://contoso.sharepoint.com/sites/site1"
-      }
+        url: "http://contoso.sharepoint.com/sites/site1",
+      },
     } as any);
     assert(svcListRequest.called);
   });
 
-  it('completes a remove request - prompt confirmed', async () => {
-    const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("completes a remove request - prompt confirmed", async () => {
+    const svcListRequest = sinon
+      .stub(request, "post")
+      .callsFake(async (opts) => {
         if (
-          opts.headers?.['X-RequestDigest']) {
-          return JSON.stringify([{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "8992299e-a003-4000-7686-fda36e26a53c" }, 22, []]);
+          (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+        ) {
+          if (opts.headers?.["X-RequestDigest"]) {
+            return JSON.stringify([
+              {
+                SchemaVersion: "15.0.0.0",
+                LibraryVersion: "16.0.7025.1207",
+                ErrorInfo: null,
+                TraceCorrelationId: "8992299e-a003-4000-7686-fda36e26a53c",
+              },
+              22,
+              [],
+            ]);
+          }
         }
-      }
 
-      throw 'Invalid request';
-    });
+        throw "Invalid request";
+      });
 
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: true }
-    ));
+    sinon.stub(Cli, "prompt").callsFake(async () => ({ continue: true }));
     await command.action(logger, {
       options: {
         verbose: true,
         confirm: false,
-        url: "http://contoso.sharepoint.com/sites/site1"
-      }
+        url: "http://contoso.sharepoint.com/sites/site1",
+      },
     } as any);
     assert(svcListRequest.called);
   });
 
-  it('handles error during remove request', async () => {
-    const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
+  it("handles error during remove request", async () => {
+    const svcListRequest = sinon
+      .stub(request, "post")
+      .callsFake(async (opts) => {
         if (
-          opts.headers?.['X-RequestDigest']) {
-          return JSON.stringify([
-            {
-              "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7018.1204", "ErrorInfo": {
-                "ErrorMessage": "An error has occurred", "ErrorValue": null, "TraceCorrelationId": "965d299e-a0c6-4000-8546-cc244881a129", "ErrorCode": -1, "ErrorTypeName": "Microsoft.SharePoint.PublicCdn.TenantCdnAdministrationException"
-              }, "TraceCorrelationId": "965d299e-a0c6-4000-8546-cc244881a129"
-            }
-          ]);
+          (opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1
+        ) {
+          if (opts.headers?.["X-RequestDigest"]) {
+            return JSON.stringify([
+              {
+                SchemaVersion: "15.0.0.0",
+                LibraryVersion: "16.0.7018.1204",
+                ErrorInfo: {
+                  ErrorMessage: "An error has occurred",
+                  ErrorValue: null,
+                  TraceCorrelationId: "965d299e-a0c6-4000-8546-cc244881a129",
+                  ErrorCode: -1,
+                  ErrorTypeName:
+                    "Microsoft.SharePoint.PublicCdn.TenantCdnAdministrationException",
+                },
+                TraceCorrelationId: "965d299e-a0c6-4000-8546-cc244881a129",
+              },
+            ]);
+          }
         }
-      }
 
-      throw 'Invalid request';
-    });
+        throw "Invalid request";
+      });
 
-    await assert.rejects(command.action(logger, {
-      options: {
-        debug: true,
-        confirm: true
-      }
-    } as any), new CommandError('An error has occurred'));
+    await assert.rejects(
+      command.action(logger, {
+        options: {
+          debug: true,
+          confirm: true,
+        },
+      } as any),
+      new CommandError("An error has occurred"),
+    );
     assert(svcListRequest.called);
   });
 
-  it('correctly handles random API error', async () => {
-    sinon.stub(request, 'post').rejects(new Error('An error has occurred'));
+  it("correctly handles random API error", async () => {
+    sinon.stub(request, "post").rejects(new Error("An error has occurred"));
 
-    await assert.rejects(command.action(logger, { options: { url: 'https://contoso.sharepoint.com/sites/site1', confirm: true } } as any),
-      new CommandError('An error has occurred'));
+    await assert.rejects(
+      command.action(logger, {
+        options: {
+          url: "https://contoso.sharepoint.com/sites/site1",
+          confirm: true,
+        },
+      } as any),
+      new CommandError("An error has occurred"),
+    );
   });
 
-  it('prompts before removing', async () => {
-    await command.action(logger, { options: { debug: true, verbose: true, confirm: false, url: 'https://contoso.sharepoint.com/sites/test1' } });
+  it("prompts before removing", async () => {
+    await command.action(logger, {
+      options: {
+        debug: true,
+        verbose: true,
+        confirm: false,
+        url: "https://contoso.sharepoint.com/sites/test1",
+      },
+    });
     let promptIssued = false;
 
-    if (promptOptions && promptOptions.type === 'confirm') {
+    if (promptOptions && promptOptions.type === "confirm") {
       promptIssued = true;
     }
 
     assert(promptIssued);
   });
 
-  it('aborts when declined confirmation', async () => {
-    const postStub = sinon.stub(request, 'post').callsFake(() => {
-      throw 'Invalid request';
+  it("aborts when declined confirmation", async () => {
+    const postStub = sinon.stub(request, "post").callsFake(() => {
+      throw "Invalid request";
     });
     sinonUtil.restore(Cli.prompt);
-    sinon.stub(Cli, 'prompt').callsFake(async () => (
-      { continue: false }
-    ));
-    await command.action(logger, { options: { debug: true, verbose: true, confirm: false, url: 'https://contoso.sharepoint.com/sites/test1' } });
+    sinon.stub(Cli, "prompt").callsFake(async () => ({ continue: false }));
+    await command.action(logger, {
+      options: {
+        debug: true,
+        verbose: true,
+        confirm: false,
+        url: "https://contoso.sharepoint.com/sites/test1",
+      },
+    });
     assert(postStub.notCalled);
   });
 
-  it('fails validation if the url option is not a valid SharePoint site URL', async () => {
-    const actual = await command.validate({ options: { url: 'foo' } }, commandInfo);
+  it("fails validation if the url option is not a valid SharePoint site URL", async () => {
+    const actual = await command.validate(
+      { options: { url: "foo" } },
+      commandInfo,
+    );
     assert.notStrictEqual(actual, true);
   });
 
-  it('passes validation if the url option is a valid SharePoint site URL', async () => {
-    const actual = await command.validate({ options: { url: 'https://contoso.sharepoint.com' } }, commandInfo);
+  it("passes validation if the url option is a valid SharePoint site URL", async () => {
+    const actual = await command.validate(
+      { options: { url: "https://contoso.sharepoint.com" } },
+      commandInfo,
+    );
     assert(actual);
   });
 
-  it('supports suppressing confirmation prompt', () => {
+  it("supports suppressing confirmation prompt", () => {
     const options = command.options;
     let containsConfirmOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('--confirm') > -1) {
+    options.forEach((o) => {
+      if (o.option.indexOf("--confirm") > -1) {
         containsConfirmOption = true;
       }
     });

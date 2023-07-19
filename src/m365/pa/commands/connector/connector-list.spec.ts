@@ -1,16 +1,16 @@
-import * as assert from 'assert';
-import * as sinon from 'sinon';
-import { telemetry } from '../../../../telemetry';
-import auth from '../../../../Auth';
-import { Logger } from '../../../../cli/Logger';
-import Command, { CommandError } from '../../../../Command';
-import request from '../../../../request';
-import { pid } from '../../../../utils/pid';
-import { session } from '../../../../utils/session';
-import { sinonUtil } from '../../../../utils/sinonUtil';
-import flowCommands from '../../../flow/commands';
-import commands from '../../commands';
-const command: Command = require('./connector-list');
+import * as assert from "assert";
+import * as sinon from "sinon";
+import { telemetry } from "../../../../telemetry";
+import auth from "../../../../Auth";
+import { Logger } from "../../../../cli/Logger";
+import Command, { CommandError } from "../../../../Command";
+import request from "../../../../request";
+import { pid } from "../../../../utils/pid";
+import { session } from "../../../../utils/session";
+import { sinonUtil } from "../../../../utils/sinonUtil";
+import flowCommands from "../../../flow/commands";
+import commands from "../../commands";
+const command: Command = require("./connector-list");
 
 describe(commands.CONNECTOR_LIST, () => {
   let log: string[];
@@ -19,10 +19,10 @@ describe(commands.CONNECTOR_LIST, () => {
   let loggerLogToStderrSpy: sinon.SinonSpy;
 
   before(() => {
-    sinon.stub(auth, 'restoreAuth').resolves();
-    sinon.stub(telemetry, 'trackEvent').returns();
-    sinon.stub(pid, 'getProcessName').returns('');
-    sinon.stub(session, 'getId').returns('');
+    sinon.stub(auth, "restoreAuth").resolves();
+    sinon.stub(telemetry, "trackEvent").returns();
+    sinon.stub(pid, "getProcessName").returns("");
+    sinon.stub(session, "getId").returns("");
     auth.service.connected = true;
   });
 
@@ -37,16 +37,14 @@ describe(commands.CONNECTOR_LIST, () => {
       },
       logToStderr: (msg: string) => {
         log.push(msg);
-      }
+      },
     };
-    loggerLogSpy = sinon.spy(logger, 'log');
-    loggerLogToStderrSpy = sinon.spy(logger, 'logToStderr');
+    loggerLogSpy = sinon.spy(logger, "log");
+    loggerLogToStderrSpy = sinon.spy(logger, "logToStderr");
   });
 
   afterEach(() => {
-    sinonUtil.restore([
-      request.get
-    ]);
+    sinonUtil.restore([request.get]);
   });
 
   after(() => {
@@ -54,176 +52,1181 @@ describe(commands.CONNECTOR_LIST, () => {
     auth.service.connected = false;
   });
 
-  it('has correct name', () => {
+  it("has correct name", () => {
     assert.strictEqual(command.name, commands.CONNECTOR_LIST);
   });
 
-  it('has a description', () => {
+  it("has a description", () => {
     assert.notStrictEqual(command.description, null);
   });
 
-  it('defines correct properties for the default output', () => {
-    assert.deepStrictEqual(command.defaultProperties(), ['name', 'displayName']);
+  it("defines correct properties for the default output", () => {
+    assert.deepStrictEqual(command.defaultProperties(), [
+      "name",
+      "displayName",
+    ]);
   });
 
-  it('defines alias', () => {
+  it("defines alias", () => {
     const alias = command.alias();
-    assert.notStrictEqual(typeof alias, 'undefined');
+    assert.notStrictEqual(typeof alias, "undefined");
   });
 
-  it('defines correct alias', () => {
+  it("defines correct alias", () => {
     const alias = command.alias();
-    assert.strictEqual((alias && alias.indexOf(flowCommands.CONNECTOR_LIST) > -1), true);
+    assert.strictEqual(
+      alias && alias.indexOf(flowCommands.CONNECTOR_LIST) > -1,
+      true,
+    );
   });
 
-  it('retrieves custom connectors (debug)', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27`) > -1) {
+  it("retrieves custom connectors (debug)", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          `providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27`,
+        ) > -1
+      ) {
         if (
           opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return { "value": [{ "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }, { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }] };
-        }
-      }
-
-      throw 'Invalid request';
-    });
-
-    await command.action(logger, { options: { debug: true, environmentName: 'Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6' } });
-    assert(loggerLogSpy.calledWith([{ "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector 2' }, { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector' }
-    ]));
-  });
-
-  it('retrieves custom connectors', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf(`providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27`) > -1) {
-        if (
-          opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
-          return { "value": [{ "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }, { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }] };
-        }
-      }
-
-      throw 'Invalid request';
-    });
-
-    await command.action(logger, { options: { environmentName: 'Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6' } });
-    assert(loggerLogSpy.calledWith([{ "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector 2' }, { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector' }
-    ]));
-  });
-
-  it('retrieves custom connectors in pages', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('skiptoken') === -1) {
-        if (
-          opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
           return {
-            "nextLink": "https://management.azure.com/providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27&%24skiptoken=eyJuZXh0TWFya2VyIjoiMjAxOTAyMDRUMTg1NDU2Wi02YTA5NGQwMi02NDFhLTQ4OTEtYjRkZi00NDA1OTRmMjZjODUifQ%3d%3d",
-            "value": [
-              { "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }
-            ]
+            value: [
+              {
+                name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector 2",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:51:54.3261899Z",
+                  changedTime: "2019-12-05T18:51:54.3261899Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+              {
+                name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:45:03.4615313Z",
+                  changedTime: "2019-12-05T18:45:03.4615313Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+            ],
           };
         }
       }
-      else {
+
+      throw "Invalid request";
+    });
+
+    await command.action(logger, {
+      options: {
+        debug: true,
+        environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+      },
+    });
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector 2",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:51:54.3261899Z",
+            changedTime: "2019-12-05T18:51:54.3261899Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector 2",
+        },
+        {
+          name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:45:03.4615313Z",
+            changedTime: "2019-12-05T18:45:03.4615313Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector",
+        },
+      ]),
+    );
+  });
+
+  it("retrieves custom connectors", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if (
+        (opts.url as string).indexOf(
+          `providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27`,
+        ) > -1
+      ) {
+        if (
+          opts.headers?.accept &&
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
+          return {
+            value: [
+              {
+                name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector 2",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:51:54.3261899Z",
+                  changedTime: "2019-12-05T18:51:54.3261899Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+              {
+                name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:45:03.4615313Z",
+                  changedTime: "2019-12-05T18:45:03.4615313Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+            ],
+          };
+        }
+      }
+
+      throw "Invalid request";
+    });
+
+    await command.action(logger, {
+      options: {
+        environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+      },
+    });
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector 2",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:51:54.3261899Z",
+            changedTime: "2019-12-05T18:51:54.3261899Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector 2",
+        },
+        {
+          name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:45:03.4615313Z",
+            changedTime: "2019-12-05T18:45:03.4615313Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector",
+        },
+      ]),
+    );
+  });
+
+  it("retrieves custom connectors in pages", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if ((opts.url as string).indexOf("skiptoken") === -1) {
+        if (
+          opts.headers?.accept &&
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
+          return {
+            nextLink:
+              "https://management.azure.com/providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27&%24skiptoken=eyJuZXh0TWFya2VyIjoiMjAxOTAyMDRUMTg1NDU2Wi02YTA5NGQwMi02NDFhLTQ4OTEtYjRkZi00NDA1OTRmMjZjODUifQ%3d%3d",
+            value: [
+              {
+                name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector 2",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:51:54.3261899Z",
+                  changedTime: "2019-12-05T18:51:54.3261899Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+            ],
+          };
+        }
+      } else {
         return {
-          "value": [
-            { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }
-          ]
+          value: [
+            {
+              name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+              id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+              type: "Microsoft.PowerApps/apis",
+              properties: {
+                displayName: "My connector",
+                iconUri:
+                  "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                iconBrandColor: "#007ee5",
+                contact: {},
+                license: {},
+                apiEnvironment: "Shared",
+                isCustomApi: true,
+                connectionParameters: {},
+                runtimeUrls: [
+                  "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                ],
+                primaryRuntimeUrl:
+                  "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+                metadata: {
+                  source: "powerapps-user-defined",
+                  brandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  publisherUrl: null,
+                  serviceUrl: null,
+                  documentationUrl: null,
+                  environmentName:
+                    "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  xrmConnectorId: null,
+                  almMode: "Environment",
+                  createdBy:
+                    '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                  modifiedBy:
+                    '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                  allowSharing: false,
+                },
+                capabilities: [],
+                description: "",
+                apiDefinitions: {
+                  originalSwaggerUrl:
+                    "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  modifiedSwaggerUrl:
+                    "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                },
+                createdBy: {
+                  id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                  displayName: "MOD Administrator",
+                  email: "admin@contoso.OnMicrosoft.com",
+                  type: "User",
+                  tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  userPrincipalName: "admin@contoso.onmicrosoft.com",
+                },
+                modifiedBy: {
+                  id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                  displayName: "MOD Administrator",
+                  email: "admin@contoso.OnMicrosoft.com",
+                  type: "User",
+                  tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  userPrincipalName: "admin@contoso.onmicrosoft.com",
+                },
+                createdTime: "2019-12-05T18:45:03.4615313Z",
+                changedTime: "2019-12-05T18:45:03.4615313Z",
+                environment: {
+                  id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                },
+                tier: "Standard",
+                publisher: "MOD Administrator",
+                almMode: "Environment",
+              },
+            },
+          ],
         };
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
-    await command.action(logger, { options: { environmentName: 'Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6' } });
-    assert(loggerLogSpy.calledWith([
-      { "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector 2' }, { "name": "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:45:03.4615313Z", "changedTime": "2019-12-05T18:45:03.4615313Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" }, displayName: 'My connector' }
-    ]));
+    await command.action(logger, {
+      options: {
+        environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+      },
+    });
+    assert(
+      loggerLogSpy.calledWith([
+        {
+          name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector 2",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:51:54.3261899Z",
+            changedTime: "2019-12-05T18:51:54.3261899Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector 2",
+        },
+        {
+          name: "shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+          type: "Microsoft.PowerApps/apis",
+          properties: {
+            displayName: "My connector",
+            iconUri:
+              "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+            iconBrandColor: "#007ee5",
+            contact: {},
+            license: {},
+            apiEnvironment: "Shared",
+            isCustomApi: true,
+            connectionParameters: {},
+            runtimeUrls: [
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            ],
+            primaryRuntimeUrl:
+              "https://europe-002.azure-apim.net/apim/my-20connector-5f0027f520b23e81c1-5f9888a90360086012",
+            metadata: {
+              source: "powerapps-user-defined",
+              brandColor: "#007ee5",
+              contact: {},
+              license: {},
+              publisherUrl: null,
+              serviceUrl: null,
+              documentationUrl: null,
+              environmentName: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              xrmConnectorId: null,
+              almMode: "Environment",
+              createdBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              modifiedBy:
+                '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+              allowSharing: false,
+            },
+            capabilities: [],
+            description: "",
+            apiDefinitions: {
+              originalSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=cOkjAecgpr6sSznMpDqiZitUOpVvVDJRCOZfe3VmReU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+              modifiedSwaggerUrl:
+                "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=rkpKHP8K%2F2yNBIUQcVN%2B0ZPjnP9sECrM%2FfoZMG%2BJZX0%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+            },
+            createdBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            modifiedBy: {
+              id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+              displayName: "MOD Administrator",
+              email: "admin@contoso.OnMicrosoft.com",
+              type: "User",
+              tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              userPrincipalName: "admin@contoso.onmicrosoft.com",
+            },
+            createdTime: "2019-12-05T18:45:03.4615313Z",
+            changedTime: "2019-12-05T18:45:03.4615313Z",
+            environment: {
+              id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+              name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+            },
+            tier: "Standard",
+            publisher: "MOD Administrator",
+            almMode: "Environment",
+          },
+          displayName: "My connector",
+        },
+      ]),
+    );
   });
 
-  it('correctly handles no environment found', async () => {
-    sinon.stub(request, 'get').rejects({
-      "error": {
-        "code": "EnvironmentAccessDenied",
-        "message": "The environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' could not be found in the tenant '0d645e38-ec52-4a4f-ac58-65f2ac4015f6'."
-      }
+  it("correctly handles no environment found", async () => {
+    sinon.stub(request, "get").rejects({
+      error: {
+        code: "EnvironmentAccessDenied",
+        message:
+          "The environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' could not be found in the tenant '0d645e38-ec52-4a4f-ac58-65f2ac4015f6'.",
+      },
     });
 
-    await assert.rejects(command.action(logger, { options: { environmentName: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' } } as any),
-      new CommandError(`The environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' could not be found in the tenant '0d645e38-ec52-4a4f-ac58-65f2ac4015f6'.`));
+    await assert.rejects(
+      command.action(logger, {
+        options: {
+          environmentName: "Default-d87a7535-dd31-4437-bfe1-95340acd55c6",
+        },
+      } as any),
+      new CommandError(
+        `The environment 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' could not be found in the tenant '0d645e38-ec52-4a4f-ac58-65f2ac4015f6'.`,
+      ),
+    );
   });
 
-  it('correctly handles no custom connectors found', async () => {
-    sinon.stub(request, 'get').resolves({ value: [] });
+  it("correctly handles no custom connectors found", async () => {
+    sinon.stub(request, "get").resolves({ value: [] });
 
-    await command.action(logger, { options: { environmentName: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' } });
+    await command.action(logger, {
+      options: {
+        environmentName: "Default-d87a7535-dd31-4437-bfe1-95340acd55c6",
+      },
+    });
     assert(loggerLogSpy.notCalled);
   });
 
-  it('correctly handles no custom connectors found (debug)', async () => {
-    sinon.stub(request, 'get').resolves({ value: [] });
+  it("correctly handles no custom connectors found (debug)", async () => {
+    sinon.stub(request, "get").resolves({ value: [] });
 
-    await command.action(logger, { options: { debug: true, environmentName: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c6' } });
-    assert(loggerLogToStderrSpy.calledWith('No custom connectors found'));
+    await command.action(logger, {
+      options: {
+        debug: true,
+        environmentName: "Default-d87a7535-dd31-4437-bfe1-95340acd55c6",
+      },
+    });
+    assert(loggerLogToStderrSpy.calledWith("No custom connectors found"));
   });
 
-  it('correctly handles API OData error', async () => {
-    sinon.stub(request, 'get').rejects({
+  it("correctly handles API OData error", async () => {
+    sinon.stub(request, "get").rejects({
       error: {
-        'odata.error': {
-          code: '-1, InvalidOperationException',
+        "odata.error": {
+          code: "-1, InvalidOperationException",
           message: {
-            value: 'An error has occurred'
-          }
-        }
-      }
+            value: "An error has occurred",
+          },
+        },
+      },
     });
 
-    await assert.rejects(command.action(logger, { options: { environmentName: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c5' } } as any),
-      new CommandError('An error has occurred'));
+    await assert.rejects(
+      command.action(logger, {
+        options: {
+          environmentName: "Default-d87a7535-dd31-4437-bfe1-95340acd55c5",
+        },
+      } as any),
+      new CommandError("An error has occurred"),
+    );
   });
 
-  it('correctly handles error when retrieving the second page of data', async () => {
-    sinon.stub(request, 'get').callsFake(async (opts) => {
-      if ((opts.url as string).indexOf('skiptoken') === -1) {
+  it("correctly handles error when retrieving the second page of data", async () => {
+    sinon.stub(request, "get").callsFake(async (opts) => {
+      if ((opts.url as string).indexOf("skiptoken") === -1) {
         if (
           opts.headers?.accept &&
-          (opts.headers.accept as string).indexOf('application/json') === 0) {
+          (opts.headers.accept as string).indexOf("application/json") === 0
+        ) {
           return {
-            "nextLink": "https://management.azure.com/providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27&%24skiptoken=eyJuZXh0TWFya2VyIjoiMjAxOTAyMDRUMTg1NDU2Wi02YTA5NGQwMi02NDFhLTQ4OTEtYjRkZi00NDA1OTRmMjZjODUifQ%3d%3d",
-            "value": [
-              { "name": "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "id": "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "type": "Microsoft.PowerApps/apis", "properties": { "displayName": "My connector 2", "iconUri": "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png", "iconBrandColor": "#007ee5", "contact": {}, "license": {}, "apiEnvironment": "Shared", "isCustomApi": true, "connectionParameters": {}, "runtimeUrls": ["https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012"], "primaryRuntimeUrl": "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012", "metadata": { "source": "powerapps-user-defined", "brandColor": "#007ee5", "contact": {}, "license": {}, "publisherUrl": null, "serviceUrl": null, "documentationUrl": null, "environmentName": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "xrmConnectorId": null, "almMode": "Environment", "createdBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "modifiedBy": "{\"id\":\"03043611-d01e-4e58-9fbe-1a18ecb861d8\",\"displayName\":\"MOD Administrator\",\"email\":\"admin@contoso.OnMicrosoft.com\",\"type\":\"User\",\"tenantId\":\"0d645e38-ec52-4a4f-ac58-65f2ac4015f6\",\"userPrincipalName\":\"admin@contoso.onmicrosoft.com\"}", "allowSharing": false }, "capabilities": [], "description": "", "apiDefinitions": { "originalSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r", "modifiedSwaggerUrl": "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r" }, "createdBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "modifiedBy": { "id": "03043611-d01e-4e58-9fbe-1a18ecb861d8", "displayName": "MOD Administrator", "email": "admin@contoso.OnMicrosoft.com", "type": "User", "tenantId": "0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "userPrincipalName": "admin@contoso.onmicrosoft.com" }, "createdTime": "2019-12-05T18:51:54.3261899Z", "changedTime": "2019-12-05T18:51:54.3261899Z", "environment": { "id": "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6", "name": "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6" }, "tier": "Standard", "publisher": "MOD Administrator", "almMode": "Environment" } }
-            ]
+            nextLink:
+              "https://management.azure.com/providers/Microsoft.PowerApps/apis?api-version=2016-11-01&$filter=environment%20eq%20%27Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6%27%20and%20IsCustomApi%20eq%20%27True%27&%24skiptoken=eyJuZXh0TWFya2VyIjoiMjAxOTAyMDRUMTg1NDU2Wi02YTA5NGQwMi02NDFhLTQ4OTEtYjRkZi00NDA1OTRmMjZjODUifQ%3d%3d",
+            value: [
+              {
+                name: "shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                id: "/providers/Microsoft.PowerApps/apis/shared_my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                type: "Microsoft.PowerApps/apis",
+                properties: {
+                  displayName: "My connector 2",
+                  iconUri:
+                    "https://az787822.vo.msecnd.net/defaulticons/api-dedicated.png",
+                  iconBrandColor: "#007ee5",
+                  contact: {},
+                  license: {},
+                  apiEnvironment: "Shared",
+                  isCustomApi: true,
+                  connectionParameters: {},
+                  runtimeUrls: [
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  ],
+                  primaryRuntimeUrl:
+                    "https://europe-002.azure-apim.net/apim/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012",
+                  metadata: {
+                    source: "powerapps-user-defined",
+                    brandColor: "#007ee5",
+                    contact: {},
+                    license: {},
+                    publisherUrl: null,
+                    serviceUrl: null,
+                    documentationUrl: null,
+                    environmentName:
+                      "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    xrmConnectorId: null,
+                    almMode: "Environment",
+                    createdBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    modifiedBy:
+                      '{"id":"03043611-d01e-4e58-9fbe-1a18ecb861d8","displayName":"MOD Administrator","email":"admin@contoso.OnMicrosoft.com","type":"User","tenantId":"0d645e38-ec52-4a4f-ac58-65f2ac4015f6","userPrincipalName":"admin@contoso.onmicrosoft.com"}',
+                    allowSharing: false,
+                  },
+                  capabilities: [],
+                  description: "",
+                  apiDefinitions: {
+                    originalSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json_original?sv=2018-03-28&sr=b&sig=rwJTmpMb4jb88Fzd9hoz8UbX0ZNbNiz5Cy5yfqTxcjU%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                    modifiedSwaggerUrl:
+                      "https://paeu2weu8.blob.core.windows.net/api-swagger-files/my-20connector-202-5f0027f520b23e81c1-5f9888a90360086012.json?sv=2018-03-28&sr=b&sig=eCW8GUjWHkcB8CFFQ%2FSZAGNBCZeAqj4H9ngRbA%2Fa4CI%3D&se=2019-12-05T19%3A53%3A49Z&sp=r",
+                  },
+                  createdBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  modifiedBy: {
+                    id: "03043611-d01e-4e58-9fbe-1a18ecb861d8",
+                    displayName: "MOD Administrator",
+                    email: "admin@contoso.OnMicrosoft.com",
+                    type: "User",
+                    tenantId: "0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    userPrincipalName: "admin@contoso.onmicrosoft.com",
+                  },
+                  createdTime: "2019-12-05T18:51:54.3261899Z",
+                  changedTime: "2019-12-05T18:51:54.3261899Z",
+                  environment: {
+                    id: "/providers/Microsoft.PowerApps/environments/Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                    name: "Default-0d645e38-ec52-4a4f-ac58-65f2ac4015f6",
+                  },
+                  tier: "Standard",
+                  publisher: "MOD Administrator",
+                  almMode: "Environment",
+                },
+              },
+            ],
           };
         }
-      }
-      else {
+      } else {
         throw {
           error: {
-            'odata.error': {
-              code: '-1, InvalidOperationException',
+            "odata.error": {
+              code: "-1, InvalidOperationException",
               message: {
-                value: 'An error has occurred'
-              }
-            }
-          }
+                value: "An error has occurred",
+              },
+            },
+          },
         };
       }
 
-      throw 'Invalid request';
+      throw "Invalid request";
     });
 
-    await assert.rejects(command.action(logger, { options: { environmentName: 'Default-d87a7535-dd31-4437-bfe1-95340acd55c5' } } as any),
-      new CommandError('An error has occurred'));
+    await assert.rejects(
+      command.action(logger, {
+        options: {
+          environmentName: "Default-d87a7535-dd31-4437-bfe1-95340acd55c5",
+        },
+      } as any),
+      new CommandError("An error has occurred"),
+    );
   });
 
-  it('supports specifying environment name', () => {
+  it("supports specifying environment name", () => {
     const options = command.options;
     let containsOption = false;
-    options.forEach(o => {
-      if (o.option.indexOf('--environment') > -1) {
+    options.forEach((o) => {
+      if (o.option.indexOf("--environment") > -1) {
         containsOption = true;
       }
     });
