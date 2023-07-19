@@ -42,7 +42,7 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
   }
 
   private _getEnvironmentMessage(): string {
-    if (!!this.context.sdks.microsoftTeams) {
+    if (this.context.sdks.microsoftTeams) {
       // running in Teams
       return this.context.isServedFromLocalhost
         ? strings.AppLocalEnvironmentTeams
