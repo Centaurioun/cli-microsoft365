@@ -21,7 +21,7 @@ export default class HelloWorldWebPart extends BaseClientSideWebPart<IHelloWorld
   public render(): void {
     this.domElement.innerHTML = `
     <section class="${styles.helloWorld} ${
-      (this.context.sdks.microsoftTeams) ? styles.teams : ""
+      this.context.sdks.microsoftTeams ? styles.teams : ""
     }">
       <div class="${styles.welcome}">
         <img alt="" src="${
