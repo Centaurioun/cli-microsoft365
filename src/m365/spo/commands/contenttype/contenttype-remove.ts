@@ -112,8 +112,8 @@ class SpoContentTypeRemoveCommand extends SpoCommand {
         }
 
         let res: any;
-        if (contentTypeIdResult &&
-          contentTypeIdResult.value &&
+        if (
+          contentTypeIdResult?.value &&
           contentTypeIdResult.value.length > 0) {
           contentTypeId = contentTypeIdResult.value[0].StringId;
 

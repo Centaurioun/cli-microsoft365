@@ -231,7 +231,7 @@ export abstract class BaseProjectCommand extends AnonymousCommand {
     if (fs.existsSync(yoRcPath)) {
       try {
         const yoRc: any = JSON.parse(fs.readFileSync(yoRcPath, 'utf-8'));
-        if (yoRc && yoRc['@microsoft/generator-sharepoint']) {
+        if ( yoRc?.['@microsoft/generator-sharepoint']) {
           const version: string | undefined = yoRc['@microsoft/generator-sharepoint'].version;
 
           if (version) {
@@ -252,8 +252,8 @@ export abstract class BaseProjectCommand extends AnonymousCommand {
     const packageJsonPath: string = path.resolve(this.projectRootPath as string, 'package.json');
     try {
       const packageJson: any = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-      if (packageJson &&
-        packageJson.dependencies &&
+      if (
+        packageJson?.dependencies &&
         packageJson.dependencies['@microsoft/sp-core-library']) {
         const coreLibVersion: string = packageJson.dependencies['@microsoft/sp-core-library'];
         return coreLibVersion.replace(/[^0-9\.]/g, '');

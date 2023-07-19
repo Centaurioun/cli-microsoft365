@@ -209,8 +209,8 @@ describe(commands.ENVIRONMENT_LIST, () => {
 
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.BusinessAppPlatform/environments?api-version=2020-10-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return env;
         }
@@ -369,8 +369,8 @@ describe(commands.ENVIRONMENT_LIST, () => {
 
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.BusinessAppPlatform/environments?api-version=2020-10-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return env;
         }
@@ -529,8 +529,8 @@ describe(commands.ENVIRONMENT_LIST, () => {
 
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.BusinessAppPlatform/scopes/admin/environments?api-version=2020-10-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return env;
         }
@@ -545,8 +545,8 @@ describe(commands.ENVIRONMENT_LIST, () => {
   it('correctly handles no environments', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/providers/Microsoft.BusinessAppPlatform/environments?api-version=2020-10-01`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             value: []

@@ -407,8 +407,8 @@ export default abstract class Command {
   }
 
   protected handleRejectedODataJsonPromise(response: any): void {
-    if (response.error &&
-      response.error['odata.error'] &&
+    if (
+      response.error?.['odata.error'] &&
       response.error['odata.error'].message) {
       throw new CommandError(response.error['odata.error'].message.value);
     }
@@ -422,8 +422,8 @@ export default abstract class Command {
       }
     }
 
-    if (response.error.error &&
-      response.error.error.message) {
+    if (
+      response.error.error?.message) {
       throw new CommandError(response.error.error.message);
     }
 
@@ -437,8 +437,8 @@ export default abstract class Command {
 
     try {
       const error: any = JSON.parse(response.error);
-      if (error &&
-        error.error &&
+      if (
+        error?.error &&
         error.error.message) {
         throw new CommandError(error.error.message);
       }

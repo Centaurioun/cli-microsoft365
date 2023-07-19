@@ -123,8 +123,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/GetFileById(guid'`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -156,8 +156,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -190,8 +190,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -224,8 +224,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -258,8 +258,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -292,8 +292,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/sites/subsite/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -325,8 +325,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/sites/subsite/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -359,8 +359,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -392,8 +392,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter(fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -425,8 +425,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/sites/subsite/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -458,8 +458,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`GetFileByServerRelativeUrl('${formatting.encodeQueryParameter('/sites/subsite/' + fileUrl)}')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -488,8 +488,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/recycle()`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -518,8 +518,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/GetFileByServerRelativeUrl('`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }
@@ -548,8 +548,8 @@ describe(commands.FILE_REMOVE, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/recycle()`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return;
         }

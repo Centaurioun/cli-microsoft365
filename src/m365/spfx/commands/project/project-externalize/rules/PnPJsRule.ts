@@ -74,7 +74,7 @@ export class PnPJsRule extends BasicDependencyRule {
   }
 
   private getEntryFilesList(project: Project): string[] {
-    return project && project.manifests ? project.manifests.map(x => x.path.replace('.manifest.json', '.ts')) : [];
+    return  project?.manifests ? project.manifests.map(x => x.path.replace('.manifest.json', '.ts')) : [];
   }
 
   private getModuleAndParents(project: Project, moduleName: string): ExternalizeEntry[] {
@@ -89,7 +89,7 @@ export class PnPJsRule extends BasicDependencyRule {
           ...moduleConfiguration,
           path: `https://unpkg.com/${moduleConfiguration.key}@${version}/dist/${moduleName.replace('@pnp/', '')}.es5.umd${moduleName === '@pnp/common' || moduleName === ' @pnp/pnpjs' ? '.bundle' : ''}.min.js`
         });
-        moduleConfiguration.globalDependencies && moduleConfiguration.globalDependencies.forEach(dependency => {
+         moduleConfiguration.globalDependencies?.forEach(dependency => {
           result.push(...this.getModuleAndParents(project, `@${dependency.replace('/', '.')}`));
         });
       }

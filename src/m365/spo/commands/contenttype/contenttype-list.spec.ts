@@ -103,8 +103,8 @@ describe(commands.CONTENTTYPE_LIST, () => {
   it('retrieves all content types (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "value": [
@@ -233,8 +233,8 @@ describe(commands.CONTENTTYPE_LIST, () => {
   it('retrieves all content types', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "value": [
@@ -362,8 +362,8 @@ describe(commands.CONTENTTYPE_LIST, () => {
   it('retrieves all content types by category (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes?$filter=Group eq 'List%20Content%20Types'`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "value": [
@@ -493,8 +493,8 @@ describe(commands.CONTENTTYPE_LIST, () => {
   it('retrieves all content types by category', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/test/_api/web/ContentTypes?$filter=Group eq 'List%20Content%20Types'`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return {
             "value": [

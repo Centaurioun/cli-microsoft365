@@ -9,7 +9,7 @@ export default abstract class YammerCommand extends Command {
     if (response.statusCode === 404) {
       throw new CommandError("Not found (404)");
     }
-    else if (response.error && response.error.base) {
+    else if ( response.error?.base) {
       throw new CommandError(response.error.base);
     }
     else {

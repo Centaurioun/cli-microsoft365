@@ -68,8 +68,8 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   it('adds OAuth2 permission grant (debug)', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants`) > -1) {
-        if (opts.headers &&
-          opts.headers['content-type'] &&
+        if (
+          opts.headers?.['content-type'] &&
           (opts.headers['content-type'] as string).indexOf('application/json') === 0 &&
           opts.data.clientId === '6a7b1395-d313-4682-8ed4-65a6265a6320' &&
           opts.data.resourceId === '6a7b1395-d313-4682-8ed4-65a6265a6321' &&
@@ -88,8 +88,8 @@ describe(commands.OAUTH2GRANT_ADD, () => {
   it('adds OAuth2 permission grant', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants`) > -1) {
-        if (opts.headers &&
-          opts.headers['content-type'] &&
+        if (
+          opts.headers?.['content-type'] &&
           (opts.headers['content-type'] as string).indexOf('application/json') === 0 &&
           opts.data.clientId === '6a7b1395-d313-4682-8ed4-65a6265a6320' &&
           opts.data.resourceId === '6a7b1395-d313-4682-8ed4-65a6265a6321' &&

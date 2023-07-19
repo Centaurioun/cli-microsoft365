@@ -895,8 +895,8 @@ class SpfxDoctorCommand extends BaseProjectCommand {
               };
             };
           } = JSON.parse(responseString);
-          if (packageInfo.dependencies &&
-            packageInfo.dependencies[packageName]) {
+          if (
+            packageInfo.dependencies?.[packageName]) {
             resolve(packageInfo.dependencies[packageName].version);
           }
           else {

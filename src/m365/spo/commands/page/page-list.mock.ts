@@ -368,7 +368,7 @@ export const fileApiListData = [
 ];
 
 export const mockPagesListOutput = mockPageListData.map(p => {
-  const clientSidePage = fileApiListData.find(cp => cp && cp.ListItemAllFields && cp.ListItemAllFields.Id === p.Id);
+  const clientSidePage = fileApiListData.find(cp =>  cp?.ListItemAllFields && cp.ListItemAllFields.Id === p.Id);
   if (clientSidePage) {
     return {
       ...clientSidePage,

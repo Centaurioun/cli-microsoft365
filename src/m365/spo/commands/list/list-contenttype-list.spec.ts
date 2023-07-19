@@ -130,8 +130,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listTitle option is passed (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/ninja/_api/web/lists/getByTitle('Documents')/ContentTypes`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -153,8 +153,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listTitle option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/ninja/_api/web/lists/getByTitle('Documents')/ContentTypes`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -175,8 +175,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listId option is passed (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/ContentTypes`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -198,8 +198,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listUrl option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/GetList(\'%2Fsites%2Fdocuments\')/ContentTypes') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -220,8 +220,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listUrl option is passed (debug)', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === 'https://contoso.sharepoint.com/_api/web/GetList(\'%2Fsites%2Fdocuments\')/ContentTypes') {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -243,8 +243,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('retrieves all content types of the specific list if listId option is passed', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/ContentTypes`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }
@@ -266,8 +266,8 @@ describe(commands.LIST_CONTENTTYPE_LIST, () => {
   it('outputs all properties when output is JSON', async () => {
     sinon.stub(request, 'get').callsFake(async (opts) => {
       if (opts.url === `https://contoso.sharepoint.com/sites/ninja/_api/web/lists(guid'dfddade1-4729-428d-881e-7fedf3cae50d')/ContentTypes`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return contentTypeResponse;
         }

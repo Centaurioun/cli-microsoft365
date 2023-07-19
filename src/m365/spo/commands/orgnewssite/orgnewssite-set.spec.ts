@@ -73,8 +73,8 @@ describe(commands.ORGNEWSSITE_SET, () => {
   it('completes a set request', async () => {
     const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest']) {
+        if (
+          opts.headers?.['X-RequestDigest']) {
           return JSON.stringify(
             [{ "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7025.1207", "ErrorInfo": null, "TraceCorrelationId": "8992299e-a003-4000-7686-fda36e26a53c" }, 22, []]
           );
@@ -96,8 +96,8 @@ describe(commands.ORGNEWSSITE_SET, () => {
   it('handles error during set request', async () => {
     const svcListRequest = sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_vti_bin/client.svc/ProcessQuery`) > -1) {
-        if (opts.headers &&
-          opts.headers['X-RequestDigest']) {
+        if (
+          opts.headers?.['X-RequestDigest']) {
           return JSON.stringify([
             {
               "SchemaVersion": "15.0.0.0", "LibraryVersion": "16.0.7018.1204", "ErrorInfo": {

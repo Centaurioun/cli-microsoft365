@@ -9,7 +9,7 @@ export const sinonUtil = {
     }
 
     method.forEach((m: any): void => {
-      if (m && m.restore) {
+      if ( m?.restore) {
         m.restore();
       }
     });

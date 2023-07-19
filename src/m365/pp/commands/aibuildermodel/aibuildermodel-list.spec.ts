@@ -118,8 +118,8 @@ describe(commands.AIBUILDERMODEL_LIST, () => {
 
     sinon.stub(request, 'get').callsFake(async opts => {
       if ((opts.url === `https://contoso-dev.api.crm4.dynamics.com/api/data/v9.0/msdyn_aimodels?$filter=iscustomizable/Value eq true`)) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return modelsResponse;
         }

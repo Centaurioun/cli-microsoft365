@@ -107,8 +107,8 @@ describe(commands.LIST_VIEW_SET, () => {
   it('ignores global options when creating request data', async () => {
     const patchRequest: sinon.SinonStub = sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/web/lists/GetByTitle('${formatting.encodeQueryParameter(listTitle)}')/views/GetByTitle('${formatting.encodeQueryParameter(viewTitle)}')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers['X-RequestDigest'] &&
           JSON.stringify(opts.data) === JSON.stringify({ Title: 'All events' })) {
@@ -126,8 +126,8 @@ describe(commands.LIST_VIEW_SET, () => {
   it('updates the Title of the list view specified using its name', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/web/lists/GetByTitle('${formatting.encodeQueryParameter(listTitle)}')/views/GetByTitle('${formatting.encodeQueryParameter(viewTitle)}')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers['X-RequestDigest'] &&
           JSON.stringify(opts.data) === JSON.stringify({ Title: 'All events' })) {
@@ -145,8 +145,8 @@ describe(commands.LIST_VIEW_SET, () => {
   it('updates the Title and CustomFormatter of the list view specified using its ID', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
       if (opts.url === `${webUrl}/_api/web/lists(guid'${formatting.encodeQueryParameter(listId)}')/views/GetById('${formatting.encodeQueryParameter(viewId)}')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers['X-RequestDigest'] &&
           JSON.stringify(opts.data) === JSON.stringify({ Title: 'All events', CustomFormatter: 'abc' })) {
@@ -165,8 +165,8 @@ describe(commands.LIST_VIEW_SET, () => {
       const serverRelativeUrl: string = urlUtil.getServerRelativePath(webUrl, listUrl);
 
       if (opts.url === `${webUrl}/_api/web/GetList('${formatting.encodeQueryParameter(serverRelativeUrl)}')/views/GetById('${formatting.encodeQueryParameter(viewId)}')`) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers['X-RequestDigest'] &&
           JSON.stringify(opts.data) === JSON.stringify({ Title: 'All events', CustomFormatter: 'abc' })) {

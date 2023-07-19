@@ -78,8 +78,8 @@ describe(commands.APP_ADD, () => {
   it('adds new app to the tenant app catalog', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -101,8 +101,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -141,8 +141,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/sitecollectionappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -182,8 +182,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -212,8 +212,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -242,8 +242,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/sitecollectionappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -274,8 +274,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -303,8 +303,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/sitecollectionappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -333,8 +333,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/tenantappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -363,8 +363,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/sitecollectionappcatalog/Add(overwrite=false, url='spfx.sppkg')`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -482,8 +482,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -520,8 +520,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {
@@ -557,8 +557,8 @@ describe(commands.APP_ADD, () => {
       requests.push(opts);
 
       if ((opts.url as string).indexOf(`/_api/web/`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0 &&
           opts.headers.binaryStringRequestBody &&
           opts.data) {

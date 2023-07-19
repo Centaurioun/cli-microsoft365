@@ -64,8 +64,8 @@ describe(commands.OAUTH2GRANT_SET, () => {
   it('updates OAuth2 permission grant (debug)', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants/YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek`) > -1) {
-        if (opts.headers &&
-          opts.headers['content-type'] &&
+        if (
+          opts.headers?.['content-type'] &&
           (opts.headers['content-type'] as string).indexOf('application/json') === 0 &&
           opts.data.scope === 'user_impersonation') {
           return;
@@ -82,8 +82,8 @@ describe(commands.OAUTH2GRANT_SET, () => {
   it('updates OAuth2 permission grant', async () => {
     sinon.stub(request, 'patch').callsFake(async (opts) => {
       if ((opts.url as string).indexOf(`/v1.0/oauth2PermissionGrants/YgA60KYa4UOPSdc-lpxYEnQkr8KVLDpCsOXkiV8i-ek`) > -1) {
-        if (opts.headers &&
-          opts.headers['content-type'] &&
+        if (
+          opts.headers?.['content-type'] &&
           (opts.headers['content-type'] as string).indexOf('application/json') === 0 &&
           opts.data.scope === 'user_impersonation') {
           return;

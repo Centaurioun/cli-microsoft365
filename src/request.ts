@@ -105,8 +105,8 @@ class Request {
     this.req.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error: AxiosError<any>): void => {
-        if (error &&
-          error.response &&
+        if (
+          error?.response &&
           error.response.data &&
           !(error.response.data instanceof Stream)) {
           // move error details from response.data to error property to make
@@ -158,11 +158,11 @@ class Request {
 
     return new Promise<TResponse>((_resolve: (res: TResponse) => void, _reject: (error: any) => void): void => {
       ((): Promise<string> => {
-        if (options.headers && options.headers['x-anonymous']) {
+        if ( options.headers?.['x-anonymous']) {
           return Promise.resolve('');
         }
         else {
-          const url = options.headers && options.headers['x-resource'] ? options.headers['x-resource'] : options.url;
+          const url =  options.headers?.['x-resource'] ? options.headers['x-resource'] : options.url;
           const resource: string = Auth.getResourceFromUrl(url as string);
           return auth.ensureAccessToken(resource, this._logger as Logger, this._debug);
         }
@@ -189,7 +189,7 @@ class Request {
             _resolve((options.responseType === 'stream' || options.fullResponse) ? res : res.data);
           }
         }, (error: AxiosError): void => {
-          if (error && error.response &&
+          if ( error?.response &&
             (error.response.status === 429 ||
               error.response.status === 503)) {
             let retryAfter: number = parseInt(error.response.headers['retry-after'] || '10');

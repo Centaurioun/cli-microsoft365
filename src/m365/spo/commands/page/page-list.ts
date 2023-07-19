@@ -65,7 +65,7 @@ class SpoPageListCommand extends SpoCommand {
       if (res && res.length > 0) {
         const clientSidePages: any[] = res.filter(p => p.ListItemAllFields.ClientSideApplicationId === 'b6917cb1-93a0-4b97-a84d-7cf49975d4ec');
         pages = pages.map(p => {
-          const clientSidePage = clientSidePages.find(cp => cp && cp.ListItemAllFields && cp.ListItemAllFields.Id === p.Id);
+          const clientSidePage = clientSidePages.find(cp =>  cp?.ListItemAllFields && cp.ListItemAllFields.Id === p.Id);
           if (clientSidePage) {
             return {
               ...clientSidePage,

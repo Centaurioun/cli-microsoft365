@@ -95,8 +95,8 @@ describe(commands.HIDEDEFAULTTHEMES_GET, () => {
   it('gets the current value of the HideDefaultThemes setting', async () => {
     sinon.stub(request, 'post').callsFake(async (opts) => {
       if ((opts.url as string).indexOf('/_api/thememanager/GetHideDefaultThemes') > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json') === 0) {
           return { value: true };
         }

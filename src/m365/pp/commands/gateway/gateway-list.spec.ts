@@ -82,8 +82,8 @@ describe(commands.GATEWAY_LIST, () => {
 
     sinon.stub(request, 'get').callsFake((opts) => {
       if ((opts.url as string).indexOf(`/v1.0/myorg/gateways`) > -1) {
-        if (opts.headers &&
-          opts.headers.accept &&
+        if (
+          opts.headers?.accept &&
           (opts.headers.accept as string).indexOf('application/json;odata.metadata=none') === 0) {
           return gateways;
         }

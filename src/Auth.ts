@@ -165,7 +165,7 @@ export class Auth {
   public async ensureAccessToken(resource: string, logger: Logger, debug: boolean = false, fetchNew: boolean = false): Promise<string> {
     const now: Date = new Date();
     const accessToken: AccessToken | undefined = this.service.accessTokens[resource];
-    const expiresOn: Date = accessToken && accessToken.expiresOn ?
+    const expiresOn: Date =  accessToken?.expiresOn ?
       // if expiresOn is serialized from the service file, it's set as a string
       // if it's coming from MSAL, it's a Date
       typeof accessToken.expiresOn === 'string' ? new Date(accessToken.expiresOn) : accessToken.expiresOn
@@ -622,11 +622,11 @@ export class Auth {
       // now lets see if the api returned 'not found' response and
       // try to get token using principal_id (object_id)
       let isNotFoundResponse = false;
-      if (e.error && e.error.Message) {
+      if ( e.error?.Message) {
         // check if it is Azure Function api 'not found' response
         isNotFoundResponse = (e.error.Message.indexOf("No Managed Identity found") !== -1);
       }
-      else if (e.error && e.error.error_description) {
+      else if ( e.error?.error_description) {
         // check if it is Azure VM api 'not found' response
         isNotFoundResponse = (e.error.error_description === "Identity not found");
       }
@@ -731,8 +731,8 @@ export class Auth {
   }
 
   public static getEndpointForResource(resource: string, cloudType: CloudType): string {
-    if (Auth.cloudEndpoints[cloudType] &&
-      Auth.cloudEndpoints[cloudType][resource]) {
+    if (
+      Auth.cloudEndpoints[cloudType]?.[resource]) {
       return Auth.cloudEndpoints[cloudType][resource];
     }
     else {
