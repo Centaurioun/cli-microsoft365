@@ -6,14 +6,14 @@
     "node": ">=0.10.0"
   },
   "dependencies": {
-    "@microsoft/sp-component-base": "1.1.0",
-    "@microsoft/sp-core-library": "~1.1.0",
-    "@microsoft/sp-http": "1.1.1",
-    "@microsoft/sp-loader": "1.1.1",
+    "@microsoft/sp-component-base": "1.4.0",
+    "@microsoft/sp-core-library": "~1.4.0",
+    "@microsoft/sp-http": "1.4.0",
+    "@microsoft/sp-loader": "1.4.0",
     "@microsoft/sp-module-interfaces": "1.1.1",
     "@microsoft/sp-odata-types": "1.1.0",
-    "@microsoft/sp-page-context": "1.1.0",
-    "@microsoft/sp-webpart-base": "~1.1.1",
+    "@microsoft/sp-page-context": "1.4.0",
+    "@microsoft/sp-webpart-base": "~1.4.0",
     "@types/webpack-env": ">=1.12.1 <1.14.0"
   },
   "devDependencies": {
