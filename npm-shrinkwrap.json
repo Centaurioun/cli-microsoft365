@@ -12,7 +12,7 @@
         "@azure/msal-node": "^1.14.2",
         "@xmldom/xmldom": "^0.8.6",
         "adaptive-expressions": "^4.18.0",
-        "adaptivecards": "^2.11.1",
+        "adaptivecards": "^3.0.1",
         "adaptivecards-templating": "^2.3.1",
         "adm-zip": "^0.5.9",
         "applicationinsights": "^2.3.6",
@@ -1023,9 +1023,9 @@
       }
     },
     "node_modules/adaptivecards": {
-      "version": "2.11.3",
-      "resolved": "https://registry.npmjs.org/adaptivecards/-/adaptivecards-2.11.3.tgz",
-      "integrity": "sha512-pfqGVU9B33vqVWDhvqGuoinEPwKe7xNPzljaQ0qHMwVCMv2OqweQ2pBH5htfzE/XNYPViq+4rNvqIDubDmuZoQ==",
+      "version": "3.0.1",
+      "resolved": "https://registry.npmjs.org/adaptivecards/-/adaptivecards-3.0.1.tgz",
+      "integrity": "sha512-n8GOU4p0bA/jokIHFeltE1zMUt+QAwmXu9w79bEUCHdFOHan7PV9ABjdcWKuJ2M4o6rNsz1Fgqpw1Lhdxu2rOw==",
       "peerDependencies": {
         "swiper": "^8.2.6"
       }
@@ -7044,9 +7044,9 @@
       }
     },
     "adaptivecards": {
-      "version": "2.11.3",
-      "resolved": "https://registry.npmjs.org/adaptivecards/-/adaptivecards-2.11.3.tgz",
-      "integrity": "sha512-pfqGVU9B33vqVWDhvqGuoinEPwKe7xNPzljaQ0qHMwVCMv2OqweQ2pBH5htfzE/XNYPViq+4rNvqIDubDmuZoQ==",
+      "version": "3.0.1",
+      "resolved": "https://registry.npmjs.org/adaptivecards/-/adaptivecards-3.0.1.tgz",
+      "integrity": "sha512-n8GOU4p0bA/jokIHFeltE1zMUt+QAwmXu9w79bEUCHdFOHan7PV9ABjdcWKuJ2M4o6rNsz1Fgqpw1Lhdxu2rOw==",
       "requires": {}
     },
     "adaptivecards-templating": {
