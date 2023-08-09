@@ -214,7 +214,7 @@
     "Wojcik, Adam <adam.wojcik.it@gmail.com>"
   ],
   "dependencies": {
-    "@azure/msal-node": "^1.14.2",
+    "@azure/msal-node": "^2.0.0",
     "@xmldom/xmldom": "^0.8.6",
     "adaptive-expressions": "^4.18.0",
     "adaptivecards": "^3.0.1",
