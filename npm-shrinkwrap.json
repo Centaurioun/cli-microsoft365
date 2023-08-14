@@ -160,19 +160,19 @@
       }
     },
     "node_modules/@azure/msal-common": {
-      "version": "14.0.0",
-      "resolved": "https://registry.npmjs.org/@azure/msal-common/-/msal-common-14.0.0.tgz",
-      "integrity": "sha512-OWFVs4BKxcIPeMlFTzgVeGXsdfd1zuMkamVcXG0aM6NhrOXVxc+V8xSPHzzFNjkt9nklNyWlvQx/AIcUQMDmSg==",
+      "version": "14.0.1",
+      "resolved": "https://registry.npmjs.org/@azure/msal-common/-/msal-common-14.0.1.tgz",
+      "integrity": "sha512-+TTQTQGKUV4zexuxQFTpOgtVGwt2FQxNfyZpgLS8KFq6jTNACgK3IJqSz0RbdRQSSdFU3c7NldeYTZwQX470ig==",
       "engines": {
         "node": ">=0.8.0"
       }
     },
     "node_modules/@azure/msal-node": {
-      "version": "2.0.0",
-      "resolved": "https://registry.npmjs.org/@azure/msal-node/-/msal-node-2.0.0.tgz",
-      "integrity": "sha512-OtReL32a9ycdEugIEYztRxHPnmkhiyTXsGQrSrWP8dbyIR2uj0+hw8Hlawm00OBK+Oaj+W4UJpGQ/JyA0T9V5g==",
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/@azure/msal-node/-/msal-node-2.0.1.tgz",
+      "integrity": "sha512-tQn4ZcKzmEElYXA1rVBVeokwcwRJzxpdeRioG2eqH13yM32yt7Qt3sLqd2q11fICvtcvZlJzyq9PdXc/3rIktA==",
       "dependencies": {
-        "@azure/msal-common": "14.0.0",
+        "@azure/msal-common": "14.0.1",
         "jsonwebtoken": "^9.0.0",
         "uuid": "^8.3.0"
       },
