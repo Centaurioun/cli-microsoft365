@@ -11,7 +11,7 @@
     "test": "gulp test"
   },
   "dependencies": {
-    "knockout": "3.4.0",
+    "knockout": "3.5.0",
     "@types/knockout": "3.4.39",
     "@microsoft/sp-core-library": "1.5.1",
     "@microsoft/sp-webpart-base": "1.5.1",
@@ -27,6 +27,6 @@
     "gulp": "~3.9.1",
     "@types/chai": "3.4.34",
     "@types/mocha": "2.2.38",
-    "ajv": "~5.2.2"
+    "ajv": "~8.17.1"
   }
 }
