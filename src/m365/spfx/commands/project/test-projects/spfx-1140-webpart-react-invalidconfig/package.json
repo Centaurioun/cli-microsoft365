@@ -9,9 +9,9 @@
     "test": "gulp test"
   },
   "dependencies": {
-    "ajv": "~8.10.0",
+    "ajv": "~8.18.0",
     "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react-dom": "19.2.4",
     "office-ui-fabric-react": "7.183.0",
     "@fluentui/react": "8.62.0",
     "@microsoft/rush-stack-compiler-3.7": "0.6.48",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@types/react": "17.0.41",
-    "@types/react-dom": "17.0.14",
+    "@types/react-dom": "19.2.3",
     "@microsoft/sp-build-web": "1.14.0",
     "@microsoft/sp-tslint-rules": "1.14.0",
     "@microsoft/sp-module-interfaces": "~1.14.0",
